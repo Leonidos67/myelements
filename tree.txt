@@ -1,0 +1,17 @@
+/
+├── index.html
+├── package.json
+├── vite.config.js
+└── src/
+    ├── main.jsx
+    ├── App.jsx
+    ├── styles.css
+    ├── data.js
+    └── components/
+        ├── Sidebar.jsx
+        ├── Topbar.jsx
+        ├── KPICards.jsx
+        ├── Chart.jsx
+        ├── RegionTable.jsx
+        ├── GeoMap.jsx
+        └── EditModal.jsx

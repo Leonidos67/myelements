@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme {
+  --color-page: #000000;
+  --color-surface: #0a0a0a;
+  --color-surface-2: #141414;
+  --color-ink: #f5f5f5;
+  --color-ink-dim: #a3a3a3;
+  --color-ink-faint: #6b6b6b;
+  --color-line: #1f1f1f;
+  --color-line-strong: #2a2a2a;
+  --color-side: #000000;
+  --color-side-active: #141414;
+  --color-side-text: #d6dadd;
+  --color-side-dim: #8a9196;
+  --color-brand: #f4623a;
+  --color-brand-soft: #2a1a14;
+  --color-danger: #ef4444;
+  --color-kpi-spend: #1c1512;
+
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  --radius-panel: 18px;
+
+  --shadow-panel: 0 4px 24px rgba(0,0,0,0.5);
+  --shadow-modal: 0 20px 60px rgba(0,0,0,0.8);
+}
+
+@layer base {
+  html, body, #root { @apply m-0 min-h-screen; }
+
+  /* убираем скроллбар везде, но скролл оставляем рабочим */
+  * { scrollbar-width: none; -ms-overflow-style: none; }
+  *::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+  body {
+    @apply bg-page text-ink antialiased;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px;
+    line-height: 1.45;
+
+    /* фон-картинка страницы: fixed + cover + тёмная подложка */
+    background-image:
+  linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.75)),
+  url('https://storage.yandexcloud.net/cdn.carso.ru/uploads/used_car/7214/images/card_1200_800_5hCxrMvt.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+  }
+
+  button { @apply cursor-pointer; }
+  input, select, textarea { color-scheme: dark; }
+  input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
+}
