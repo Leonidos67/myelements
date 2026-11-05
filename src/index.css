@@ -53,3 +53,9 @@
   input, select, textarea { color-scheme: dark; }
   input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
 }
+/* Visible scroll affordance for the comment moderation panel. */
+.comment-pending-scroll { scrollbar-width: thin; scrollbar-color: #5c4034 transparent; }
+.comment-pending-scroll::-webkit-scrollbar { display: block; width: 5px; }
+.comment-pending-scroll::-webkit-scrollbar-track { background: transparent; }
+.comment-pending-scroll::-webkit-scrollbar-thumb { background: #5c4034; border-radius: 999px; }
+.comment-pending-scroll::-webkit-scrollbar-thumb:hover { background: #a85b3f; }

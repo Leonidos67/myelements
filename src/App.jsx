@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from './api';
 import Login from './Login';
+import CommentPageModal from './CommentPageModal';
 import AIChat from './AIChat';
 import CalendarView from './CalendarView';
 import SavingsView from './SavingsView';
@@ -10,7 +11,7 @@ import {
   Gift, Gamepad2, Sparkles, Palette, 
   Settings, Trash2, X, ChevronDown, CreditCard, DollarSign,
   LayoutDashboard, FolderOpen, MoreVertical, Target, Calendar, Bot, Bookmark,
-  Heart, AlertCircle, CheckCircle2, ArrowUpCircle, ArrowDownCircle
+  Info, Heart, AlertCircle, CheckCircle2, ArrowUpCircle, ArrowDownCircle
 } from 'lucide-react';
 
 const fmtMoney = (n) => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -57,6 +58,23 @@ export default function App() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editVideo, setEditVideo] = useState(null);
+  const [commentVideo, setCommentVideo] = useState(null);
+  const [commentSummary, setCommentSummary] = useState(null);
+  const [commentSummaryError, setCommentSummaryError] = useState(false);
+  const refreshCommentSummary = async () => {
+    try {
+      const rows = await api.commentSummary();
+      setCommentSummary(Object.fromEntries(rows.map(row => [row._id, row])));
+      setCommentSummaryError(false);
+    } catch { setCommentSummaryError(true); }
+  };
+  useEffect(() => {
+    if (!me) { setCommentSummary(null); return; }
+    refreshCommentSummary();
+    const timer = setInterval(() => { if (!document.hidden) refreshCommentSummary(); }, 15000);
+    window.addEventListener('focus', refreshCommentSummary);
+    return () => { clearInterval(timer); window.removeEventListener('focus', refreshCommentSummary); };
+  }, [me]);
   
   const [openMenuId, setOpenMenuId] = useState(null);
   const [openStatusId, setOpenStatusId] = useState(null);
@@ -142,7 +160,7 @@ export default function App() {
   };
 
   if (booting) return <div className="p-6 text-gray-400 bg-[#111] min-h-screen">…</div>;
-  if (!me) return <Login onLogin={setMe} />;
+  if (!me) return <Login onLogin={(user) => { setMe(user); reload(); }} />;
 
   const displayedVideos = activeAccount 
     ? videos.filter(v => (typeof v.account === 'string' ? v.account : v.account?._id) === activeAccount)
@@ -276,7 +294,7 @@ export default function App() {
             </div>
             
             <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left border-collapse min-w-[1100px]">
+              <table className="w-full text-xs text-left border-collapse min-w-[1220px]">
                 <thead>
                   <tr className="border-b border-[#2a2a2a] text-gray-400">
                     <th className="pb-3 font-medium">Админ</th>
@@ -285,6 +303,7 @@ export default function App() {
                     <th className="pb-3 font-medium">Тематика</th>
                     <th className="pb-3 font-medium text-right">Просмотры</th>
                     <th className="pb-3 font-medium text-center" title="Введи реальное кол-во лайков для проверки ER">Лайки (ER+факт)</th>
+                    <th className="pb-3 font-medium text-center px-3">Комментарии</th>
                     <th className="pb-3 font-medium text-right">CPM</th>
                     <th className="pb-3 font-medium text-right">Начислено</th>
                     <th className="pb-3 font-medium text-right">Траты</th>
@@ -300,6 +319,7 @@ export default function App() {
                   const cpm = v.views > 0 ? ((v.grossRevenue / v.views) * 1000).toFixed(2) : '0.00';
                   
                   const likesStatus = getLikesStatus(v.likes, v.views, v.category);
+                  const comments = commentSummary?.[v._id];
                   
                   const statusColors = {
                     moderation: 'bg-gray-500/20 text-gray-400',
@@ -405,6 +425,12 @@ export default function App() {
                           </div>
                         </div>
                       </td>
+                      <td className="py-3 px-3 text-center">
+                        {commentSummaryError ? <button onClick={refreshCommentSummary} className="text-gray-400 text-[10px] hover:text-white" title="Не удалось загрузить прогресс. Повторить">Обновить</button> : !commentSummary ? <span className="text-gray-500">…</span> : comments ? <div className="flex items-center justify-center gap-2 whitespace-nowrap">
+                          <span className={comments.issued === comments.total ? 'font-mono text-green-400' : 'font-mono text-gray-300'} title="Выдано комментариев">{comments.issued} из {comments.total}</span>
+                          <button onClick={() => setCommentVideo(v)} title="Подробнее о комментариях" aria-label="Подробнее о комментариях" className="p-1 rounded text-gray-400 hover:text-[#f4623a] hover:bg-[#2a2a2a]"><Info size={15} /></button>
+                        </div> : <button onClick={() => setCommentVideo(v)} className="px-2 py-1 rounded text-[#f4623a] hover:bg-[#2a2a2a] inline-flex items-center gap-1"><Plus size={12} /> Добавить</button>}
+                      </td>
                       <td className="py-3 text-right font-mono text-gray-400 text-[11px]" title="Стоимость 1000 просмотров">${cpm}</td>
                       <td className="py-3 text-right font-mono text-gray-300">${v.grossRevenue.toFixed(2)}</td>
                       <td className="py-3 text-right font-mono text-red-400">-${v.totalExpenses.toFixed(2)}</td>
@@ -449,7 +475,7 @@ export default function App() {
                   );
                 })}
                   {displayedVideos.length === 0 && (
-                    <tr><td colSpan={12} className="text-center py-8 text-gray-500">нет видео</td></tr>
+                    <tr><td colSpan={13} className="text-center py-8 text-gray-500">нет видео</td></tr>
                   )}
                 </tbody>
               </table>
@@ -698,6 +724,7 @@ export default function App() {
           onAdd={() => { setIsAddOpen(false); reload(); }} 
         />
       )}
+      {commentVideo && <CommentPageModal video={commentVideo} onClose={() => { setCommentVideo(null); refreshCommentSummary(); }} onChange={refreshCommentSummary} />}
       {editVideo && <EditVideoModal video={editVideo} onClose={() => setEditVideo(null)} onSave={async (data) => { await api.updateVideo(editVideo._id, data); setEditVideo(null); reload(); }} />}
       {isAdjustOpen && <AdjustModal onClose={() => setIsAdjustOpen(false)} onAdd={() => { setIsAdjustOpen(false); reload(); }} />}
       {isHistoryOpen && <HistoryModal adjustments={adjustments} onClose={() => setIsHistoryOpen(false)} reload={reload} />}

@@ -12,6 +12,14 @@ async function req(path, opts = {}) {
 }
 
 export const api = {
+  replaceComment: (id, comment) => req('/comment-pages/' + encodeURIComponent(id) + '/replace', { method: 'POST', body: JSON.stringify({ comment }) }),
+  deleteCommentTask: (video) => req('/comment-pages?video=' + encodeURIComponent(video), { method: 'DELETE' }),
+  commentSummary: () => req('/comment-pages/summary'),
+  commentThemes: () => req('/comment-pages/themes'),
+  commentPages: (video) => req('/comment-pages?video=' + encodeURIComponent(video)),
+  createCommentPage: (data) => req('/comment-pages', { method: 'POST', body: JSON.stringify(data) }),
+  commentPage: (id) => req('/comment-pages/' + encodeURIComponent(id)),
+  claimComment: (id, visitor) => req('/comment-pages/' + encodeURIComponent(id) + '/claim', { method: 'POST', body: JSON.stringify({ visitor }) }),
   me: () => req('/auth/me'),
   login: (username, password) => req('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
   logout: () => req('/auth/logout', { method: 'POST' }),

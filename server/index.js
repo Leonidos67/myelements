@@ -14,6 +14,8 @@ import ideasRouter from './routes/ideas.js';
 import savingsRouter from './routes/savings.js';
 import adjustmentsRouter from './routes/adjustments.js';
 
+import commentPagesRouter from './routes/commentPages.js';
+
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
@@ -22,6 +24,7 @@ app.use(cors({
   credentials: true,
 }));
 
+app.use('/api/comment-pages', commentPagesRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/accounts', accountsRouter);
 app.use('/api/videos', videosRouter);

@@ -3,6 +3,10 @@
     {
       "source": "/api/:path*",
       "destination": "https://myelements-ubt-tracker-api.onrender.com/api/:path*"
+    },
+    {
+      "source": "/get-comment/:id",
+      "destination": "/index.html"
     }
   ]
 }
