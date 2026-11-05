@@ -18,12 +18,18 @@ try {
   const visitors = Array.from({ length: 50 }, () => randomUUID());
   const results = await Promise.all(visitors.map(v => claimComment(Model, 'concurrent', v)));
   const successes = results.filter(r => r.status === 200);
-  assert.equal(successes.length, 25);
-  assert.equal(new Set(successes.map(r => r.comment.text)).size, 25);
-  assert.equal(results.filter(r => r.status === 410).length, 25);
+  assert.equal(successes.length, 1);
+  assert.equal(new Set(successes.map(r => r.comment.text)).size, 1);
+  assert.equal(results.filter(r => r.status === 429).length, 49);
   const winner = results.findIndex(r => r.status === 200);
   const repeat = await claimComment(Model, 'concurrent', visitors[winner]);
   assert.deepEqual(repeat.comment, results[winner].comment);
+  for (const nextVisitor of visitors.filter((v, i) => i !== winner).slice(0, 24)) {
+    await Model.updateOne({ _id: 'concurrent' }, { $set: { nextAvailableAt: new Date(0) } });
+    assert.equal((await claimComment(Model, 'concurrent', nextVisitor)).status, 200);
+  }
+  assert.equal((await claimComment(Model, 'concurrent', randomUUID())).status, 410);
+  assert.deepEqual((await claimComment(Model, 'concurrent', visitors[winner])).comment, repeat.comment);
   const exhausted = await Model.findById('concurrent').lean();
   assert.equal(exhausted.remaining.length, 0);
   assert.equal(exhausted.claims.length, 25);
@@ -64,6 +70,14 @@ try {
   assert.equal(race.remaining.length, 1);
   assert.equal(race.claims.length, 1);
   assert.ok(!race.discarded.some(c => c.text === race.claims[0].comment.text));
+  for (const [label, count, age, expectedSeconds] of [['first', 0, 0, 120], ['two', 1, 60000, 600], ['four', 3, 60000, 1200], ['idle', 1, 1260000, 10]]) {
+    const claims = Array.from({ length: count }, (_, i) => ({ visitor: randomUUID(), comment: {text: 'prior ' + i, tags: []}, issuedAt: new Date(Date.now() - age) }));
+    await Model.create({ _id: 'tier-' + label, video: new mongoose.Types.ObjectId(), total: 26, remaining: comments, claims });
+    assert.equal((await claimComment(Model, 'tier-' + label, randomUUID())).status, 200);
+    const tier = await Model.findById('tier-' + label).lean();
+    assert.equal((tier.nextAvailableAt - tier.claims.at(-1).issuedAt) / 1000, expectedSeconds);
+  }
+  console.log('PASS: global cooldown, one concurrent winner, repeat bypass, 2/10/20 minute and idle 10 second tiers');
   console.log('PASS: pending replacements, simultaneous replacements and claims, issued unchanged, unchanged quota, no repeats, exhausted reserve');
   console.log('PASS: concurrent unique claims, exhaustion, retry after exhaustion, simultaneous duplicate requests, tags, missing page');
 } finally {

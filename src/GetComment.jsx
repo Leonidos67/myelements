@@ -9,7 +9,17 @@ export default function GetComment({ id }) {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
-  useEffect(() => { api.commentPage(id).then(setPage).catch(e => setError(e.message)); }, [id]);
+  const [waitUntil, setWaitUntil] = useState(0);
+  const [now, setNow] = useState(Date.now());
+  const [hasVisitor, setHasVisitor] = useState(() => { try { return !!localStorage.getItem('comment-visitor:' + id); } catch { return false; } });
+  const updateWait = (date, serverTime) => {
+    setWaitUntil(Date.now() + Math.max(0, new Date(date || 0).getTime() - new Date(serverTime || Date.now()).getTime()));
+    setNow(Date.now());
+  };
+  useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, []);
+  const secondsLeft = Math.max(0, Math.ceil((waitUntil - now) / 1000));
+  const countdown = Math.floor(secondsLeft / 60) + ':' + String(secondsLeft % 60).padStart(2, '0');
+  useEffect(() => { api.commentPage(id).then(p => { setPage(p); updateWait(p.nextAvailableAt, p.serverTime); }).catch(e => setError(e.message)); }, [id]);
   const mentions = (comment?.tags || []).filter(tag => tag.trim().startsWith('@'));
   const instructions = (comment?.tags || []).filter(tag => !tag.trim().startsWith('@'));
   const videoUrl = /^https?:\/\//i.test(page?.videoUrl || '') ? page.videoUrl : '';
@@ -21,9 +31,13 @@ export default function GetComment({ id }) {
       let visitor = localStorage.getItem(key);
       if (!visitor) { visitor = crypto.randomUUID(); localStorage.setItem(key, visitor); }
       const result = await api.claimComment(id, visitor);
+      setHasVisitor(true);
       setComment(result.comment);
       setPage(p => ({ ...p, remaining: result.remaining }));
-    } catch (e) { setError(e.message); }
+    } catch (e) {
+      if (e.status === 429) { updateWait(e.retryAt, e.serverTime); setHasVisitor(false); }
+      else setError(e.message);
+    }
     finally { setBusy(false); }
   }
   async function copy() {
@@ -48,7 +62,7 @@ export default function GetComment({ id }) {
             {instructions.length > 0 && <div className="mt-4 border-t border-white/[0.07] pt-3"><p className="text-[10px] text-neutral-600 mb-1.5">Стикеры и дополнения</p>{instructions.map((tag, i) => <p key={i} className="text-xs leading-relaxed text-neutral-400 break-words">{tag}</p>)}</div>}
           </div>
           <button onClick={copy} className={button + ' mt-4'}>{copied ? <Check size={16} /> : <Copy size={16} />}{copied ? 'Комментарий скопирован' : 'Скопировать комментарий'}</button>
-        </div> : <button disabled={busy || !page} onClick={receive} className={button + ' mt-6'}>{busy ? <LoaderCircle size={16} className="animate-spin" /> : <MessageSquare size={16} />}{busy ? 'Подбираем комментарий…' : 'Получить комментарий'}</button>}
+        </div> : <button disabled={busy || !page || (secondsLeft > 0 && !hasVisitor)} onClick={receive} className={button + ' mt-6'}>{busy ? <LoaderCircle size={16} className="animate-spin" /> : <MessageSquare size={16} />}{busy ? 'Подбираем комментарий…' : secondsLeft > 0 && !hasVisitor ? 'Получить через ' + countdown : 'Получить комментарий'}</button>}
         {!page && !error && <p className="mt-4 flex justify-center items-center gap-2 text-xs text-neutral-500"><LoaderCircle size={13} className="animate-spin" />Загружаем набор…</p>}
         {error && <p role="alert" className="mt-4 rounded-xl border border-red-400/15 bg-red-400/5 p-3 text-xs leading-relaxed text-red-300">{error}</p>}
       </section>

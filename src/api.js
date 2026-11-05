@@ -6,7 +6,9 @@ async function req(path, opts = {}) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `http ${res.status}`);
+    const error = new Error(err.error || `http ${res.status}`);
+    error.status = res.status; error.retryAt = err.retryAt; error.serverTime = err.serverTime;
+    throw error;
   }
   return res.json();
 }

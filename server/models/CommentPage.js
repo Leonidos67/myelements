@@ -8,6 +8,7 @@ const schema = new mongoose.Schema({
   theme: String,
   themeLabel: String,
   total: Number,
+  nextAvailableAt: Date,
   remaining: [comment],
   claims: [claim],
   discarded: [comment],

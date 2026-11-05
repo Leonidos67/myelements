@@ -21,7 +21,7 @@ router.get('/', auth, wrap(async (req, res) => {
   res.json(await CommentPage.aggregate([
     { $match: { video: new mongoose.Types.ObjectId(req.query.video) } },
     { $sort: { createdAt: -1 } },
-    { $project: { themeLabel: 1, total: 1, createdAt: 1, pending: '$remaining', issued: { $size: '$claims' }, remaining: { $size: '$remaining' } } },
+    { $project: { themeLabel: 1, total: 1, createdAt: 1, pending: '$remaining', completed: { $map: { input: '$claims', as: 'claim', in: { comment: '$$claim.comment', issuedAt: '$$claim.issuedAt' } } }, issued: { $size: '$claims' }, remaining: { $size: '$remaining' } } },
   ]));
 }));
 router.delete('/', auth, wrap(async (req, res) => {
@@ -56,15 +56,16 @@ router.post('/:id/replace', auth, wrap(async (req, res) => {
   res.status(status).json(body);
 }));
 router.get('/:id', wrap(async (req, res) => {
-  const page = await CommentPage.findById(req.params.id).select('video videoTitle themeLabel total remaining').lean();
+  const page = await CommentPage.findById(req.params.id).select('video videoTitle themeLabel total remaining nextAvailableAt').lean();
   if (!page) return res.status(404).json({ error: 'Страница не найдена' });
   const video = await Video.findById(page.video).select('url').lean();
-  res.json({ title: page.videoTitle, videoUrl: video?.url || '', themeLabel: page.themeLabel, total: page.total, remaining: page.remaining.length });
+  res.json({ title: page.videoTitle, videoUrl: video?.url || '', nextAvailableAt: page.nextAvailableAt, serverTime: new Date(), themeLabel: page.themeLabel, total: page.total, remaining: page.remaining.length });
 }));
 router.post('/:id/claim', wrap(async (req, res) => {
   const visitor = req.body?.visitor;
   if (typeof visitor !== 'string' || !/^[a-zA-Z0-9-]{20,80}$/.test(visitor)) return res.status(400).json({ error: 'Некорректный идентификатор посетителя' });
   const { status, ...body } = await claimComment(CommentPage, req.params.id, visitor);
+  if (status === 429) res.set('Retry-After', String(Math.max(1, Math.ceil((new Date(body.retryAt) - new Date(body.serverTime)) / 1000))));
   res.status(status).json(body);
 }));
 export default router;
