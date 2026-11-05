@@ -37,7 +37,7 @@ export default function GetComment({ id }) {
     } catch (e) {
       if (e.status === 429) { updateWait(e.retryAt, e.serverTime); setHasVisitor(false); }
       else setError(e.message);
-    }
+    } 
     finally { setBusy(false); }
   }
   async function copy() {
