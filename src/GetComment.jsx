@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowUpRight, Check, Copy, LoaderCircle, MessageSquare } from 'lucide-react';
 import { api } from './api';
+import tiktokLogo from './assets/tiktok-logo.jpg';
 
 export default function GetComment({ id }) {
   const [page, setPage] = useState(null);
@@ -37,10 +38,10 @@ export default function GetComment({ id }) {
       <section className="rounded-3xl border border-white/10 bg-[#111] p-6 shadow-[0_24px_100px_rgba(0,0,0,0.6)] sm:p-8">
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">{comment ? 'Ваш комментарий' : 'Получить комментарий'}</h1>
-          {page && <span title="Осталось комментариев из общего количества" aria-label={'Осталось ' + page.remaining + ' из ' + page.total} className="shrink-0 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-mono tabular-nums text-neutral-400">{page.remaining}<span className="mx-1.5 text-neutral-700">/</span>{page.total}</span>}
+          {/* {page && <span title="Осталось комментариев из общего количества" aria-label={'Осталось ' + page.remaining + ' из ' + page.total} className="shrink-0 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-mono tabular-nums text-neutral-400">{page.remaining}<span className="mx-1.5 text-neutral-700">/</span>{page.total}</span>} */}
         </div>
         <p className="mt-3 text-sm leading-relaxed text-neutral-500">{comment ? 'Скопируйте текст и оставьте его под видео.' : 'Нажмите кнопку, чтобы получить текст.'}</p>
-        {videoUrl && <a href={videoUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-sm text-neutral-300 underline decoration-neutral-700 underline-offset-4 transition-colors hover:text-white hover:decoration-white" title={page?.title}>Перейти к видео<ArrowUpRight size={15} /></a>}
+        {videoUrl && <a href={videoUrl} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-sm text-neutral-300 underline decoration-neutral-700 underline-offset-4 transition-colors hover:text-white hover:decoration-white" title={page?.title}><img src={tiktokLogo} alt="TikTok" width="20" height="20" className="h-5 w-5 shrink-0 rounded object-contain" />Перейти к видео<ArrowUpRight size={15} /></a>}
         {comment ? <div className="mt-6">
           <div className="rounded-2xl border border-white/10 bg-[#090909] p-5 sm:p-6">
             <button type="button" onClick={copy} title="Нажмите, чтобы скопировать комментарий" aria-label="Скопировать текст комментария" className="block w-full cursor-copy rounded-lg text-left text-lg sm:text-xl leading-relaxed whitespace-pre-wrap break-words transition-colors hover:text-neutral-300 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">{fullText}</button>
