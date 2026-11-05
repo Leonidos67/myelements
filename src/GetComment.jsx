@@ -18,6 +18,11 @@ export default function GetComment({ id }) {
   };
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, []);
   const secondsLeft = Math.max(0, Math.ceil((waitUntil - now) / 1000));
+  useEffect(() => {
+    if (comment || secondsLeft <= 0) return;
+    const timer = setInterval(() => { if (!document.hidden) api.commentPage(id).then(p => { setPage(p); updateWait(p.nextAvailableAt, p.serverTime); }).catch(() => {}); }, 5000);
+    return () => clearInterval(timer);
+  }, [id, !!comment, secondsLeft > 0]);
   const countdown = Math.floor(secondsLeft / 60) + ':' + String(secondsLeft % 60).padStart(2, '0');
   useEffect(() => { api.commentPage(id).then(p => { setPage(p); updateWait(p.nextAvailableAt, p.serverTime); }).catch(e => setError(e.message)); }, [id]);
   const mentions = (comment?.tags || []).filter(tag => tag.trim().startsWith('@'));

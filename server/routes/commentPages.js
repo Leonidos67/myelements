@@ -21,7 +21,7 @@ router.get('/', auth, wrap(async (req, res) => {
   res.json(await CommentPage.aggregate([
     { $match: { video: new mongoose.Types.ObjectId(req.query.video) } },
     { $sort: { createdAt: -1 } },
-    { $project: { themeLabel: 1, total: 1, createdAt: 1, pending: '$remaining', completed: { $map: { input: '$claims', as: 'claim', in: { comment: '$$claim.comment', issuedAt: '$$claim.issuedAt' } } }, issued: { $size: '$claims' }, remaining: { $size: '$remaining' } } },
+    { $project: { themeLabel: 1, total: 1, createdAt: 1, nextAvailableAt: 1, serverTime: '$$NOW', pending: '$remaining', completed: { $map: { input: '$claims', as: 'claim', in: { comment: '$$claim.comment', issuedAt: '$$claim.issuedAt' } } }, issued: { $size: '$claims' }, remaining: { $size: '$remaining' } } },
   ]));
 }));
 router.delete('/', auth, wrap(async (req, res) => {
@@ -43,6 +43,23 @@ router.post('/', auth, wrap(async (req, res) => {
   }
   const page = await CommentPage.create({ _id: randomBytes(18).toString('hex'), video: video._id, videoTitle: video.title || 'Комментарий к видео', theme: theme.id, themeLabel: theme.label, total: count, remaining: pool.slice(0, count), claims: [], createdBy: req.admin.id });
   res.status(201).json({ _id: page._id, total: page.total, themeLabel: page.themeLabel, issued: 0, remaining: page.total, createdAt: page.createdAt, pending: page.remaining });
+}));
+router.post('/:id/reset-timer', auth, wrap(async (req, res) => {
+  const page = await CommentPage.findByIdAndUpdate(req.params.id, { $set: { nextAvailableAt: new Date(0) } }, { new: true }).select('_id').lean();
+  if (!page) return res.status(404).json({ error: 'Страница не найдена' });
+  res.json({ ok: true });
+}));
+router.post('/:id/comments', auth, wrap(async (req, res) => {
+  const raw = req.body || {};
+  if (typeof raw.text !== 'string' || !raw.text.trim() || raw.text.length > 5000 || !Array.isArray(raw.tags) || raw.tags.length > 20 || raw.tags.some(t => typeof t !== 'string' || t.length > 500)) return res.status(400).json({ error: 'Введите комментарий до 5000 символов и не более 20 дополнений' });
+  const comment = { text: raw.text.trim(), tags: raw.tags.map(t => t.trim()).filter(Boolean) };
+  const duplicate = { text: comment.text, tags: comment.tags };
+  const page = await CommentPage.findOneAndUpdate({ _id: req.params.id, remaining: { $not: { $elemMatch: duplicate } }, discarded: { $not: { $elemMatch: duplicate } }, claims: { $not: { $elemMatch: { 'comment.text': comment.text, 'comment.tags': comment.tags } } } }, { $push: { remaining: comment }, $inc: { total: 1 } }, { new: true }).select('_id').lean();
+  if (!page) {
+    if (!await CommentPage.exists({ _id: req.params.id })) return res.status(404).json({ error: 'Страница не найдена' });
+    return res.status(409).json({ error: 'Этот комментарий уже есть в наборе или был использован' });
+  }
+  res.status(201).json({ ok: true });
 }));
 router.post('/:id/replace', auth, wrap(async (req, res) => {
   const raw = req.body?.comment;
