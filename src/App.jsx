@@ -11,7 +11,7 @@ import {
   Gift, Gamepad2, Sparkles, Palette, 
   Settings, Trash2, X, ChevronDown, CreditCard, DollarSign,
   LayoutDashboard, FolderOpen, MoreVertical, Target, Calendar, Bot, Bookmark,
-  Info, Heart, AlertCircle, CheckCircle2, ArrowUpCircle, ArrowDownCircle
+  Star, Pin, PinOff, Info, Heart, AlertCircle, CheckCircle2, ArrowUpCircle, ArrowDownCircle
 } from 'lucide-react';
 
 const fmtMoney = (n) => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -59,6 +59,15 @@ export default function App() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editVideo, setEditVideo] = useState(null);
   const [commentVideo, setCommentVideo] = useState(null);
+  const [videoActionIds, setVideoActionIds] = useState(() => new Set());
+  const toggleVideoFlag = async (video, field) => {
+    setVideoActionIds(ids => new Set(ids).add(video._id));
+    try {
+      const updated = await api.updateVideo(video._id, { [field]: !video[field] });
+      setVideos(rows => rows.map(row => row._id === video._id ? updated : row));
+    } catch (e) { setErr(e.message || 'Не удалось обновить видео'); }
+    finally { setVideoActionIds(ids => { const next = new Set(ids); next.delete(video._id); return next; }); }
+  };
   const [commentSummary, setCommentSummary] = useState(null);
   const [commentSummaryError, setCommentSummaryError] = useState(false);
   const refreshCommentSummary = async () => {
@@ -162,9 +171,9 @@ export default function App() {
   if (booting) return <div className="p-6 text-gray-400 bg-[#111] min-h-screen">…</div>;
   if (!me) return <Login onLogin={(user) => { setMe(user); reload(); }} />;
 
-  const displayedVideos = activeAccount 
+  const displayedVideos = (activeAccount
     ? videos.filter(v => (typeof v.account === 'string' ? v.account : v.account?._id) === activeAccount)
-    : videos;
+    : [...videos]).sort((a, b) => Number(!!b.isPinned) - Number(!!a.isPinned) || new Date(b.createdAt) - new Date(a.createdAt));
 
   const daysLeft = goal ? Math.max(0, Math.ceil((new Date(goal.deadlineDate) - new Date()) / (1000 * 60 * 60 * 24))) : 0;
 
@@ -297,6 +306,7 @@ export default function App() {
               <table className="w-full text-xs text-left border-collapse min-w-[1220px]">
                 <thead>
                   <tr className="border-b border-[#2a2a2a] text-gray-400">
+                    <th className="pb-3 w-10 text-center" aria-label="Избранное"><Star size={12} className="mx-auto text-gray-600" aria-hidden="true" /></th>
                     <th className="pb-3 font-medium">Админ</th>
                     <th className="pb-3 font-medium">Дата</th>
                     <th className="pb-3 font-medium">Ссылка</th>
@@ -339,10 +349,12 @@ export default function App() {
 
                   return (
                     <tr key={v._id} className="border-b border-[#2a2a2a]/50 hover:bg-[#1a1a1a] transition-colors">
+                      <td className="py-3 pr-2 text-center"><button disabled={videoActionIds.has(v._id)} onClick={() => toggleVideoFlag(v, 'isFavorite')} title={v.isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'} aria-label={v.isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'} aria-pressed={!!v.isFavorite} className={'p-1.5 rounded-lg transition-colors hover:bg-white/5 disabled:opacity-40 ' + (v.isFavorite ? 'text-amber-400' : 'text-gray-600 hover:text-amber-300')}><Star size={15} fill={v.isFavorite ? 'currentColor' : 'none'} /></button></td>
                       <td className="py-3 text-gray-300 font-mono text-[11px]">{adminName}</td>
                       <td className="py-3 text-gray-400 font-mono text-[11px]">{dateStr}</td>
                       <td className="py-3">
                         <a href={v.url} target="_blank" rel="noreferrer" className="text-[#f4623a] hover:underline break-all block max-w-[150px] truncate" title={v.title || v.url}>{v.title || v.url}</a>
+                        {v.isPinned && <span className="mt-1 inline-flex items-center gap-1 text-[9px] text-gray-500"><Pin size={10} />Закреплено</span>}
                       </td>
                       <td className="py-3 text-gray-300">
                         <div className="flex items-center gap-2" title={cat.label}>
@@ -462,6 +474,7 @@ export default function App() {
                           <>
                             <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
                             <div className="absolute right-8 top-2 z-50 w-32 bg-[#141414] border border-[#2a2a2a] rounded-lg shadow-xl py-1">
+                              <button disabled={videoActionIds.has(v._id)} onClick={() => { setOpenMenuId(null); toggleVideoFlag(v, 'isPinned'); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-[#2a2a2a] flex items-center gap-2 transition-colors disabled:opacity-40">{v.isPinned ? <PinOff size={12} /> : <Pin size={12} />}{v.isPinned ? 'Открепить' : 'Закрепить'}</button>
                               <button onClick={() => { setOpenMenuId(null); setEditVideo(v); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-[#2a2a2a] flex items-center gap-2 transition-colors"><Settings size={12} /> Настройки</button>
                               <button onClick={async () => { 
                                 setOpenMenuId(null);
@@ -475,7 +488,7 @@ export default function App() {
                   );
                 })}
                   {displayedVideos.length === 0 && (
-                    <tr><td colSpan={13} className="text-center py-8 text-gray-500">нет видео</td></tr>
+                    <tr><td colSpan={14} className="text-center py-8 text-gray-500">нет видео</td></tr>
                   )}
                 </tbody>
               </table>

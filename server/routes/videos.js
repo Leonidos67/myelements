@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
   const q = {};
   if (req.query.account) q.account = req.query.account;
   const list = await Video.find(q)
-    .sort({ createdAt: -1 })
+    .sort({ isPinned: -1, createdAt: -1 })
     .populate('account', 'name')
     .populate('createdBy', 'username');
   res.json(list);
@@ -34,6 +34,12 @@ router.post('/', async (req, res) => {
 
 router.patch('/:id', async (req, res) => {
   const patch = { updatedAt: new Date() };
+  for (const field of ['isFavorite', 'isPinned']) {
+    if (req.body[field] !== undefined) {
+      if (typeof req.body[field] !== 'boolean') return res.status(400).json({ error: field + ' must be boolean' });
+      patch[field] = req.body[field];
+    }
+  }
   
   if (req.body.views !== undefined) {
     patch.views = Number(req.body.views) || 0;

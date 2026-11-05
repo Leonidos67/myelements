@@ -12,6 +12,8 @@ const videoSchema = new mongoose.Schema({
   account: { type: mongoose.Schema.Types.ObjectId, ref: 'Account', required: true },
   url: { type: String, required: true, trim: true },
   title: { type: String, default: '' },
+  isFavorite: { type: Boolean, default: false },
+  isPinned: { type: Boolean, default: false },
   category: { type: String, enum: Object.keys(CATEGORIES), default: 'rubup' },
   views: { type: Number, default: 0, min: 0 },
   
