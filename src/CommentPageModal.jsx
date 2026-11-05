@@ -111,7 +111,7 @@ export default function CommentPageModal({ video, onClose, onChange }) {
         })}</div>}
         {showForm && <form onSubmit={create} className="mt-5 space-y-4 border-t border-[#333] pt-5">
           <h3 className="text-sm font-medium">Новый набор комментариев</h3>
-          <label className="block text-sm">Тематика<select required value={theme} onChange={e => setTheme(e.target.value)} className="block w-full mt-2 bg-[#222] border border-[#333] rounded-lg p-3">{themes.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}</select></label>
+          <label className="block text-sm">Тематика<select required value={theme} onChange={e => { const next = themes.find(t => t.id === e.target.value); setTheme(e.target.value); setCount(current => Math.min(Number(current) || 1, next?.available || 1)); }} className="block w-full mt-2 bg-[#222] border border-[#333] rounded-lg p-3">{themes.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}</select></label>
           <label className="block text-sm">Количество комментариев<input required type="number" min="1" max={selected?.available || 1} step="1" value={count} onChange={e => setCount(e.target.value)} className="block w-full mt-2 bg-[#222] border border-[#333] rounded-lg p-3" /></label>
           <p className="text-xs text-gray-500">Доступно вариантов: {selected?.available ?? '…'}. Для каждой ссылки создаётся отдельный случайный набор. Внутри ссылки варианты не повторяются.</p>
           <button disabled={busy || deleting || !theme} className="w-full bg-[#f4623a] text-black font-medium rounded-lg p-3 disabled:opacity-50">{busy ? 'Создаём…' : 'Создать страницу'}</button>
