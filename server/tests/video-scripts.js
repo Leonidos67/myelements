@@ -1,0 +1,52 @@
+import 'dotenv/config';
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import express from 'express';
+import cookieParser from 'cookie-parser';
+import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
+import router from '../routes/videoScripts.js';
+import Video from '../models/Video.js';
+import VideoScript from '../models/VideoScript.js';
+import { validateScript, fetchLiveScript } from '../services/videoScripts.js';
+assert.throws(() => validateScript(''), /пуст/);
+assert.throws(() => validateScript('const = ;'), /синтаксиса/);
+assert.throws(() => validateScript('x'.repeat(262145)), /256/);
+validateScript('globalThis.__scriptMustNotRun = true;');
+assert.equal(globalThis.__scriptMustNotRun, undefined);
+const live = await fetchLiveScript(); assert.ok(live.code.includes('const DATA'));
+console.log('PASS: live source, size limit, syntax validation, no execution');
+const dbName = 'cdxt_' + randomUUID().replaceAll('-', '');
+assert.match(dbName, /^cdxt_[a-f0-9]{32}$/);
+const app = express(); app.use(express.json({limit:'2mb'})); app.use(cookieParser()); app.use('/api/video-scripts',router);
+app.use((err, req, res, next) => res.status(500).json({error:err.message}));
+const server = app.listen(0,'127.0.0.1'); let connected = false;
+try {
+  // Isolated database; only the two test collections below are created/removed.
+  await mongoose.connect(process.env.MONGO_URI, {dbName,autoCreate:false,autoIndex:false,maxPoolSize:3,serverSelectionTimeoutMS:10000,connectTimeoutMS:10000,socketTimeoutMS:15000});
+  connected = true;
+  await VideoScript.createCollection(); await VideoScript.createIndexes();
+  const user = new mongoose.Types.ObjectId();
+  const first = await Video.create({account:new mongoose.Types.ObjectId(),url:'https://example.com/first',createdBy:user});
+  const second = await Video.create({account:new mongoose.Types.ObjectId(),url:'https://example.com/second',createdBy:user});
+  const base='http://127.0.0.1:'+server.address().port+'/api/video-scripts/';
+  const cookie='token='+jwt.sign({id:user.toString()},process.env.JWT_SECRET);
+  const get=(id,source='saved',auth=true)=>fetch(base+id+'?source='+source,{headers:auth?{Cookie:cookie}:{}});
+  const put=(id,code,revision)=>fetch(base+id,{method:'PUT',headers:{Cookie:cookie,'Content-Type':'application/json'},body:JSON.stringify({code,revision})});
+  assert.equal((await get(first.id,'saved',false)).status,401);
+  assert.equal((await get('bad')).status,400);
+  assert.equal((await put(first.id,'const = ;',0)).status,400);
+  const create=await put(first.id,live.code,0);assert.equal(create.status,200);assert.equal((await create.json()).revision,1);
+  const saved=await (await get(first.id)).json();assert.equal(saved.code,live.code);assert.equal(saved.source,'saved');
+  assert.equal((await put(first.id,'const DATA = {};',0)).status,409);
+  assert.equal((await put(first.id,'const DATA = { test: 2 };',1)).status,200);
+  const parallel=await Promise.all([put(first.id,'const DATA = { test: 3 };',2),put(first.id,'const DATA = { test: 4 };',2)]);
+  assert.deepEqual(parallel.map(r=>r.status).sort(),[200,409]);
+  const untouched=await (await get(second.id,'bundled')).json();assert.equal(untouched.revision,0);assert.equal(untouched.source,'bundled');
+  assert.equal(await VideoScript.countDocuments({video:second._id}),0);
+  console.log('PASS: auth, save/read, revisions, concurrent saves, per-video isolation');
+} finally {
+  server.close();
+  if(connected) await Promise.allSettled([VideoScript.collection.drop(),Video.collection.drop()]);
+  await mongoose.disconnect();
+}

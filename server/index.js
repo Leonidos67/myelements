@@ -15,8 +15,10 @@ import savingsRouter from './routes/savings.js';
 import adjustmentsRouter from './routes/adjustments.js';
 
 import commentPagesRouter from './routes/commentPages.js';
+import videoScriptsRouter from './routes/videoScripts.js';
 
 const app = express();
+app.use('/api/video-scripts', express.json({ limit: '2mb' }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
@@ -24,6 +26,7 @@ app.use(cors({
   credentials: true,
 }));
 
+app.use('/api/video-scripts', videoScriptsRouter);
 app.use('/api/comment-pages', commentPagesRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/accounts', accountsRouter);

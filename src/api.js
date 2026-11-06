@@ -14,6 +14,8 @@ async function req(path, opts = {}) {
 }
 
 export const api = {
+  videoScript: (id, source = 'saved') => req('/video-scripts/' + encodeURIComponent(id) + '?source=' + encodeURIComponent(source)),
+  saveVideoScript: (id, data) => req('/video-scripts/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify(data) }),
   resetCommentTimer: (id) => req('/comment-pages/' + encodeURIComponent(id) + '/reset-timer', { method: 'POST' }),
   addCustomComment: (id, data) => req('/comment-pages/' + encodeURIComponent(id) + '/comments', { method: 'POST', body: JSON.stringify(data) }),
   replaceComment: (id, comment) => req('/comment-pages/' + encodeURIComponent(id) + '/replace', { method: 'POST', body: JSON.stringify({ comment }) }),

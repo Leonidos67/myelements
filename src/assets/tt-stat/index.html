@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Анализ видео</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=TikTok+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <button class="back" aria-label="Назад">
+      <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <h1>Анализ видео</h1>
+    <button class="studio">
+      <svg viewBox="0 0 24 24" width="13" height="13"><circle cx="9" cy="8" r="3.5" fill="currentColor"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6z" fill="currentColor"/><path d="M19 4l1 2.2 2.3.3-1.7 1.6.5 2.3-2.1-1.2-2.1 1.2.5-2.3-1.7-1.6 2.3-.3z" fill="currentColor"/></svg>
+      TikTok Studio
+    </button>
+  </header>
+
+  <section class="summary" id="summary">
+    <div class="vid sm" data-vid><span class="dur" id="dur"></span></div>
+    <p class="pub" id="pub"></p>
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <!-- Обертка для sticky-эффекта -->
+  <div class="tabs-wrapper">
+    <nav class="tabs" id="tabs" role="tablist">
+      <div class="tab-indicator" id="tab-indicator"></div>  
+      <button data-tab="inspiration">Вдохновение</button>
+      <button data-tab="overview" class="on">Обзор</button>
+      <button data-tab="viewers">Зрители</button>
+      <button data-tab="engagement">Вовлеченность</button>
+    </nav>
+  </div>
+
+  <main>
+    <!-- ================= ОБЗОР ================= -->
+    <div class="pane" data-pane="overview">
+      <section class="banner" id="banner">
+        <img class="logo" width="48" height="48" alt="TikTok Studio" src="https://play-lh.googleusercontent.com/IKt9PFmV1dzLC1oQ2MtM1Hf6fDp3XMsr3aW2SiyVnKx8Mzf1hmA-QvBBm8IgNNJTj-ASprZo0x77sCtlPvUFt84=s0-br30">
+        <div class="bn-text">
+          <b>Установите приложение TikTok Studio</b>
+          <p>Посмотрите свою статистику за последние 365 дней. <a href="#" class="dl">Скачать</a></p>
+        </div>
+        <button class="close" id="banner-close" aria-label="Закрыть">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </button>
+      </section>
+
+      <section class="card">
+        <h2>Основные метрики <i class="info"></i></h2>
+        <p class="rt">Обновление в реальном времени</p>
+        <div class="metrics">
+          <div class="m sel"><span class="lbl" id="l-views"></span><b id="v-views"></b></div>
+          <div class="m"><span class="lbl" id="l-total"></span><b id="v-total" class="fit"></b></div>
+          <div class="m"><span class="lbl" id="l-avg"></span><b id="v-avg"></b></div>
+          <div class="m"><span class="lbl" id="l-full"></span><b id="v-full"></b></div>
+          <div class="m"><span class="lbl" id="l-subs"></span><b id="v-subs"></b></div>
+        </div>
+        <svg id="views-chart" class="chart" role="img" aria-label="Просмотры по часам"></svg>
+      </section>
+
+      <section class="card">
+        <h2>Коэффициент удержания <i class="info"></i></h2>
+        <p class="lead" id="ret-lead"></p>
+        <p class="sub" id="ret-sub"></p>
+        <div class="preview">
+          <div class="play"><svg viewBox="0 0 24 24" width="34" height="34"><path d="M7 4.5v15l13-7.5z" fill="#fff"/></svg></div>
+        </div>
+        <svg id="ret-chart" class="chart"></svg>
+        <input id="ret-slider" type="range" min="0" value="0" step="0.01" aria-label="Позиция в видео">
+        <div class="ret-labels"><span id="ret-now"></span><span id="ret-end"></span></div>
+      </section>
+
+      <section class="card"><h2>Источники трафика <i class="info"></i></h2><div id="sources"></div></section>
+
+      <section class="card" style="padding: 16px;">
+        <h2>Поисковые запросы <i class="info"></i></h2>
+        <p class="sub" style="margin-top: 4px;">Сейчас у всех поисковых запросов низкий трафик. Данные появятся, когда хотя бы у 1 запроса будет достаточно трафика.</p>
+      </section>
+
+      <a class="card row" style="padding: 16px;">
+        <div><h2>Want more traffic?</h2><p class="sub" style="margin-top: 4px;">Use Promote to grow your audience.</p></div>
+        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a class="card row other">
+        <span>Посмотреть данные других публикаций</span>
+        <div class="thumbs">
+          <img src="https://i.ibb.co/rBMkQ5d/image.png" alt="" style="width:28px; height:28px; border-radius:4px; object-fit:cover;">
+          <img src="https://i.ibb.co/gLB86P6J/image.png" alt="" style="width:28px; height:28px; border-radius:4px; object-fit:cover;">
+          <img src="https://i.ibb.co/35WL0hs5/image.png" alt="" style="width:28px; height:28px; border-radius:4px; object-fit:cover;">
+        </div>
+      </a>
+    </div>
+
+    <!-- ================= ЗРИТЕЛИ ================= -->
+    <div class="pane" data-pane="viewers" hidden>
+      <section class="card">
+        <h2>Всего зрителей <i class="info"></i></h2>
+        <div class="big" id="v-total-viewers"></div>
+      </section>
+      <section class="card">
+        <h2>Типы зрителей <i class="info"></i></h2>
+        <div id="types"></div>
+      </section>
+      <section class="card">
+        <h2>Пол</h2>
+        <svg id="donut" class="donut" viewBox="0 0 160 82"></svg>
+        <div id="gender"></div>
+      </section>
+      <section class="card"><h2>Возраст</h2><div id="ages"></div></section>
+      <section class="card"><h2>Места <i class="info"></i></h2><div id="places"></div></section>
+    </div>
+
+    <!-- ================= ВОВЛЕЧЕННОСТЬ ================= -->
+    <div class="pane" data-pane="engagement" hidden>
+      <section class="card">
+        <h2>Самые частые слова в комментариях <i class="info"></i></h2>
+        <p class="sub tight">Аналитические данные о самых часто используемых словах пока не готовы. Зайдите позже.</p>
+      </section>
+      <section class="card">
+        <h2>Лайки <i class="info"></i></h2>
+        <p class="sub" id="likes-text"></p>
+        <div class="vid big-vid" data-vid></div>
+        <svg id="likes-chart" class="chart"></svg>
+        <input id="likes-slider" type="range" min="0" value="0" step="0.01" aria-label="Позиция в видео">
+        <div class="ret-labels"><span id="likes-now"></span><span id="likes-end"></span></div>
+      </section>
+    </div>
+
+    <!-- ================= ВДОХНОВЕНИЕ ================= -->
+    <div class="pane" data-pane="inspiration" hidden>
+      <section class="card"><h2>Вдохновение</h2><p class="sub">Этот раздел пока пуст.</p></section>
+    </div>
+  </main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

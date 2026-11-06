@@ -1,0 +1,209 @@
+:root{
+  --bg:#f4f4f5; --card:#fff; --text:#111; --muted:#8a8b91;
+  --blue:#0a74da; --track:#dcdcdf; --hh:52px; --thumb:26px;
+}
+*{box-sizing:border-box; margin:0; scrollbar-width:none}
+*::-webkit-scrollbar{display:none}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:"TikTok Sans","TikTokFont",-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Arial,Tahoma,sans-serif;
+  display:flex; justify-content:center;
+}
+button{font-family:inherit; color:inherit}
+[hidden]{display:none!important}
+.app{width:100%; min-height:100vh; background:var(--bg)}
+
+/* ---------- шапка ---------- */
+.top{
+  position:sticky; top:0; z-index:6; height:var(--hh); background:var(--bg);
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center; padding:0 12px;
+}
+.top h1{font-size:17px; font-weight:700; text-align:center; white-space:nowrap}
+.back{justify-self:start; background:none; border:0; padding:6px 6px 6px 2px; display:flex; cursor:pointer}
+.studio{
+  justify-self:end; display:flex; align-items:center; gap:4px; background:#fff; border:1px solid #ececee;
+  border-radius:16px; padding:6px 10px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;
+}
+
+/* ---------- сводка по видео ---------- */
+.summary{padding:10px 0 4px; text-align:center}
+.pub{margin-top:8px; font-size:12px; color:#6f7077}
+
+.stats{display:grid; grid-template-columns:repeat(5,1fr); margin:18px 14px 14px}
+.stats div{display:flex; flex-direction:column; align-items:center; gap:6px; font-size:13px; font-weight:500; position:relative}
+.stats div+div::before{content:""; position:absolute; left:0; top:50%; height:18px; transform:translateY(-50%); border-left:1px solid #e8e8eb}
+.stats svg{width:22px; height:22px; fill:#9b9ba1; stroke:#9b9ba1; stroke-width:2; stroke-linejoin:round}
+.stats svg circle{fill:var(--bg); stroke:none}
+
+/* ---------- вкладки ---------- */
+.tabs-wrapper{position:sticky; top:var(--hh); z-index:5; background:var(--bg)}
+.tabs{
+  position:relative; display:flex; justify-content:center; gap:20px;
+  padding:0 12px; border-bottom:1px solid #e3e3e5;
+}
+.tabs button{
+  flex:none; background:none; border:0; padding:8px 4px 9px;
+  font-size:14px; font-weight:500; color:var(--muted); white-space:nowrap; cursor:pointer;
+  transition:color .2s ease;
+  /* Убираем эффект нажатия на мобильных */
+  -webkit-tap-highlight-color: transparent; 
+  outline: none; /* Убираем рамку фокуса при клике (но оставляем для клавиатуры ниже) */
+}
+.tabs button.on{color:var(--text); font-weight:600}
+.tab-indicator{
+  position:absolute; bottom:-1px; left:0; height:2px; border-radius:1px; background:var(--text);
+  transition:transform .3s cubic-bezier(.4,0,.2,1), width .3s cubic-bezier(.4,0,.2,1);
+  will-change:transform,width;
+}
+
+main{padding:10px 0 40px}
+.pane{display:flex; flex-direction:column; gap:10px; width:calc(100% - 16px); margin:0 auto}
+
+/* ---------- карточки ---------- */
+.card{background:var(--card); border-radius:14px; padding:18px 16px; display:block; color:inherit; text-decoration:none}
+.card h2{font-size:17px; font-weight:700; display:flex; align-items:center; gap:8px}
+.info{
+  width:16px; height:16px; flex:none; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6.8' fill='none' stroke='%23888' stroke-width='1.3'/%3E%3Ccircle cx='8' cy='4.9' r='.9' fill='%23888'/%3E%3Cpath d='M8 7.2v4.3' stroke='%23888' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+.rt{margin-top:4px; font-size:12px; color:var(--muted)}
+.big{font-size:28px; font-weight:700; margin-top:4px}
+.lead{margin-top:12px; font-size:14px; font-weight:600; line-height:1.3}
+.sub{margin-top:7px; font-size:13px; color:var(--muted); line-height:1.35}
+.sub.tight{margin-top:4px}
+#ret-sub{font-size:13px}
+
+/* ---------- основные метрики ---------- */
+.metrics{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:16px 0 22px}
+.m{border:1px solid #e3e3e5; border-radius:10px; padding:11px 12px 12px; display:flex; flex-direction:column; gap:3px; min-width:0; cursor:pointer}
+.m.sel{border-color:var(--blue); background:#f5f8fc}
+.m .lbl{display:block; font-size:13px; color:#111; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+/* размер значений общий (--vs), его подбирает скрипт fitValues() */
+.m b{display:block; font-size:var(--vs,20px); font-weight:700; line-height:1.25; white-space:nowrap; overflow:hidden}
+
+.m b:not(.fit){font-size:24px}   /* крупнее у всех, кроме «Общего времени просмотра» (class="fit") */
+
+/* ---------- графики ---------- */
+.chart{width:100%; height:auto; display:block; overflow:visible}
+.chart text{font-size:11px; fill:var(--muted); font-family:inherit}
+.chart .grid{stroke:#c9cacd; stroke-width:1; stroke-dasharray:3 3}
+
+/* ползунок: начало и конец дорожки совпадают с краями графика (6/400 и 346/400 ширины) */
+input[type=range]{
+  -webkit-appearance:none; appearance:none; display:block; outline:0;
+  width:calc(85% + var(--thumb)); height:5px; margin:18px 0 0 calc(1.5% - var(--thumb) / 2);
+  background:var(--track); border-radius:3px;
+}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:var(--thumb); height:var(--thumb); border:0; border-radius:50%; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.3); cursor:grab}
+input[type=range]::-moz-range-thumb{width:var(--thumb); height:var(--thumb); border:0; border-radius:50%; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.3); cursor:grab}
+input[type=range]:focus-visible{outline:2px solid var(--blue); outline-offset:10px}
+.ret-labels{display:flex; justify-content:space-between; margin:22px 13.5% 0 1.5%; font-size:14px; color:var(--muted)}
+
+/* ---------- видео ---------- */
+.vid{
+  position:relative; flex:none; overflow:hidden; width:13.4em; height:21.4em; font-size:11px; border-radius:.6em;
+  background:linear-gradient(#0e2556,#10204a 50%,#16122f); color:#dfe6ff;
+}
+.vid .vt{position:absolute; left:0; right:0; top:3.6em; padding:0 2.4em; text-align:center; font-weight:700; font-style:italic; line-height:1.25}
+.vid .isl{position:absolute; left:0; right:0; top:9em; height:6em; background:radial-gradient(ellipse at 50% 100%,#1c2f63 0 55%,transparent 56%)}
+.vid .road{position:absolute; left:0; right:0; top:11.8em; height:.9em; background:#3a3f55}
+.vid .vbar{position:absolute; left:0; right:0; bottom:5.4em; height:2.6em; padding:.5em 0 0 4.2em; line-height:1.15; border-radius:.6em; background:linear-gradient(#5a1f8c,#3d1566)}
+.vid .vbar b{display:block; font-size:.95em}
+.vid .vbar small{font-size:.65em; opacity:.8}
+.vid .vplay{position:absolute; left:50%; top:50%; width:3.4em; height:3.4em; transform:translate(-50%,-50%)}
+.big-vid{margin:20px auto 12px}
+
+/* обложка в сводке */
+.summary .vid{margin:0 auto}
+.summary .vid.sm{width:72px; height:96px; border-radius:6px; background:#17171b}
+.summary .vid.sm img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block}
+.summary .vid.sm::after{content:""; position:absolute; left:0; right:0; bottom:0; height:45%; background:linear-gradient(transparent,rgba(0,0,0,.5))}
+.dur{position:absolute; left:0; right:0; bottom:5px; z-index:1; text-align:center; font-size:12px; font-weight:600; line-height:1; color:#fff}
+
+/* обложка в «Коэффициенте удержания» */
+.preview{
+  position: relative; 
+  width: 160px;      
+  height: 255px;     
+  margin: 18px auto 14px; 
+  overflow: hidden; 
+  border-radius: 6px; 
+  background: #000;
+}
+
+.preview img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block}
+.play{position:absolute; inset:0; display:grid; place-items:center; pointer-events:none}
+.play svg{filter:drop-shadow(0 3px 8px rgba(0,0,0,.55))}
+
+/* ---------- полоски ---------- */
+.src{margin-top:12px}
+#sources .src:first-child,#ages .src:first-child,#places .src:first-child{margin-top:18px}
+.src-h{display:flex; justify-content:space-between; align-items:center; font-size:13px}
+.src-h b{display:flex; align-items:center; gap:4px; font-weight:500} /* Уменьшили жирность с 600 */
+.bar{height:9px; margin-top:8px; border-radius:3px; background:var(--track); overflow:hidden}
+.bar i{display:block; height:100%; min-width:2px; border-radius:3px; background:var(--blue)}
+.bar.zero i{min-width:0}
+
+/* типы зрителей */
+.split{margin-top:18px}
+.split+.split{margin-top:26px}
+.split .nums{display:flex; justify-content:space-between; font-size:14px; font-weight:500} /* Уменьшили жирность с 600 */
+.split .sbar{display:flex; gap:2px; height:9px; margin:10px 0}
+.split .sbar i{display:block; border-radius:3px; background:var(--blue)}
+.split .sbar i+i{min-width:6px; background:#8cc0f0}
+.split .names{display:flex; justify-content:space-between; font-size:15px}
+
+/* пол */
+.donut{display:block; width:160px; margin:22px auto 24px; overflow:visible}
+.leg{display:flex; align-items:center; gap:12px; padding:13px 0; border-top:1px solid #ececee; font-size:13px; font-weight:400} /* Уменьшили жирность с 500 на 400 */
+.leg:first-child{border-top:0}
+.leg .dot{width:8px; height:8px; flex:none; border-radius:50%}
+.leg span{flex:1}
+.leg b{display:flex; align-items:center; gap:4px; font-weight:500} /* Вернули 500 для цифр, чтобы они выделялись на фоне текста */
+
+/* ---------- баннер ---------- */
+.banner{display:flex; align-items:flex-start; gap:12px; padding:10px 8px 10px 12px; border-radius:14px; background:#fff}
+.banner .logo{flex:none; display:block; width:56px; height:56px; aspect-ratio:1/1; border-radius:10px; object-fit:cover}  /* размер выравнивает syncLogo() */
+.bn-text{flex:1; min-width:0}
+.bn-text b{display:block; font-size:14px; font-weight:700; line-height:1.25}
+.bn-text p{margin-top:2px; font-size:13px; line-height:1.3; color:var(--muted)}
+.bn-text .dl{color:#fe2c55; font-weight:600; text-decoration:none}
+.close{display:flex; padding:6px; border:0; border-radius:50%; background:none; color:#9a9aa0; cursor:pointer}
+.close:hover{background:#f0f0f1}
+
+/* ---------- прочее ---------- */
+.row{display:flex; align-items:center; justify-content:space-between; gap:16px; cursor:pointer}
+.row h2{font-size:16px}
+/* Делаем блок "Посмотреть данные других публикаций" более плоским, как на скрине */
+.other{padding:12px 16px;} 
+.other span{font-size:13px; font-weight:600}
+.thumbs{display:flex; gap:6px; flex:none}
+.thumbs img, .thumbs i {
+  width: 28px; 
+  height: 40px; 
+  border-radius: 4px; 
+  object-fit: cover; 
+  display: block;
+}
+.thumbs i:nth-child(2){background:linear-gradient(160deg,#2d6fd0,#6a2bb8)}
+.thumbs i:nth-child(3){background:linear-gradient(160deg,#4b3b8a,#c9803a)}
+
+
+
+/* ========================================================= */
+/* НОВОЕ: ПОДКЛЮЧЕНИЕ ШРИФТА INTER ДЛЯ ЦИФР                  */
+/* ========================================================= */
+
+/* Применяем Inter ко всем нужным цифрам */
+.m b, 
+.big, 
+.chart text, 
+.src-h b, 
+.split .nums, 
+.leg b,
+.dur,
+.ret-labels span {
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-variant-numeric: tabular-nums; 
+}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from './api';
 import Login from './Login';
 import CommentPageModal from './CommentPageModal';
+import VideoScriptModal from './VideoScriptModal';
 import AIChat from './AIChat';
 import CalendarView from './CalendarView';
 import SavingsView from './SavingsView';
@@ -11,7 +12,7 @@ import {
   Gift, Gamepad2, Sparkles, Palette, 
   Settings, Trash2, X, ChevronDown, CreditCard, DollarSign,
   LayoutDashboard, FolderOpen, MoreVertical, Target, Calendar, Bot, Bookmark,
-  Star, Pin, PinOff, Info, Heart, AlertCircle, CheckCircle2, ArrowUpCircle, ArrowDownCircle
+  FileCode2, Star, Pin, PinOff, Info, Heart, AlertCircle, CheckCircle2, ArrowUpCircle, ArrowDownCircle
 } from 'lucide-react';
 
 const fmtMoney = (n) => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -59,6 +60,7 @@ export default function App() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editVideo, setEditVideo] = useState(null);
   const [commentVideo, setCommentVideo] = useState(null);
+  const [scriptVideo, setScriptVideo] = useState(null);
   const [videoActionIds, setVideoActionIds] = useState(() => new Set());
   const toggleVideoFlag = async (video, field) => {
     setVideoActionIds(ids => new Set(ids).add(video._id));
@@ -475,6 +477,7 @@ export default function App() {
                             <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
                             <div className="absolute right-8 top-2 z-50 w-32 bg-[#141414] border border-[#2a2a2a] rounded-lg shadow-xl py-1">
                               <button disabled={videoActionIds.has(v._id)} onClick={() => { setOpenMenuId(null); toggleVideoFlag(v, 'isPinned'); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-[#2a2a2a] flex items-center gap-2 transition-colors disabled:opacity-40">{v.isPinned ? <PinOff size={12} /> : <Pin size={12} />}{v.isPinned ? 'Открепить' : 'Закрепить'}</button>
+                              <button onClick={() => { setOpenMenuId(null); setScriptVideo(v); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-[#2a2a2a] flex items-center gap-2"><FileCode2 size={12} />Извлечь JS</button>
                               <button onClick={() => { setOpenMenuId(null); setEditVideo(v); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-[#2a2a2a] flex items-center gap-2 transition-colors"><Settings size={12} /> Настройки</button>
                               <button onClick={async () => { 
                                 setOpenMenuId(null);
@@ -737,6 +740,7 @@ export default function App() {
           onAdd={() => { setIsAddOpen(false); reload(); }} 
         />
       )}
+      {scriptVideo && <VideoScriptModal video={scriptVideo} onClose={() => setScriptVideo(null)} />}
       {commentVideo && <CommentPageModal video={commentVideo} onClose={() => { setCommentVideo(null); refreshCommentSummary(); }} onChange={refreshCommentSummary} />}
       {editVideo && <EditVideoModal video={editVideo} onClose={() => setEditVideo(null)} onSave={async (data) => { await api.updateVideo(editVideo._id, data); setEditVideo(null); reload(); }} />}
       {isAdjustOpen && <AdjustModal onClose={() => setIsAdjustOpen(false)} onAdd={() => { setIsAdjustOpen(false); reload(); }} />}
