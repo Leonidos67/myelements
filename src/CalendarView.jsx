@@ -122,17 +122,17 @@ export default function CalendarView({ videos, ideas, reload, categories }) {
                 key={dayStr}
                 onClick={() => setSelectedDate(day)}
                 className={`min-h-[80px] p-1.5 rounded-lg border cursor-pointer transition-colors flex flex-col gap-1
-                  ${isSelected ? 'bg-[#2a2a2a] border-[#f4623a]' : 'bg-[#1a1a1a] border-[#2a2a2a] hover:border-gray-600'}
+                  ${isSelected ? 'bg-[#2a2a2a] border-[#ededed]' : 'bg-[#1a1a1a] border-[#2a2a2a] hover:border-gray-600'}
                   ${isMonth && !isCurrentMonth ? 'opacity-40' : ''}
                 `}
               >
-                <span className={`text-xs font-mono ${isSelected ? 'text-[#f4623a]' : 'text-gray-400'}`}>{format(day, 'd')}</span>
+                <span className={`text-xs font-mono ${isSelected ? 'text-[#ededed]' : 'text-gray-400'}`}>{format(day, 'd')}</span>
                 
                 <div className="flex flex-wrap gap-1 mt-auto">
                   {hasPublished && <div title="Опубликовано" className="w-2 h-2 rounded-full bg-blue-500" />}
                   {hasPaid && <div title="Выплата" className="w-2 h-2 rounded-full bg-green-500" />}
                   {hasRejected && <div title="Отказ" className="w-2 h-2 rounded-full bg-red-500" />}
-                  {hasIdea && <div title="Идея" className="w-2 h-2 rounded-full bg-[#f4623a]" />}
+                  {hasIdea && <div title="Идея" className="w-2 h-2 rounded-full bg-[#ededed]" />}
                 </div>
               </div>
             );
@@ -147,7 +147,7 @@ export default function CalendarView({ videos, ideas, reload, categories }) {
             <CalendarDays size={16} className="text-gray-400" />
             {format(selectedDate, 'd MMMM, EEEE', { locale: ru })}
           </h3>
-          <button onClick={() => setIsAddOpen(true)} className="p-1.5 bg-[#f4623a]/10 text-[#f4623a] rounded-lg hover:bg-[#f4623a]/20"><Plus size={16} /></button>
+          <button onClick={() => setIsAddOpen(true)} className="p-1.5 bg-[#ededed]/10 text-[#ededed] rounded-lg hover:bg-[#ededed]/20"><Plus size={16} /></button>
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-2 pr-1">
@@ -183,9 +183,9 @@ export default function CalendarView({ videos, ideas, reload, categories }) {
             }
             if (ev.type === 'idea') {
               return (
-                <div key={idx} className="bg-[#1a1a1a] border border-[#f4623a]/30 rounded-lg p-3 group">
+                <div key={idx} className="bg-[#1a1a1a] border border-[#ededed]/30 rounded-lg p-3 group">
                   <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2 text-[#f4623a] text-xs font-medium"><Lightbulb size={12} /> Идея</div>
+                    <div className="flex items-center gap-2 text-[#ededed] text-xs font-medium"><Lightbulb size={12} /> Идея</div>
                     <button onClick={async () => { if(confirm('Удалить?')) { await api.deleteIdea(ev.payload._id); reload(); } }} className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-500 transition-opacity"><Trash2 size={12} /></button>
                   </div>
                   <div className="text-xs text-white">{ev.payload.title}</div>
@@ -225,7 +225,7 @@ function AddIdeaModal({ dateStr, categories, onClose, onAdd }) {
     } finally { setBusy(false); }
   };
 
-  const inputCls = 'bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#f4623a] w-full mb-3';
+  const inputCls = 'bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#ededed] w-full mb-3';
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-5">
@@ -241,7 +241,7 @@ function AddIdeaModal({ dateStr, categories, onClose, onAdd }) {
           <label className="text-[10px] text-gray-400 uppercase mb-1 block">Заметка (опционально)</label>
           <textarea className={inputCls} rows={3} placeholder="Что нужно сделать?" value={notes} onChange={e => setNotes(e.target.value)} />
           
-          <button disabled={busy} className="w-full h-9 mt-2 bg-[#f4623a] text-black font-medium rounded-lg hover:opacity-90 disabled:opacity-50">
+          <button disabled={busy} className="w-full h-9 mt-2 bg-[#ededed] text-black font-medium rounded-lg hover:opacity-90 disabled:opacity-50">
             {busy ? '...' : 'Добавить'}
           </button>
         </div>

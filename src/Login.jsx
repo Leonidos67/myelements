@@ -32,7 +32,7 @@ export default function Login({ onLogin }) {
         <input className={inputCls} placeholder="username" value={u} onChange={e => setU(e.target.value)} autoFocus />
         <input className={inputCls} placeholder="password" type="password" value={p} onChange={e => setP(e.target.value)} />
         {err && <div className="text-[11px] text-red-500">{err}</div>}
-        <button disabled={busy} className="h-9 bg-[#f4623a] text-black font-medium rounded-lg hover:opacity-90 disabled:opacity-50">
+        <button disabled={busy} className="h-9 bg-[#ededed] text-black font-medium rounded-lg hover:opacity-90 disabled:opacity-50">
           {busy ? '…' : 'Войти'}
         </button>
       </form>

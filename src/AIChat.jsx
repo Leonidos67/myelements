@@ -88,7 +88,7 @@ export default function AIChat({ user, contextData }) {
     <div className="flex flex-col h-[calc(100vh-140px)] bg-[#141414] border border-[#2a2a2a] rounded-2xl overflow-hidden">
       <div className="flex items-center justify-between px-5 py-3 border-b border-[#2a2a2a] bg-[#1a1a1a]">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#f4623a] to-[#ff8a65] flex items-center justify-center shadow-lg shadow-[#f4623a]/20">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#ededed] to-[#ff8a65] flex items-center justify-center shadow-lg shadow-[#ededed]/20">
             <Sparkles size={16} className="text-black" />
           </div>
           <div>
@@ -105,7 +105,7 @@ export default function AIChat({ user, contextData }) {
         {messages.map((msg) => (
           <div key={msg.id} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
             <div className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center mt-1 ${
-              msg.role === 'user' ? 'bg-[#2a2a2a] text-gray-300' : 'bg-[#f4623a]/10 text-[#f4623a] border border-[#f4623a]/30'
+              msg.role === 'user' ? 'bg-[#2a2a2a] text-gray-300' : 'bg-[#ededed]/10 text-[#ededed] border border-[#ededed]/30'
             }`}>
               {msg.role === 'user' ? <User size={14} /> : <Bot size={14} />}
             </div>
@@ -127,7 +127,7 @@ export default function AIChat({ user, contextData }) {
               {msg.role === 'assistant' && (
                 <div className="flex items-center gap-3 mt-2 px-1">
                   <button onClick={() => handleCopy(msg.id, msg.content)} className="text-gray-500 hover:text-gray-300 transition-colors" title="Копировать">
-                    {copiedId === msg.id ? <Check size={14} className="text-[#f4623a]" /> : <Copy size={14} />}
+                    {copiedId === msg.id ? <Check size={14} className="text-[#ededed]" /> : <Copy size={14} />}
                   </button>
                 </div>
               )}
@@ -137,13 +137,13 @@ export default function AIChat({ user, contextData }) {
 
         {isTyping && (
           <div className="flex gap-4">
-            <div className="w-8 h-8 shrink-0 rounded-full bg-[#f4623a]/10 text-[#f4623a] border border-[#f4623a]/30 flex items-center justify-center mt-1">
+            <div className="w-8 h-8 shrink-0 rounded-full bg-[#ededed]/10 text-[#ededed] border border-[#ededed]/30 flex items-center justify-center mt-1">
               <Bot size={14} />
             </div>
             <div className="bg-[#1a1a1a] border border-[#2a2a2a] p-4 rounded-2xl rounded-tl-sm flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-[#f4623a] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-1.5 h-1.5 bg-[#f4623a] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-1.5 h-1.5 bg-[#f4623a] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <span className="w-1.5 h-1.5 bg-[#ededed] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 bg-[#ededed] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 bg-[#ededed] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
           </div>
         )}
@@ -158,7 +158,7 @@ export default function AIChat({ user, contextData }) {
       </div>
 
       <div className="p-4 bg-[#141414] border-t border-[#2a2a2a]">
-        <form onSubmit={sendMessage} className="flex items-end gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-2 focus-within:border-[#f4623a]/50 transition-colors">
+        <form onSubmit={sendMessage} className="flex items-end gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-2 focus-within:border-[#ededed]/50 transition-colors">
           <button type="button" className="p-2 text-gray-500 hover:text-gray-300 transition-colors shrink-0">
             <Paperclip size={18} />
           </button>
@@ -175,7 +175,7 @@ export default function AIChat({ user, contextData }) {
           <button 
             type="submit"
             disabled={!input.trim() || isTyping}
-            className={`p-2 rounded-lg shrink-0 transition-opacity ${input.trim() && !isTyping ? 'bg-[#f4623a] text-black hover:opacity-90' : 'bg-[#2a2a2a] text-gray-500'}`}
+            className={`p-2 rounded-lg shrink-0 transition-opacity ${input.trim() && !isTyping ? 'bg-[#ededed] text-black hover:opacity-90' : 'bg-[#2a2a2a] text-gray-500'}`}
           >
             {isTyping ? <StopCircle size={16} /> : <Send size={16} />}
           </button>

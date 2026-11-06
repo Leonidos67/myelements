@@ -6,7 +6,7 @@ const TYPE_ICONS = {
   youtube: { Icon: Video, label: 'YouTube', color: 'text-red-500', bg: 'bg-red-500/10' },
   telegram: { Icon: Send, label: 'Telegram', color: 'text-blue-400', bg: 'bg-blue-400/10' },
   article: { Icon: FileText, label: 'Статья', color: 'text-gray-300', bg: 'bg-gray-500/10' },
-  other: { Icon: Bookmark, label: 'Другое', color: 'text-[#f4623a]', bg: 'bg-[#f4623a]/10' },
+  other: { Icon: Bookmark, label: 'Другое', color: 'text-[#ededed]', bg: 'bg-[#ededed]/10' },
 };
 
 export default function SavingsView({ savings, reload }) {
@@ -41,7 +41,7 @@ export default function SavingsView({ savings, reload }) {
         </div>
         <button
           onClick={() => setIsAddOpen(true)}
-          className="h-8 px-4 bg-[#f4623a] text-black font-medium text-xs rounded-lg hover:opacity-90 flex items-center gap-1.5"
+          className="h-8 px-4 bg-[#ededed] text-black font-medium text-xs rounded-lg hover:opacity-90 flex items-center gap-1.5"
         >
           <Plus size={14} /> Сохранить
         </button>
@@ -59,7 +59,7 @@ export default function SavingsView({ savings, reload }) {
             const t = TYPE_ICONS[s.type] || TYPE_ICONS.other;
             const Icon = t.Icon;
             return (
-              <div key={s._id} className="bg-[#141414] border border-[#2a2a2a] rounded-2xl p-4 flex flex-col group hover:border-[#f4623a]/40 transition-colors">
+              <div key={s._id} className="bg-[#141414] border border-[#2a2a2a] rounded-2xl p-4 flex flex-col group hover:border-[#ededed]/40 transition-colors">
                 <div className="flex items-start justify-between mb-3">
                   <div className={`w-9 h-9 rounded-lg ${t.bg} flex items-center justify-center`}>
                     <Icon size={16} className={t.color} />
@@ -89,7 +89,7 @@ export default function SavingsView({ savings, reload }) {
                   href={s.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-auto flex items-center gap-1.5 text-xs text-[#f4623a] hover:underline pt-3 border-t border-[#2a2a2a]"
+                  className="mt-auto flex items-center gap-1.5 text-xs text-[#ededed] hover:underline pt-3 border-t border-[#2a2a2a]"
                 >
                   <ExternalLink size={12} /> Открыть
                 </a>
@@ -124,7 +124,7 @@ function AddSavingModal({ onClose, onAdd }) {
     } finally { setBusy(false); }
   };
 
-  const inputCls = 'bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#f4623a] w-full mb-3';
+  const inputCls = 'bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#ededed] w-full mb-3';
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-5">
@@ -154,7 +154,7 @@ function AddSavingModal({ onClose, onAdd }) {
           <label className="text-[10px] text-gray-400 uppercase mb-1 block">Заметка</label>
           <textarea className={inputCls} rows={3} placeholder="Почему сохранил? Чем полезно?" value={notes} onChange={e => setNotes(e.target.value)} />
 
-          <button disabled={busy} className="w-full h-9 mt-2 bg-[#f4623a] text-black font-medium rounded-lg hover:opacity-90 disabled:opacity-50">
+          <button disabled={busy} className="w-full h-9 mt-2 bg-[#ededed] text-black font-medium rounded-lg hover:opacity-90 disabled:opacity-50">
             {busy ? '...' : 'Сохранить'}
           </button>
         </div>

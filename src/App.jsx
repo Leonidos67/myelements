@@ -43,19 +43,19 @@ export default function App() {
   const [videos, setVideos] = useState([]);
   const [ideas, setIdeas] = useState([]);
   const [savings, setSavings] = useState([]);
-  
+
   const [isAdjustOpen, setIsAdjustOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [adjustments, setAdjustments] = useState([]);
-  
+
   const [activeAccount, setActiveAccount] = useState(() => {
     const saved = localStorage.getItem('ubt_active_account');
     return saved === 'all' ? '' : (saved || '');
   });
-  
+
   const [err, setErr] = useState('');
   const [goal, setGoal] = useState(null);
-  
+
   const [currentView, setCurrentView] = useState('dashboard');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editVideo, setEditVideo] = useState(null);
@@ -89,7 +89,7 @@ export default function App() {
     window.addEventListener('focus', refreshCommentSummary);
     return () => { clearInterval(timer); window.removeEventListener('focus', refreshCommentSummary); };
   }, [me]);
-  
+
   const [openMenuId, setOpenMenuId] = useState(null);
   const [openStatusId, setOpenStatusId] = useState(null);
 
@@ -114,7 +114,7 @@ export default function App() {
         api.stats(), api.accounts(), api.videos(), api.getGoal(), api.ideas(), api.savings(), api.adjustments()
       ]);
       setStats(s); setAccounts(a); setVideos(v); setGoal(g); setIdeas(i || []); setSavings(sv || []); setAdjustments(adj || []);
-      
+
       if (activeAccount) {
         if (!a.some(acc => acc._id === activeAccount)) setActiveAccount('');
       } else {
@@ -156,7 +156,7 @@ export default function App() {
   // Функция расчета статуса лайков
   const getLikesStatus = (likes, views, category) => {
     if (!views || views < 1000) return null;
-    
+
     const matrix = LIKES_MATRIX[category] || LIKES_MATRIX.rubup;
     const mult = views / 1000;
     const minThreshold = Math.floor(matrix.min * mult * 0.75);
@@ -169,7 +169,7 @@ export default function App() {
     if (likes < minThreshold) return { status: 'low', color: 'text-red-400', icon: ArrowDownCircle, label: 'Мало', min: minThreshold, ideal: idealThreshold, max: maxThreshold };
     if (likes >= minThreshold && likes <= idealThreshold) return { status: 'ok', color: 'text-yellow-400', icon: ArrowUpCircle, label: 'Норма', min: minThreshold, ideal: idealThreshold, max: maxThreshold };
     if (likes > idealThreshold && likes <= maxThreshold) return { status: 'ideal', color: 'text-green-400', icon: CheckCircle2, label: 'Идеально', min: minThreshold, ideal: idealThreshold, max: maxThreshold };
-    
+
     return { status: 'high', color: 'text-blue-400', icon: ArrowDownCircle, label: 'Перебор', min: minThreshold, ideal: idealThreshold, max: maxThreshold };
   };
 
@@ -183,10 +183,11 @@ export default function App() {
   const daysLeft = goal ? Math.max(0, Math.ceil((new Date(goal.deadlineDate) - new Date()) / (1000 * 60 * 60 * 24))) : 0;
 
   return (
-    <div className="min-h-screen bg-[#111]/80 text-white p-6 font-sans">
-      <header className="flex justify-between items-center mb-8">
+    <div className="studio-shell min-h-screen bg-[#080808] text-white font-sans">
+      <header className="studio-header flex flex-wrap justify-between items-center gap-5">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">
+          <div className="mb-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500"><span className="flex h-6 w-6 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white"><LayoutDashboard size={12} /></span>MyElement<span className="mx-1 text-gray-700">/</span>Workspace</div>
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
             {currentView === 'dashboard' && 'Партнёрская программа'}
             {currentView === 'accounts' && 'Аккаунты UBT'}
             {currentView === 'finance' && 'Финансы и цели'}
@@ -194,7 +195,7 @@ export default function App() {
             {currentView === 'savings' && 'Сохраненки'}
             {currentView === 'ai' && 'AI Ассистент'}
           </h1>
-          <p className="text-[11px] text-gray-400 font-mono mt-0.5">
+          <p className="text-xs text-gray-500 mt-2">
             {currentView === 'dashboard' && 'Управление видео и выплатами'}
             {currentView === 'accounts' && 'Список всех аккаунтов и их статистика'}
             {currentView === 'finance' && 'Анализ выплат и планирование'}
@@ -203,28 +204,9 @@ export default function App() {
             {currentView === 'ai' && 'Интеллектуальный помощник (RouterAI)'}
           </p>
         </div>
-        
-        <div className="flex items-center gap-4">
-          <div className="flex bg-[#141414] border border-[#2a2a2a] rounded-lg p-1 mr-2">
-            <button onClick={() => setCurrentView('dashboard')} className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md transition-colors ${currentView === 'dashboard' ? 'bg-[#2a2a2a] text-white' : 'text-gray-400 hover:text-white'}`}>
-              <LayoutDashboard size={14} /> Дашборд
-            </button>
-            <button onClick={() => setCurrentView('accounts')} className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md transition-colors ${currentView === 'accounts' ? 'bg-[#2a2a2a] text-white' : 'text-gray-400 hover:text-white'}`}>
-              <FolderOpen size={14} /> Аккаунты
-            </button>
-            <button onClick={() => setCurrentView('finance')} className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md transition-colors ${currentView === 'finance' ? 'bg-[#2a2a2a] text-white' : 'text-gray-400 hover:text-white'}`}>
-              <Wallet size={14} /> Финансы
-            </button>
-            <button onClick={() => setCurrentView('calendar')} className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md transition-colors ${currentView === 'calendar' ? 'bg-[#2a2a2a] text-white' : 'text-gray-400 hover:text-white'}`}>
-              <Calendar size={14} /> Календарь
-            </button>
-            <button onClick={() => setCurrentView('savings')} className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md transition-colors ${currentView === 'savings' ? 'bg-[#2a2a2a] text-white' : 'text-gray-400 hover:text-white'}`}>
-              <Bookmark size={14} /> Сохраненки
-            </button>
-            <button onClick={() => setCurrentView('ai')} className={`flex items-center gap-2 px-3 py-1.5 text-xs rounded-md transition-colors ${currentView === 'ai' ? 'bg-[#2a2a2a] text-white' : 'text-gray-400 hover:text-white'}`}>
-              <Bot size={14} /> AI
-            </button>
-          </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+
 
           <div className="relative group">
             <button className="flex items-center gap-2 h-8 px-3 bg-[#141414] border border-[#2a2a2a] rounded-lg text-xs hover:bg-[#1a1a1a] transition-colors">
@@ -243,37 +225,57 @@ export default function App() {
                 ))}
               </div>
               <div className="border-t border-[#2a2a2a] p-1">
-                <button onClick={addAccount} className="w-full text-left px-3 py-2 text-xs text-[#f4623a] hover:bg-[#2a2a2a] rounded flex items-center gap-2"><Plus size={12} /> Добавить</button>
+                <button onClick={addAccount} className="w-full text-left px-3 py-2 text-xs text-[#ededed] hover:bg-[#2a2a2a] rounded flex items-center gap-2"><Plus size={12} /> Добавить</button>
               </div>
             </div>
           </div>
 
           <div className="w-px h-6 bg-[#2a2a2a]"></div>
           <div className="flex items-center gap-2 text-xs text-gray-400"><User size={14} /><span>{me.username}</span></div>
-          <button onClick={logout} className="flex items-center gap-1.5 text-xs text-[#f4623a] hover:text-[#ff7a55] transition-colors"><LogOut size={14} /><span>Выйти</span></button>
+          <button onClick={logout} className="flex items-center gap-1.5 text-xs text-[#ededed] hover:text-[#ffffff] transition-colors"><LogOut size={14} /><span>Выйти</span></button>
         </div>
       </header>
+      <nav aria-label="Разделы кабинета" className="studio-nav flex gap-1 overflow-x-auto">
+            <button onClick={() => setCurrentView('dashboard')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'dashboard' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}>
+              <LayoutDashboard size={14} /> Дашборд
+            </button>
+            <button onClick={() => setCurrentView('accounts')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'accounts' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}>
+              <FolderOpen size={14} /> Аккаунты
+            </button>
+            <button onClick={() => setCurrentView('finance')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'finance' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}>
+              <Wallet size={14} /> Финансы
+            </button>
+            <button onClick={() => setCurrentView('calendar')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'calendar' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}>
+              <Calendar size={14} /> Календарь
+            </button>
+            <button onClick={() => setCurrentView('savings')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'savings' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}>
+              <Bookmark size={14} /> Сохраненки
+            </button>
+            <button onClick={() => setCurrentView('ai')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'ai' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}>
+              <Bot size={14} /> AI
+            </button>
+          </nav>
 
-      {err && <div className="mb-6 text-red-500 text-sm">{err}</div>}
+      {err && <div className="mb-6 rounded-xl border border-red-400/15 bg-red-400/5 px-4 py-3 text-red-400 text-sm">{err}</div>}
 
       {currentView === 'dashboard' && (
         <>
           {stats && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-              <div className="bg-[#141414] border border-[#2a2a2a] rounded-2xl p-5 relative group">
+              <div className="studio-panel bg-[#111] border border-[#252525] rounded-2xl p-5 relative group">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2 text-[11px] text-gray-400 uppercase tracking-wider">
                     <Wallet size={14} /> Выплачено
                   </div>
                   <button 
                     onClick={() => setIsAdjustOpen(true)} 
-                    className="p-1 bg-[#2a2a2a] rounded-md text-[#f4623a] hover:bg-[#f4623a] hover:text-black transition-colors"
+                    className="p-1 bg-[#2a2a2a] rounded-md text-[#ededed] hover:bg-[#ededed] hover:text-black transition-colors"
                     title="Пополнить баланс"
                   >
                     <Plus size={14} />
                   </button>
                 </div>
-                <div className="text-3xl font-mono font-semibold text-[#f4623a]">{fmtMoney(stats.totalRevenue)}</div>
+                <div className="text-3xl font-semibold tracking-tight tabular-nums text-[#ededed]">{fmtMoney(stats.totalRevenue)}</div>
                 <button 
                   onClick={() => setIsHistoryOpen(true)} 
                   className="text-[11px] text-gray-500 hover:text-white transition-colors underline decoration-dotted underline-offset-2 mt-2 inline-block"
@@ -281,34 +283,34 @@ export default function App() {
                   история операций
                 </button>
               </div>
-              <div className="bg-[#141414] border border-[#2a2a2a] rounded-2xl p-5">
+              <div className="studio-panel bg-[#111] border border-[#252525] rounded-2xl p-5">
                 <div className="flex items-center gap-2 text-[11px] text-gray-400 uppercase tracking-wider mb-2"><Eye size={14} /> Просмотры</div>
                 <div className="text-3xl font-mono font-semibold">{fmtInt(stats.totalViews)}</div>
                 <div className="text-[11px] text-gray-500 mt-2">{stats.totalVideos} видео</div>
               </div>
-              <div className="bg-[#1c1512] border border-[#f4623a]/30 rounded-2xl p-5">
+              <div className="studio-panel bg-[#111] border border-[#353535] rounded-2xl p-5">
                 <div className="flex items-center gap-2 text-[11px] text-gray-400 uppercase tracking-wider mb-2"><DollarSign size={14} /> Ожидаемая прибыль</div>
                 <div className="text-3xl font-mono font-semibold">{fmtMoney(stats.totalGross)}</div>
                 <div className="text-[11px] text-gray-500 mt-2">по остальным статусам</div>
               </div>
-              <div className="bg-[#141414] border border-[#2a2a2a] rounded-2xl p-5">
+              <div className="studio-panel bg-[#111] border border-[#252525] rounded-2xl p-5">
                 <div className="flex items-center gap-2 text-[11px] text-gray-400 uppercase tracking-wider mb-2"><CreditCard size={14} /> Расходы</div>
                 <div className="text-3xl font-mono font-semibold text-red-400">{fmtMoney(stats.totalExpenses)}</div>
               </div>
             </div>
           )}
 
-          <div className="bg-[#141414] border border-[#2a2a2a] rounded-2xl p-5">
+          <div className="studio-panel bg-[#111] border border-[#252525] rounded-2xl p-5">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-sm font-semibold">Ваши видео {activeAccount && <span className="text-gray-500 text-xs font-normal">(фильтр по аккаунту)</span>}</h2>
               <div className="flex items-center gap-3">
                 <span className="text-[10px] text-gray-400 font-mono">{displayedVideos.length} шт.</span>
-                <button onClick={() => setIsAddOpen(true)} className="h-8 px-4 bg-[#f4623a] text-black font-medium text-xs rounded-lg hover:opacity-90 flex items-center gap-1.5"><Plus size={14} /> Добавить видео</button>
+                <button onClick={() => setIsAddOpen(true)} className="h-8 px-4 bg-[#ededed] text-black font-medium text-xs rounded-lg hover:opacity-90 flex items-center gap-1.5"><Plus size={14} /> Добавить видео</button>
               </div>
             </div>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left border-collapse min-w-[1220px]">
+
+            <div className="studio-table-wrap overflow-x-auto">
+              <table className="studio-table w-full text-xs text-left border-collapse min-w-[1220px]">
                 <thead>
                   <tr className="border-b border-[#2a2a2a] text-gray-400">
                     <th className="pb-3 w-10 text-center" aria-label="Избранное"><Star size={12} className="mx-auto text-gray-600" aria-hidden="true" /></th>
@@ -332,10 +334,10 @@ export default function App() {
                   const cat = stats?.categories[v.category] || { label: v.category, minViews: 0 };
                   const isMin = v.views >= (cat.minViews || 0);
                   const cpm = v.views > 0 ? ((v.grossRevenue / v.views) * 1000).toFixed(2) : '0.00';
-                  
+
                   const likesStatus = getLikesStatus(v.likes, v.views, v.category);
                   const comments = commentSummary?.[v._id];
-                  
+
                   const statusColors = {
                     moderation: 'bg-gray-500/20 text-gray-400',
                     published: 'bg-blue-500/20 text-blue-400',
@@ -358,7 +360,7 @@ export default function App() {
                       <td className="py-3 text-gray-300 font-mono text-[11px]">{adminName}</td>
                       <td className="py-3 text-gray-400 font-mono text-[11px]">{dateStr}</td>
                       <td className="py-3">
-                        <a href={v.url} target="_blank" rel="noreferrer" className="text-[#f4623a] hover:underline break-all block max-w-[150px] truncate" title={v.title || v.url}>{v.title || v.url}</a>
+                        <a href={v.url} target="_blank" rel="noreferrer" className="text-[#ededed] hover:underline break-all block max-w-[150px] truncate" title={v.title || v.url}>{v.title || v.url}</a>
                         {v.isPinned && <span className="mt-1 inline-flex items-center gap-1 text-[9px] text-gray-500"><Pin size={10} />Закреплено</span>}
                       </td>
                       <td className="py-3 text-gray-300">
@@ -381,7 +383,7 @@ export default function App() {
                               const n = +e.target.value || 0;
                               if (n !== v.views) { await api.updateVideo(v._id, { views: n }); reload(); }
                             }} 
-                            className={`w-20 bg-[#111] border rounded px-2 py-1 text-right font-mono text-xs outline-none focus:border-[#f4623a] ${!isMin ? 'border-red-500/50' : 'border-[#2a2a2a]'}`} 
+                            className={`w-20 bg-[#111] border rounded px-2 py-1 text-right font-mono text-xs outline-none focus:border-[#ededed] ${!isMin ? 'border-red-500/50' : 'border-[#2a2a2a]'}`}
                             title={!isMin ? `Внимание: минимум ${cat.minViews} просмотров` : ''} 
                           />
                         </div>
@@ -392,7 +394,7 @@ export default function App() {
                           <div className="text-[9px] text-gray-500 mb-0.5">
                             {likesStatus ? `Идеал: ~${fmtInt(likesStatus.ideal)}` : 'Идеал: —'}
                           </div>
-                          
+
                           <div className="flex items-center gap-1.5">
                             <input 
                               type="number" 
@@ -402,9 +404,9 @@ export default function App() {
                                 const n = +e.target.value || 0;
                                 if (n !== (v.likes || 0)) { await api.updateVideo(v._id, { likes: n }); reload(); }
                               }} 
-                              className="w-16 bg-[#111] border border-[#2a2a2a] rounded px-2 py-1 text-center font-mono text-xs outline-none focus:border-[#f4623a]" 
+                              className="w-16 bg-[#111] border border-[#2a2a2a] rounded px-2 py-1 text-center font-mono text-xs outline-none focus:border-[#ededed]"
                             />
-                            
+
                             {/* Иконка + Текст статуса */}
                             <div className="flex items-center gap-1 min-w-[50px]">
                               {/* Мало лайков -> Стрелка ВВЕРХ (нужно больше) */}
@@ -414,7 +416,7 @@ export default function App() {
                                   <span className="text-[9px] text-red-400">Мало</span>
                                 </>
                               )}
-                              
+
                               {/* Норма -> Стрелка ВВЕРХ (почти идеал) */}
                               {likesStatus && likesStatus.status === 'ok' && (
                                 <>
@@ -422,7 +424,7 @@ export default function App() {
                                   <span className="text-[9px] text-yellow-400">Норма</span>
                                 </>
                               )}
-                              
+
                               {/* Идеал -> Галочка */}
                               {likesStatus && likesStatus.status === 'ideal' && (
                                 <>
@@ -430,7 +432,7 @@ export default function App() {
                                   <span className="text-[9px] text-green-400">Ок</span>
                                 </>
                               )}
-                              
+
                               {/* Перебор лайков -> Стрелка ВНИЗ (сбавь обороты) */}
                               {likesStatus && likesStatus.status === 'high' && (
                                 <>
@@ -445,13 +447,13 @@ export default function App() {
                       <td className="py-3 px-3 text-center">
                         {commentSummaryError ? <button onClick={refreshCommentSummary} className="text-gray-400 text-[10px] hover:text-white" title="Не удалось загрузить прогресс. Повторить">Обновить</button> : !commentSummary ? <span className="text-gray-500">…</span> : comments ? <div className="flex items-center justify-center gap-2 whitespace-nowrap">
                           <span className={comments.issued === comments.total ? 'font-mono text-green-400' : 'font-mono text-gray-300'} title="Выдано комментариев">{comments.issued} из {comments.total}</span>
-                          <button onClick={() => setCommentVideo(v)} title="Подробнее о комментариях" aria-label="Подробнее о комментариях" className="p-1 rounded text-gray-400 hover:text-[#f4623a] hover:bg-[#2a2a2a]"><Info size={15} /></button>
-                        </div> : <button onClick={() => setCommentVideo(v)} className="px-2 py-1 rounded text-[#f4623a] hover:bg-[#2a2a2a] inline-flex items-center gap-1"><Plus size={12} /> Добавить</button>}
+                          <button onClick={() => setCommentVideo(v)} title="Подробнее о комментариях" aria-label="Подробнее о комментариях" className="p-1 rounded text-gray-400 hover:text-[#ededed] hover:bg-[#2a2a2a]"><Info size={15} /></button>
+                        </div> : <button onClick={() => setCommentVideo(v)} className="px-2 py-1 rounded text-[#ededed] hover:bg-[#2a2a2a] inline-flex items-center gap-1"><Plus size={12} /> Добавить</button>}
                       </td>
                       <td className="py-3 text-right font-mono text-gray-400 text-[11px]" title="Стоимость 1000 просмотров">${cpm}</td>
                       <td className="py-3 text-right font-mono text-gray-300">${v.grossRevenue.toFixed(2)}</td>
                       <td className="py-3 text-right font-mono text-red-400">-${v.totalExpenses.toFixed(2)}</td>
-                      <td className="py-3 text-right font-mono text-[#f4623a] font-semibold">${v.revenue.toFixed(2)}</td>
+                      <td className="py-3 text-right font-mono text-[#ededed] font-semibold">${v.revenue.toFixed(2)}</td>
                       <td className="py-3 text-center relative">
                         <button onClick={() => setOpenStatusId(openStatusId === v._id ? null : v._id)} className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] uppercase font-semibold transition-opacity hover:opacity-80 ${statusColors[v.status]}`}>
                           {statusLabels[v.status]} <ChevronDown size={10} className="opacity-50" />
@@ -466,7 +468,7 @@ export default function App() {
                                   if (v.status !== key) { await api.updateVideo(v._id, { status: key }); reload(); }
                                 }} className={`w-full text-left px-3 py-2 text-[11px] transition-colors flex items-center justify-between ${v.status === key ? 'bg-[#2a2a2a] text-white' : 'text-gray-300 hover:bg-[#2a2a2a]'}`}>
                                   {label}
-                                  {v.status === key && <div className="w-1.5 h-1.5 rounded-full bg-[#f4623a]" />}
+                                  {v.status === key && <div className="w-1.5 h-1.5 rounded-full bg-[#ededed]" />}
                                 </button>
                               ))}
                             </div>
@@ -520,20 +522,20 @@ export default function App() {
               : 'Не назначен';
 
             return (
-              <div key={acc._id} className="bg-[#141414] border border-[#2a2a2a] rounded-2xl p-5 flex flex-col hover:border-[#f4623a]/50 transition-colors cursor-pointer" onClick={() => { setActiveAccount(acc._id); setCurrentView('dashboard'); }}>
+              <div key={acc._id} className="studio-panel bg-[#111] border border-[#252525] rounded-2xl p-5 flex flex-col hover:border-[#ededed]/50 transition-colors cursor-pointer" onClick={() => { setActiveAccount(acc._id); setCurrentView('dashboard'); }}>
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#2a2a2a] flex items-center justify-center text-[#f4623a]"><CreditCard size={20} /></div>
+                    <div className="w-10 h-10 rounded-full bg-[#2a2a2a] flex items-center justify-center text-[#ededed]"><CreditCard size={20} /></div>
                     <div>
                       <h3 className="text-sm font-semibold text-white">{acc.name}</h3>
                       <p className="text-[11px] text-gray-400 font-mono mt-0.5 flex items-center gap-1">
-                        <User size={10} className="text-gray-500" /> Админ: <span className="text-[#f4623a]">{adminName}</span>
+                        <User size={10} className="text-gray-500" /> Админ: <span className="text-[#ededed]">{adminName}</span>
                       </p>
                     </div>
                   </div>
                   <button onClick={(e) => deleteAccount(acc._id, e)} className="text-gray-500 hover:text-red-500 p-1"><Trash2 size={16} /></button>
                 </div>
-                
+
                 <div className="grid grid-cols-3 gap-2 mt-auto pt-4 border-t border-[#2a2a2a]">
                   <div>
                     <div className="text-[10px] text-gray-500 uppercase mb-1 flex items-center gap-1"><FolderOpen size={10} /> Видео</div>
@@ -545,13 +547,13 @@ export default function App() {
                   </div>
                   <div>
                     <div className="text-[10px] text-gray-500 uppercase mb-1 flex items-center gap-1"><Wallet size={10} /> Выплачено</div>
-                    <div className="text-sm font-mono font-semibold text-[#f4623a]">{fmtMoney(acc.revenue)}</div>
+                    <div className="text-sm font-mono font-semibold text-[#ededed]">{fmtMoney(acc.revenue)}</div>
                   </div>
                 </div>
               </div>
             );
           })}
-          <button onClick={addAccount} className="border border-dashed border-[#2a2a2a] hover:border-[#f4623a]/50 hover:bg-[#141414] rounded-2xl p-5 flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-[#f4623a] transition-all min-h-[160px]">
+          <button onClick={addAccount} className="border border-dashed border-[#2a2a2a] hover:border-[#ededed]/50 hover:bg-[#141414] rounded-2xl p-5 flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-[#ededed] transition-all min-h-[160px]">
             <Plus size={24} /><span className="text-xs font-medium">Новый аккаунт</span>
           </button>
           {accounts.length === 0 && (
@@ -562,10 +564,10 @@ export default function App() {
 
       {currentView === 'finance' && stats && (
         <div className="space-y-6">
-          <div className="bg-[#141414] border border-[#2a2a2a] rounded-2xl p-6 flex items-center justify-between">
+          <div className="studio-panel bg-[#111] border border-[#252525] rounded-2xl p-6 flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2 text-[11px] text-gray-400 uppercase tracking-wider mb-2"><Wallet size={16} /> Всего выплачено</div>
-              <div className="text-4xl font-mono font-semibold text-[#f4623a]">{fmtMoney(stats.totalRevenue)}</div>
+              <div className="text-4xl font-mono font-semibold text-[#ededed]">{fmtMoney(stats.totalRevenue)}</div>
               <div className="text-[11px] text-gray-500 mt-2">по статусу "Выплатили"</div>
             </div>
             <div className="text-right">
@@ -576,9 +578,9 @@ export default function App() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="bg-[#141414] border border-[#2a2a2a] rounded-2xl p-6 flex flex-col">
-              <div className="flex items-center gap-2 text-sm font-semibold mb-4"><Target size={18} className="text-[#f4623a]"/> Моя цель</div>
-              
+            <div className="studio-panel bg-[#111] border border-[#252525] rounded-2xl p-6 flex flex-col">
+              <div className="flex items-center gap-2 text-sm font-semibold mb-4"><Target size={18} className="text-[#ededed]"/> Моя цель</div>
+
               <form onSubmit={async (e) => {
                 e.preventDefault();
                 const fd = new FormData(e.target);
@@ -592,23 +594,23 @@ export default function App() {
               }} className="flex flex-col gap-3">
                 <div>
                   <label className="text-[10px] text-gray-500 uppercase mb-1 block">Название</label>
-                  <input name="title" defaultValue={goal?.title} required className="w-full bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#f4623a]" placeholder="Например: Новый ПК" />
+                  <input name="title" defaultValue={goal?.title} required className="w-full bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#ededed]" placeholder="Например: Новый ПК" />
                 </div>
                 <div>
                   <label className="text-[10px] text-gray-500 uppercase mb-1 block">URL картинки</label>
-                  <input name="imageUrl" defaultValue={goal?.imageUrl} className="w-full bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#f4623a]" placeholder="https://..." />
+                  <input name="imageUrl" defaultValue={goal?.imageUrl} className="w-full bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#ededed]" placeholder="https://..." />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-[10px] text-gray-500 uppercase mb-1 block">Сумма ($)</label>
-                    <input name="targetAmount" type="number" defaultValue={goal?.targetAmount} required className="w-full bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#f4623a]" placeholder="500" />
+                    <input name="targetAmount" type="number" defaultValue={goal?.targetAmount} required className="w-full bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#ededed]" placeholder="500" />
                   </div>
                   <div>
                     <label className="text-[10px] text-gray-500 uppercase mb-1 block">Дедлайн (дата)</label>
-                    <input name="deadlineDate" type="date" defaultValue={goal?.deadlineDate ? new Date(goal.deadlineDate).toISOString().split('T')[0] : ''} required className="w-full bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#f4623a]" />
+                    <input name="deadlineDate" type="date" defaultValue={goal?.deadlineDate ? new Date(goal.deadlineDate).toISOString().split('T')[0] : ''} required className="w-full bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#ededed]" />
                   </div>
                 </div>
-                <button className="w-full h-9 mt-2 bg-[#f4623a] text-black font-medium rounded-lg hover:opacity-90">Сохранить цель</button>
+                <button className="w-full h-9 mt-2 bg-[#ededed] text-black font-medium rounded-lg hover:opacity-90">Сохранить цель</button>
               </form>
 
               {goal && (
@@ -626,30 +628,30 @@ export default function App() {
               )}
             </div>
 
-            <div className="lg:col-span-2 bg-[#141414] border border-[#2a2a2a] rounded-2xl p-6 flex flex-col">
+            <div className="lg:col-span-2 studio-panel bg-[#111] border border-[#252525] rounded-2xl p-6 flex flex-col">
               {goal ? (() => {
                 const target = goal.targetAmount;
                 const current = stats.totalRevenue;
                 const remaining = Math.max(0, target - current);
                 const progress = Math.min(100, (current / target) * 100);
-                
+
                 const now = new Date();
                 now.setHours(0, 0, 0, 0);
                 const deadline = new Date(goal.deadlineDate);
                 deadline.setHours(0, 0, 0, 0);
-                
+
                 const diffTime = deadline.getTime() - now.getTime();
                 const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 const isPast = daysLeft < 0;
 
                 const cats = Object.entries(stats.categories);
-                
+
                 return (
                   <div className="flex flex-col h-full">
                     <div className="flex justify-between items-end mb-6">
                       <div>
                         <div className="text-[11px] text-gray-400 uppercase tracking-wider mb-1">Осталось собрать</div>
-                        <div className="text-3xl font-mono font-semibold text-[#f4623a]">{fmtMoney(remaining)}</div>
+                        <div className="text-3xl font-mono font-semibold text-[#ededed]">{fmtMoney(remaining)}</div>
                         <div className="text-[11px] text-gray-500 mt-2">
                           {isPast ? (
                             <span className="text-red-500">Дедлайн просрочен</span>
@@ -665,20 +667,20 @@ export default function App() {
                     </div>
 
                     <div className="w-full h-3 bg-[#2a2a2a] rounded-full mb-8 overflow-hidden">
-                      <div className="h-full bg-[#f4623a] rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
+                      <div className="h-full bg-[#ededed] rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
                     </div>
 
                     <div className="text-[11px] text-gray-400 uppercase tracking-wider mb-3">
                       {isPast ? 'Дедлайн прошел, нужно обновить цель' : `Сколько просмотров в день нужно (по тематикам)`}
                     </div>
-                    
+
                     {!isPast && remaining > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {cats.map(([key, cat]) => {
                           const CatIcon = CAT_ICONS[key] || Sparkles;
                           const totalNeededViews = Math.ceil((remaining / cat.rate1k) * 1000);
                           const viewsPerDay = Math.ceil(totalNeededViews / Math.max(1, daysLeft));
-                          
+
                           return (
                             <div key={key} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-3 flex items-center justify-between">
                               <div className="flex items-center gap-3">
@@ -689,7 +691,7 @@ export default function App() {
                                 </div>
                               </div>
                               <div className="text-right">
-                                <div className="text-sm font-mono font-semibold text-[#f4623a]">{fmtInt(viewsPerDay)}</div>
+                                <div className="text-sm font-mono font-semibold text-[#ededed]">{fmtInt(viewsPerDay)}</div>
                                 <div className="text-[10px] text-gray-500">в день</div>
                                 <div className="text-[9px] text-gray-600 mt-0.5">всего {fmtInt(totalNeededViews)}</div>
                               </div>
@@ -793,11 +795,11 @@ function AddVideoModal({ accounts, activeAccountId, categories, onClose, onAdd }
     }
   };
 
-  const inputCls = 'bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#f4623a] w-full mb-3';
+  const inputCls = 'bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#ededed] w-full mb-3';
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-5">
-      <form onSubmit={submit} className="bg-[#141414] border border-[#2a2a2a] rounded-2xl w-full max-w-md overflow-hidden">
+      <form onSubmit={submit} className="studio-panel bg-[#111] border border-[#252525] rounded-2xl w-full max-w-md overflow-hidden">
         <div className="p-5 border-b border-[#2a2a2a] flex justify-between items-center">
           <h2 className="text-sm font-semibold">Добавить видео</h2>
           <button type="button" onClick={onClose} className="text-gray-500 hover:text-white"><X size={16} /></button>
@@ -805,7 +807,7 @@ function AddVideoModal({ accounts, activeAccountId, categories, onClose, onAdd }
         <div className="p-5">
           <label className="text-[10px] text-gray-400 uppercase mb-1 block">Ссылка на видео</label>
           <input className={inputCls} placeholder="https://..." value={url} onChange={e => setUrl(e.target.value)} required />
-          
+
           <label className="text-[10px] text-gray-400 uppercase mb-1 block">Аккаунт UBT</label>
           <select className={inputCls} value={account} onChange={e => setAccount(e.target.value)}>
             {accounts.map(a => <option key={a._id} value={a._id}>{a.name}</option>)}
@@ -823,7 +825,7 @@ function AddVideoModal({ accounts, activeAccountId, categories, onClose, onAdd }
 
           {error && <div className="text-red-500 text-xs mb-3">{error}</div>}
 
-          <button disabled={busy} className="w-full h-9 mt-2 bg-[#f4623a] text-black font-medium rounded-lg hover:opacity-90 disabled:opacity-50">
+          <button disabled={busy} className="w-full h-9 mt-2 bg-[#ededed] text-black font-medium rounded-lg hover:opacity-90 disabled:opacity-50">
             {busy ? '…' : 'Сохранить'}
           </button>
         </div>
@@ -835,13 +837,13 @@ function AddVideoModal({ accounts, activeAccountId, categories, onClose, onAdd }
 // Модалка настроек видео
 function EditVideoModal({ video, onClose, onSave }) {
   const [status, setStatus] = useState(video.status);
-  
+
   const [p1, setP1] = useState(0);
   const [p2, setP2] = useState(0);
   const [p3, setP3] = useState(0);
   const [p4, setP4] = useState(0);
   const [p5, setP5] = useState(0);
-  
+
   const [rate, setRate] = useState(0);
   const [totalUsd, setTotalUsd] = useState(0);
 
@@ -868,7 +870,7 @@ function EditVideoModal({ video, onClose, onSave }) {
   const submit = (e) => {
     e.preventDefault();
     if (!rate) return alert('Ждем загрузки курса...');
-    
+
     onSave({ 
       status, 
       expenses: { 
@@ -881,11 +883,11 @@ function EditVideoModal({ video, onClose, onSave }) {
     });
   };
 
-  const inputCls = 'bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#f4623a] w-full';
+  const inputCls = 'bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#ededed] w-full';
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-5">
-      <form onSubmit={submit} className="bg-[#141414] border border-[#2a2a2a] rounded-2xl w-full max-w-md overflow-hidden">
+      <form onSubmit={submit} className="studio-panel bg-[#111] border border-[#252525] rounded-2xl w-full max-w-md overflow-hidden">
         <div className="p-5 border-b border-[#2a2a2a] flex justify-between items-center">
           <h2 className="text-sm font-semibold">Настройки видео</h2>
           <button type="button" onClick={onClose} className="text-gray-500 hover:text-white"><X size={16} /></button>
@@ -903,7 +905,7 @@ function EditVideoModal({ video, onClose, onSave }) {
             <label className="text-[10px] text-gray-400 uppercase block">Траты (в рублях ₽)</label>
             {rate > 0 && <span className="text-[10px] text-gray-500 font-mono">Курс: {rate.toFixed(2)} ₽/$</span>}
           </div>
-          
+
           <div className="grid grid-cols-2 gap-3 mb-4">
             <input type="number" className={inputCls} placeholder="Пункт 1 (₽)" value={p1 || ''} onChange={e => setP1(+e.target.value)} />
             <input type="number" className={inputCls} placeholder="Пункт 2 (₽)" value={p2 || ''} onChange={e => setP2(+e.target.value)} />
@@ -917,7 +919,7 @@ function EditVideoModal({ video, onClose, onSave }) {
             <span className="text-sm font-mono font-semibold text-red-400">-${totalUsd.toFixed(2)}</span>
           </div>
 
-          <button className="w-full h-9 bg-[#f4623a] text-black font-medium rounded-lg hover:opacity-90">Применить</button>
+          <button className="w-full h-9 bg-[#ededed] text-black font-medium rounded-lg hover:opacity-90">Применить</button>
         </div>
       </form>
     </div>
@@ -947,11 +949,11 @@ function AdjustModal({ onClose, onAdd }) {
     } finally { setBusy(false); }
   };
 
-  const inputCls = 'bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#f4623a] w-full mb-3';
+  const inputCls = 'bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#ededed] w-full mb-3';
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-5">
-      <form onSubmit={submit} className="bg-[#141414] border border-[#2a2a2a] rounded-2xl w-full max-w-sm overflow-hidden">
+      <form onSubmit={submit} className="studio-panel bg-[#111] border border-[#252525] rounded-2xl w-full max-w-sm overflow-hidden">
         <div className="p-4 border-b border-[#2a2a2a] flex justify-between items-center">
           <h2 className="text-sm font-semibold">Корректировка баланса</h2>
           <button type="button" onClick={onClose} className="text-gray-500 hover:text-white"><X size={16} /></button>
@@ -962,14 +964,14 @@ function AdjustModal({ onClose, onAdd }) {
             <input 
               type="number" 
               step="0.01"
-              className="bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#f4623a] flex-1"
+              className="bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#ededed] flex-1"
               value={amount} 
               onChange={e => setAmount(e.target.value)} 
               placeholder={currency === 'usd' ? '100' : '9500'}
               required
             />
             <select 
-              className="bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#f4623a] w-20"
+              className="bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#ededed] w-20"
               value={currency} 
               onChange={e => setCurrency(e.target.value)}
             >
@@ -977,7 +979,7 @@ function AdjustModal({ onClose, onAdd }) {
               <option value="rub">RUB</option>
             </select>
           </div>
-          
+
           {amount && rate > 0 && (
             <div className="text-[11px] text-gray-500 mb-3 font-mono">
               {currency === 'usd' 
@@ -985,7 +987,7 @@ function AdjustModal({ onClose, onAdd }) {
                 : `≈ $${(parseFloat(amount) / rate).toFixed(2)}`}
             </div>
           )}
-          
+
           <label className="text-[10px] text-gray-400 uppercase mb-1 block">Комментарий (опционально)</label>
           <input 
             className={inputCls} 
@@ -1004,7 +1006,7 @@ function AdjustModal({ onClose, onAdd }) {
             </button>
             <button 
               disabled={busy} 
-              className="flex-1 h-9 bg-[#f4623a] text-black font-medium rounded-lg hover:opacity-90 disabled:opacity-50"
+              className="flex-1 h-9 bg-[#ededed] text-black font-medium rounded-lg hover:opacity-90 disabled:opacity-50"
             >
               {busy ? '...' : 'Применить'}
             </button>
@@ -1018,7 +1020,7 @@ function AdjustModal({ onClose, onAdd }) {
 function HistoryModal({ adjustments, onClose, reload }) {
   return (
     <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-5">
-      <div className="bg-[#141414] border border-[#2a2a2a] rounded-2xl w-full max-w-lg overflow-hidden max-h-[80vh] flex flex-col">
+      <div className="studio-panel bg-[#111] border border-[#252525] rounded-2xl w-full max-w-lg overflow-hidden max-h-[80vh] flex flex-col">
         <div className="p-4 border-b border-[#2a2a2a] flex justify-between items-center">
           <h2 className="text-sm font-semibold">История корректировок</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-white"><X size={16} /></button>

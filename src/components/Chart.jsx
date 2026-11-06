@@ -32,8 +32,8 @@ export default function Chart({ data }) {
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-[220px] block" preserveAspectRatio="none">
         <defs>
           <linearGradient id="area-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#f4623a" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#f4623a" stopOpacity="0" />
+            <stop offset="0%" stopColor="#ededed" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#ededed" stopOpacity="0" />
           </linearGradient>
         </defs>
         {[0.25, 0.5, 0.75].map(t => (
@@ -47,9 +47,9 @@ export default function Chart({ data }) {
           />
         ))}
         <path d={areaPath} fill="url(#area-grad)" />
-        <path d={linePath} fill="none" stroke="#f4623a" strokeWidth="2" strokeLinejoin="round" />
+        <path d={linePath} fill="none" stroke="#ededed" strokeWidth="2" strokeLinejoin="round" />
         {pts.map((p, i) => (
-          <circle key={i} cx={p[0]} cy={p[1]} r="3" fill="#141414" stroke="#f4623a" strokeWidth="2" />
+          <circle key={i} cx={p[0]} cy={p[1]} r="3" fill="#141414" stroke="#ededed" strokeWidth="2" />
         ))}
       </svg>
       <div className="flex justify-between mt-1.5 font-mono text-[11px] text-ink-faint">

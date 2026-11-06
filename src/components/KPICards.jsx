@@ -1,6 +1,6 @@
 import { sum, fmtMoney, fmtInt } from '../data.js';
 
-function Sparkline({ points, color = '#f4623a' }) {
+function Sparkline({ points, color = '#ededed' }) {
   if (!points.length) return null;
   const max = Math.max(...points, 1);
   const w = 80, h = 28;
@@ -32,7 +32,7 @@ export default function KPICards({ data }) {
         <div className="text-2xl font-semibold tracking-tight font-mono text-ink">{fmtMoney(spend)}</div>
         <div className="flex items-center justify-between text-[11px] text-ink-faint">
           <span>{data.length} записей</span>
-          <Sparkline points={spendSeries} color="#f4623a" />
+          <Sparkline points={spendSeries} color="#ededed" />
         </div>
       </div>
       <div className="bg-side-active border border-line-strong rounded-2xl p-4 flex flex-col gap-2">
