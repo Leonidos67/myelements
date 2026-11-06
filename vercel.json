@@ -7,6 +7,10 @@
     {
       "source": "/get-comment/:id",
       "destination": "/index.html"
+    },
+    {
+      "source": "/tt-stat/:id",
+      "destination": "/index.html"
     }
   ]
 }

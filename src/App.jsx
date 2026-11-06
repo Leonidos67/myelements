@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from './api';
 import Login from './Login';
 import CommentPageModal from './CommentPageModal';
@@ -12,7 +12,7 @@ import {
   Gift, Gamepad2, Sparkles, Palette, 
   Settings, Trash2, X, ChevronDown, CreditCard, DollarSign,
   LayoutDashboard, FolderOpen, MoreVertical, Target, Calendar, Bot, Bookmark,
-  FileCode2, Star, Pin, PinOff, Info, Heart, AlertCircle, CheckCircle2, ArrowUpCircle, ArrowDownCircle
+  ChevronLeft, ChevronRight, Upload, FileCode2, Star, Pin, PinOff, Info, Heart, AlertCircle, CheckCircle2, ArrowUpCircle, ArrowDownCircle
 } from 'lucide-react';
 
 const fmtMoney = (n) => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -61,6 +61,9 @@ export default function App() {
   const [editVideo, setEditVideo] = useState(null);
   const [commentVideo, setCommentVideo] = useState(null);
   const [scriptVideo, setScriptVideo] = useState(null);
+  const [videoMenuPage, setVideoMenuPage] = useState('main');
+  const scriptFileInput = useRef(null);
+  const scriptFileVideo = useRef(null);
   const [videoActionIds, setVideoActionIds] = useState(() => new Set());
   const toggleVideoFlag = async (video, field) => {
     setVideoActionIds(ids => new Set(ids).add(video._id));
@@ -471,18 +474,25 @@ export default function App() {
                         )}
                       </td>
                       <td className="py-3 text-right relative">
-                        <button onClick={() => setOpenMenuId(openMenuId === v._id ? null : v._id)} className="p-1 text-gray-500 hover:text-white rounded hover:bg-[#2a2a2a] transition-colors"><MoreVertical size={16} /></button>
+                        <button onClick={() => { setVideoMenuPage('main'); setOpenMenuId(openMenuId === v._id ? null : v._id); }} className="p-1 text-gray-500 hover:text-white rounded hover:bg-[#2a2a2a] transition-colors"><MoreVertical size={16} /></button>
                         {openMenuId === v._id && (
                           <>
                             <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
-                            <div className="absolute right-8 top-2 z-50 w-32 bg-[#141414] border border-[#2a2a2a] rounded-lg shadow-xl py-1">
+                            <div className="absolute right-8 top-2 z-50 w-52 overflow-hidden bg-[#141414] border border-[#2a2a2a] rounded-xl shadow-xl py-1">
+                              {videoMenuPage === 'layout' ? <>
+                                <button onClick={() => setVideoMenuPage('main')} className="flex w-full items-center gap-2 border-b border-white/5 px-3 py-2.5 text-left text-xs font-medium text-white hover:bg-white/5"><ChevronLeft size={14} />Макет</button>
+                                <button onClick={() => {setOpenMenuId(null);setScriptVideo(v);}} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-300 hover:bg-white/5"><FileCode2 size={13} />Извлечь JS</button>
+                                <button onClick={() => {scriptFileVideo.current=v;setOpenMenuId(null);scriptFileInput.current.click();}} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-300 hover:bg-white/5"><Upload size={13} />Загрузить новый JS</button>
+                                <a href={'/tt-stat/' + v._id} target="_blank" rel="noreferrer" onClick={() => setOpenMenuId(null)} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-300 hover:bg-white/5"><Eye size={13} />Предпросмотр<ChevronRight size={12} className="ml-auto text-gray-500" /></a>
+                              </> : <>
                               <button disabled={videoActionIds.has(v._id)} onClick={() => { setOpenMenuId(null); toggleVideoFlag(v, 'isPinned'); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-[#2a2a2a] flex items-center gap-2 transition-colors disabled:opacity-40">{v.isPinned ? <PinOff size={12} /> : <Pin size={12} />}{v.isPinned ? 'Открепить' : 'Закрепить'}</button>
-                              <button onClick={() => { setOpenMenuId(null); setScriptVideo(v); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-[#2a2a2a] flex items-center gap-2"><FileCode2 size={12} />Извлечь JS</button>
+                              <button onClick={() => setVideoMenuPage('layout')} className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-white/5 flex items-center gap-2"><FileCode2 size={13} />Макет<ChevronRight size={12} className="ml-auto text-gray-500" /></button>
                               <button onClick={() => { setOpenMenuId(null); setEditVideo(v); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-[#2a2a2a] flex items-center gap-2 transition-colors"><Settings size={12} /> Настройки</button>
                               <button onClick={async () => { 
                                 setOpenMenuId(null);
                                 if (confirm('Удалить?')) { await api.deleteVideo(v._id); reload(); }
                               }} className="w-full text-left px-3 py-1.5 text-xs text-red-400 hover:bg-[#2a2a2a] flex items-center gap-2 transition-colors"><Trash2 size={12} /> Удалить</button>
+                              </>}
                             </div>
                           </>
                         )}
@@ -740,6 +750,7 @@ export default function App() {
           onAdd={() => { setIsAddOpen(false); reload(); }} 
         />
       )}
+      <input ref={scriptFileInput} type="file" accept=".js,text/javascript,application/javascript" className="hidden" onChange={e => {const file=e.target.files?.[0];e.target.value='';if(file && scriptFileVideo.current)setScriptVideo({...scriptFileVideo.current, initialFile:file});}} />
       {scriptVideo && <VideoScriptModal video={scriptVideo} onClose={() => setScriptVideo(null)} />}
       {commentVideo && <CommentPageModal video={commentVideo} onClose={() => { setCommentVideo(null); refreshCommentSummary(); }} onChange={refreshCommentSummary} />}
       {editVideo && <EditVideoModal video={editVideo} onClose={() => setEditVideo(null)} onSave={async (data) => { await api.updateVideo(editVideo._id, data); setEditVideo(null); reload(); }} />}

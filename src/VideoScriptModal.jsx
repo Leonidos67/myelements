@@ -20,9 +20,25 @@ export default function VideoScriptModal({ video, onClose }) {
   const preview = useMemo(() => tab === 'preview' ? buildStatPreview(code) : '', [code, tab]);
   useEffect(() => {
     let active = true;
-    api.videoScript(video._id).then(result => {
-      if (active) { setCode(result.code); setOriginal(result.code); setMetadata(result); setServerReady(true); }
-    }).catch(e => { if (active) { setServerReady(false); setNotice('Открыта локальная копия app.js: можно редактировать, смотреть результат и скачать файл.'); setError(e.status === 404 ? 'Сервер не нашёл API для JS или выбранное видео. Перезапустите обновлённый сервер MyElement (или обновите сервер в Render), затем нажмите «Подключить сохранение».' : 'Сохранение в базе сейчас недоступно: ' + e.message); } }).finally(() => { if (active) setLoading(false); });
+    (async () => {
+      try {
+        const result = await api.videoScript(video._id);
+        if(active){setCode(result.code);setOriginal(result.code);setMetadata(result);setServerReady(true);}
+      } catch(e) {
+        if(active){setServerReady(false);setError(e.status===404?'API JS или видео не найдено. Обновите сервер MyElement.':e.message);setNotice('Открыта локальная копия JS.');}
+      }
+      if (video.initialFile && active) {
+        try {
+          const file=video.initialFile;
+          if(!/\.js$/i.test(file.name))throw Error('Выберите файл .js');
+          if(file.size>MAX_BYTES)throw Error('Размер файла не должен превышать 256 КБ');
+          const text=await file.text();
+          if(!text.trim())throw Error('Файл пуст');
+          if(active){setCode(text);setNotice('Файл «'+file.name+'» загружен. Нажмите «Сохранить для видео».');}
+        } catch(e){if(active)setError(e.message);}
+      }
+      if(active)setLoading(false);
+    })();
     return () => { active = false; };
   }, [video._id]);
   function close() {
