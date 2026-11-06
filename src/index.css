@@ -1,29 +1,27 @@
 @import "tailwindcss";
+:root {
+ --ui-scheme:dark; --ui-bg:#080808; --ui-surface:#111111; --ui-elevated:#1b1b1b; --ui-inset:#0b0b0b;
+ --ui-text:#ededed; --ui-muted:#a3a3a3; --ui-subtle:#808080; --ui-line:#2a2a2a; --ui-line-strong:#404040;
+ --ui-primary:#f5f5f5; --ui-on-primary:#111111; --ui-shadow:0 1px 3px #0003; --ui-modal-shadow:0 24px 80px #0008;
+ --ui-space:24px;
+}
+:root[data-theme='light'] {
+ --ui-scheme:light; --ui-bg:#fafafa; --ui-surface:#ffffff; --ui-elevated:#f3f3f3; --ui-inset:#f8f8f8;
+ --ui-text:#171717; --ui-muted:#525252; --ui-subtle:#737373; --ui-line:#e5e5e5; --ui-line-strong:#bdbdbd;
+ --ui-primary:#171717; --ui-on-primary:#fafafa; --ui-shadow:0 1px 3px #00000008; --ui-modal-shadow:0 24px 80px #0000001a;
+}
 
-@theme {
-  --color-page: #080808;
-  --color-surface: #0a0a0a;
-  --color-surface-2: #171717;
-  --color-ink: #f5f5f5;
-  --color-ink-dim: #a3a3a3;
-  --color-ink-faint: #6b6b6b;
-  --color-line: #1f1f1f;
-  --color-line-strong: #303030;
-  --color-side: #000000;
-  --color-side-active: #141414;
-  --color-side-text: #d6dadd;
-  --color-side-dim: #8a9196;
-  --color-brand: #ededed;
-  --color-brand-soft: #171717;
-  --color-danger: #ef4444;
-  --color-kpi-spend: #111111;
 
-  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
-
-  --radius-panel: 18px;
-
-  --shadow-panel: 0 4px 24px rgba(0,0,0,0.5);
-  --shadow-modal: 0 20px 60px rgba(0,0,0,0.8);
+@theme inline {
+ --color-page:var(--ui-bg); --color-background:var(--ui-bg);
+ --color-surface:var(--ui-surface); --color-surface-2:var(--ui-elevated); --color-elevated:var(--ui-elevated); --color-inset:var(--ui-inset);
+ --color-foreground:var(--ui-text); --color-ink:var(--ui-text); --color-muted:var(--ui-muted); --color-subtle:var(--ui-subtle); --color-ink-dim:var(--ui-muted); --color-ink-faint:var(--ui-subtle);
+ --color-line:var(--ui-line); --color-line-strong:var(--ui-line-strong);
+ --color-primary:var(--ui-primary); --color-primary-foreground:var(--ui-on-primary); --color-brand:var(--ui-primary); --color-brand-soft:var(--ui-elevated);
+ --color-side:var(--ui-surface); --color-side-active:var(--ui-elevated); --color-side-text:var(--ui-text); --color-side-dim:var(--ui-muted);
+ --color-danger:#ef4444; --color-kpi-spend:var(--ui-surface);
+ --font-mono:ui-monospace,'SF Mono','JetBrains Mono',Menlo,Consolas,monospace;
+ --radius-panel:16px; --shadow-panel:var(--ui-shadow); --shadow-modal:var(--ui-modal-shadow);
 }
 
 @layer base {
@@ -39,11 +37,11 @@
     font-size: 13px;
     line-height: 1.45;
 
-    background: #080808;
+    background: var(--ui-bg);
   }
 
   button { @apply cursor-pointer; }
-  input, select, textarea { color-scheme: dark; }
+  input, select, textarea { color-scheme: var(--ui-scheme); }
   input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); }
 }
 /* Visible scroll affordance for the comment moderation panel. */
@@ -54,33 +52,33 @@
 .comment-pending-scroll::-webkit-scrollbar-thumb:hover { background: #737373; }
 
 @layer base {
-  html { color-scheme: dark; }
+  html { color-scheme: var(--ui-scheme); }
   body { font-feature-settings: 'cv11', 'ss01'; }
   button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
   button, a { touch-action: manipulation; }
   button { transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease, opacity 150ms ease; }
   button:disabled { cursor: not-allowed; }
   :where(button, a, input, textarea, select):focus-visible { outline: 2px solid #a3a3a3; outline-offset: 3px; }
-  ::selection { background: #e5e5e5; color: #111; }
+  ::selection { background: var(--ui-primary); color: var(--ui-on-primary); }
 }
 .studio-shell { padding: 28px clamp(16px, 3vw, 52px) 48px; max-width: 1920px; margin-inline: auto; }
 .studio-header { padding-bottom: 24px; }
-.studio-nav { margin-bottom: 28px; padding: 10px 0 16px; border-top: 1px solid #202020; border-bottom: 1px solid #202020; }
+.studio-nav { margin-bottom: 28px; padding: 10px 0 16px; border-top: 1px solid var(--ui-line); border-bottom: 1px solid var(--ui-line); }
 .studio-nav button { flex-shrink: 0; min-height: 36px; }
-.studio-panel { box-shadow: 0 1px 2px #0003; }
-.studio-panel:has(> .text-3xl), .studio-panel:has(> div > .text-3xl) { background: linear-gradient(145deg, #151515, #101010); }
-.studio-table-wrap { margin: 0 -20px -20px; padding: 0 20px 8px; border-radius: 0 0 16px 16px; }
+.studio-panel { box-shadow: var(--ui-shadow); }
+.studio-panel:has(> .text-3xl), .studio-panel:has(> div > .text-3xl) { background: var(--ui-surface); }
+.studio-table-wrap { margin: 0 -24px -24px; padding: 0 24px 8px; border-radius: 0 0 16px 16px; }
 .studio-table { font-variant-numeric: tabular-nums; }
-.studio-table thead th { padding-top: 12px; padding-bottom: 14px; font-size: 10px; color: #737373; white-space: nowrap; background: #111; }
+.studio-table thead th { padding-top: 12px; padding-bottom: 14px; font-size: 10px; color: var(--ui-subtle); white-space: nowrap; background: var(--ui-surface); }
 .studio-table tbody td { padding-top: 16px; padding-bottom: 16px; }
-.studio-table tbody tr { border-color: #202020; }
-.studio-table tbody tr:hover { background: #ffffff03; }
-.studio-table input { min-height: 30px; background: #0a0a0a; border-color: #292929; border-radius: 7px; }
-.studio-table input:hover { border-color: #454545; }
-.studio-table input:focus { border-color: #888; }
-.studio-shell [role='dialog'] { box-shadow: 0 24px 100px #0009; }
+.studio-table tbody tr { border-color: var(--ui-line); }
+.studio-table tbody tr:hover { background: var(--ui-elevated); }
+.studio-table input { min-height: 30px; background: var(--ui-inset); border-color: var(--ui-line); border-radius: 7px; }
+.studio-table input:hover { border-color: var(--ui-line-strong); }
+.studio-table input:focus { border-color: var(--ui-line-strong); }
+.studio-shell [role='dialog'] { box-shadow: var(--ui-modal-shadow); }
 .studio-shell [role='dialog'] input, .studio-shell [role='dialog'] textarea, .studio-shell [role='dialog'] select { transition: border-color 150ms ease; }
-.studio-shell [role='dialog'] input:focus, .studio-shell [role='dialog'] textarea:focus { border-color: #777; }
+.studio-shell [role='dialog'] input:focus, .studio-shell [role='dialog'] textarea:focus { border-color: var(--ui-line-strong); }
 @media (max-width: 767px) {
   .studio-shell { padding-top: 20px; }
   .studio-header { align-items: flex-start; gap: 18px; }
@@ -91,3 +89,24 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
+
+.ui-panel { background:var(--ui-surface); border:1px solid var(--ui-line); border-radius:16px; box-shadow:var(--ui-shadow); }
+.ui-content { padding:var(--ui-space); }
+body { color:var(--ui-text); letter-spacing:-0.01em; }
+body > #root > main:not(:has(iframe)), .studio-shell { padding-bottom:88px; }
+input, textarea, select { color-scheme:var(--ui-scheme); }
+:where(button,a,input,textarea,select):focus-visible { outline-color:var(--ui-line-strong); }
+.fixed.inset-0 > :is(form,section,div):not(.fixed):has(h2) { border-color:var(--ui-line); border-radius:16px; box-shadow:var(--ui-modal-shadow); }
+.project-assistant { box-shadow:var(--ui-shadow); }
+.project-assistant summary::marker { color:var(--ui-subtle); }
+:root[data-theme='light'] :is(.text-red-300,.text-red-400,.text-red-500) { color:#b91c1c; }
+:root[data-theme='light'] :is(.text-green-300,.text-green-400,.text-green-500) { color:#15803d; }
+:root[data-theme='light'] :is(.text-yellow-300,.text-yellow-400,.text-amber-300,.text-amber-400) { color:#a16207; }
+:root[data-theme='light'] :is(.text-blue-300,.text-blue-400,.text-blue-500) { color:#1d4ed8; }
+:root[data-theme='light'] .theme-toggle { box-shadow:0 4px 16px #0000000a; }
+@media(max-width:640px) { :root { --ui-space:20px; } .ui-content { padding:20px; } }
+
+.fixed.inset-0 > :is(form,section,div):not(.fixed):has(h2) { max-height:calc(100dvh - 48px); overflow-y:auto; }
+:root[data-theme='light'] input[type='date']::-webkit-calendar-picker-indicator { filter:none; }
+
+input[type='checkbox'], input[type='radio'] { accent-color:var(--ui-primary); }

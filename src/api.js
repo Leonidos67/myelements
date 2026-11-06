@@ -16,6 +16,7 @@ async function req(path, opts = {}) {
 export const api = {
   openStatProject: videoId => req('/stat-projects', {method:'POST',body:JSON.stringify({videoId})}),
   statProjectForVideo: videoId => req('/stat-projects/by-video/'+encodeURIComponent(videoId)),
+  projectAssistant: (id,data) => req('/stat-projects/'+encodeURIComponent(id)+'/assistant',{method:'POST',body:JSON.stringify(data)}),
   statProject: id => req('/stat-projects/'+encodeURIComponent(id)),
   statProjectScript: id => req('/stat-projects/'+encodeURIComponent(id)+'/script'),
   saveStatProject: (id,data) => req('/stat-projects/'+encodeURIComponent(id),{method:'PUT',body:JSON.stringify(data)}),

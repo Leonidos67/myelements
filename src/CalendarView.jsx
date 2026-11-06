@@ -67,7 +67,7 @@ export default function CalendarView({ videos, ideas, reload, categories }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Календарь (левая часть) */}
-      <div className="lg:col-span-2 bg-[#141414] border border-[#2a2a2a] rounded-2xl p-5">
+      <div className="lg:col-span-2 bg-surface border border-line rounded-2xl p-6">
         
         {/* Шапка календаря */}
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-6">
@@ -77,31 +77,31 @@ export default function CalendarView({ videos, ideas, reload, categories }) {
           
           <div className="flex items-center gap-2">
             {/* Переключатель Месяц/Неделя */}
-            <div className="flex bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-1 mr-2">
+            <div className="flex bg-elevated border border-line rounded-lg p-1 mr-2">
               <button 
                 onClick={() => setViewMode('month')} 
-                className={`px-3 py-1 text-xs rounded-md transition-colors ${isMonth ? 'bg-[#2a2a2a] text-white' : 'text-gray-400 hover:text-white'}`}
+                className={`px-3 py-1 text-xs rounded-md transition-colors ${isMonth ? 'bg-elevated text-foreground' : 'text-muted hover:text-foreground'}`}
               >
                 Месяц
               </button>
               <button 
                 onClick={() => setViewMode('week')} 
-                className={`px-3 py-1 text-xs rounded-md transition-colors ${!isMonth ? 'bg-[#2a2a2a] text-white' : 'text-gray-400 hover:text-white'}`}
+                className={`px-3 py-1 text-xs rounded-md transition-colors ${!isMonth ? 'bg-elevated text-foreground' : 'text-muted hover:text-foreground'}`}
               >
                 Неделя
               </button>
             </div>
 
-            <button onClick={handlePrev} className="p-2 bg-[#1a1a1a] rounded-lg hover:bg-[#2a2a2a]"><ChevronLeft size={16} /></button>
-            <button onClick={() => setCurrentDate(new Date())} className="px-3 py-2 bg-[#1a1a1a] text-xs rounded-lg hover:bg-[#2a2a2a]">Сегодня</button>
-            <button onClick={handleNext} className="p-2 bg-[#1a1a1a] rounded-lg hover:bg-[#2a2a2a]"><ChevronRight size={16} /></button>
+            <button onClick={handlePrev} className="p-2 bg-elevated rounded-lg hover:bg-elevated"><ChevronLeft size={16} /></button>
+            <button onClick={() => setCurrentDate(new Date())} className="px-3 py-2 bg-elevated text-xs rounded-lg hover:bg-elevated">Сегодня</button>
+            <button onClick={handleNext} className="p-2 bg-elevated rounded-lg hover:bg-elevated"><ChevronRight size={16} /></button>
           </div>
         </div>
 
         {/* Сетка */}
         <div className="grid grid-cols-7 gap-1 mb-2">
           {['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(d => (
-            <div key={d} className="text-center text-[10px] text-gray-500 uppercase py-1">{d}</div>
+            <div key={d} className="text-center text-[10px] text-subtle uppercase py-1">{d}</div>
           ))}
         </div>
 
@@ -122,17 +122,17 @@ export default function CalendarView({ videos, ideas, reload, categories }) {
                 key={dayStr}
                 onClick={() => setSelectedDate(day)}
                 className={`min-h-[80px] p-1.5 rounded-lg border cursor-pointer transition-colors flex flex-col gap-1
-                  ${isSelected ? 'bg-[#2a2a2a] border-[#ededed]' : 'bg-[#1a1a1a] border-[#2a2a2a] hover:border-gray-600'}
+                  ${isSelected ? 'bg-elevated border-foreground' : 'bg-elevated border-line hover:border-gray-600'}
                   ${isMonth && !isCurrentMonth ? 'opacity-40' : ''}
                 `}
               >
-                <span className={`text-xs font-mono ${isSelected ? 'text-[#ededed]' : 'text-gray-400'}`}>{format(day, 'd')}</span>
+                <span className={`text-xs font-mono ${isSelected ? 'text-foreground' : 'text-muted'}`}>{format(day, 'd')}</span>
                 
                 <div className="flex flex-wrap gap-1 mt-auto">
                   {hasPublished && <div title="Опубликовано" className="w-2 h-2 rounded-full bg-blue-500" />}
                   {hasPaid && <div title="Выплата" className="w-2 h-2 rounded-full bg-green-500" />}
                   {hasRejected && <div title="Отказ" className="w-2 h-2 rounded-full bg-red-500" />}
-                  {hasIdea && <div title="Идея" className="w-2 h-2 rounded-full bg-[#ededed]" />}
+                  {hasIdea && <div title="Идея" className="w-2 h-2 rounded-full bg-primary" />}
                 </div>
               </div>
             );
@@ -141,55 +141,55 @@ export default function CalendarView({ videos, ideas, reload, categories }) {
       </div>
 
       {/* Правая часть — детали дня */}
-      <div className="bg-[#141414] border border-[#2a2a2a] rounded-2xl p-5 flex flex-col h-[600px]">
+      <div className="bg-surface border border-line rounded-2xl p-6 flex flex-col h-[600px]">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-sm font-semibold capitalize flex items-center gap-2">
-            <CalendarDays size={16} className="text-gray-400" />
+            <CalendarDays size={16} className="text-muted" />
             {format(selectedDate, 'd MMMM, EEEE', { locale: ru })}
           </h3>
-          <button onClick={() => setIsAddOpen(true)} className="p-1.5 bg-[#ededed]/10 text-[#ededed] rounded-lg hover:bg-[#ededed]/20"><Plus size={16} /></button>
+          <button onClick={() => setIsAddOpen(true)} className="p-1.5 bg-primary/10 text-foreground rounded-lg hover:bg-primary/20"><Plus size={16} /></button>
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-2 pr-1">
           {selectedEvents.length === 0 && (
-            <div className="text-center text-gray-500 text-xs py-10">Нет событий. Добавьте идею.</div>
+            <div className="text-center text-subtle text-xs py-10">Нет событий. Добавьте идею.</div>
           )}
           
           {selectedEvents.map((ev, idx) => {
             if (ev.type === 'published') {
               return (
-                <div key={idx} className="bg-[#1a1a1a] border border-blue-500/20 rounded-lg p-3">
+                <div key={idx} className="bg-elevated border border-blue-500/20 rounded-lg p-3">
                   <div className="flex items-center gap-2 text-blue-400 text-xs font-medium mb-1"><Video size={12} /> Опубликовано</div>
-                  <div className="text-xs text-gray-300 truncate">{ev.payload.title || ev.payload.url}</div>
+                  <div className="text-xs text-foreground truncate">{ev.payload.title || ev.payload.url}</div>
                 </div>
               );
             }
             if (ev.type === 'paid') {
               return (
-                <div key={idx} className="bg-[#1a1a1a] border border-green-500/20 rounded-lg p-3">
+                <div key={idx} className="bg-elevated border border-green-500/20 rounded-lg p-3">
                   <div className="flex items-center gap-2 text-green-400 text-xs font-medium mb-1"><Wallet size={12} /> Выплачено</div>
-                  <div className="text-xs text-gray-300 truncate">{ev.payload.title || ev.payload.url}</div>
+                  <div className="text-xs text-foreground truncate">{ev.payload.title || ev.payload.url}</div>
                   <div className="text-sm font-mono text-green-400 mt-1">+${ev.payload.revenue.toFixed(2)}</div>
                 </div>
               );
             }
             if (ev.type === 'rejected') {
               return (
-                <div key={idx} className="bg-[#1a1a1a] border border-red-500/20 rounded-lg p-3">
+                <div key={idx} className="bg-elevated border border-red-500/20 rounded-lg p-3">
                   <div className="flex items-center gap-2 text-red-400 text-xs font-medium mb-1"><XCircle size={12} /> Отказано</div>
-                  <div className="text-xs text-gray-300 truncate">{ev.payload.title || ev.payload.url}</div>
+                  <div className="text-xs text-foreground truncate">{ev.payload.title || ev.payload.url}</div>
                 </div>
               );
             }
             if (ev.type === 'idea') {
               return (
-                <div key={idx} className="bg-[#1a1a1a] border border-[#ededed]/30 rounded-lg p-3 group">
+                <div key={idx} className="bg-elevated border border-foreground/30 rounded-lg p-3 group">
                   <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2 text-[#ededed] text-xs font-medium"><Lightbulb size={12} /> Идея</div>
-                    <button onClick={async () => { if(confirm('Удалить?')) { await api.deleteIdea(ev.payload._id); reload(); } }} className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-500 transition-opacity"><Trash2 size={12} /></button>
+                    <div className="flex items-center gap-2 text-foreground text-xs font-medium"><Lightbulb size={12} /> Идея</div>
+                    <button onClick={async () => { if(confirm('Удалить?')) { await api.deleteIdea(ev.payload._id); reload(); } }} className="opacity-0 group-hover:opacity-100 text-subtle hover:text-red-500 transition-opacity"><Trash2 size={12} /></button>
                   </div>
-                  <div className="text-xs text-white">{ev.payload.title}</div>
-                  {ev.payload.notes && <div className="text-[10px] text-gray-500 mt-1">{ev.payload.notes}</div>}
+                  <div className="text-xs text-foreground">{ev.payload.title}</div>
+                  {ev.payload.notes && <div className="text-[10px] text-subtle mt-1">{ev.payload.notes}</div>}
                 </div>
               );
             }
@@ -225,23 +225,23 @@ function AddIdeaModal({ dateStr, categories, onClose, onAdd }) {
     } finally { setBusy(false); }
   };
 
-  const inputCls = 'bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#ededed] w-full mb-3';
+  const inputCls = 'bg-surface border border-line rounded-lg h-9 px-3 text-xs outline-none focus:border-foreground w-full mb-3';
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-5">
-      <form onSubmit={submit} className="bg-[#141414] border border-[#2a2a2a] rounded-2xl w-full max-w-sm overflow-hidden">
-        <div className="p-4 border-b border-[#2a2a2a] flex justify-between items-center">
+    <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-6">
+      <form onSubmit={submit} className="bg-surface border border-line rounded-2xl w-full max-w-sm overflow-hidden">
+        <div className="p-4 border-b border-line flex justify-between items-center">
           <h2 className="text-sm font-semibold">Новая идея</h2>
-          <button type="button" onClick={onClose} className="text-gray-500 hover:text-white">✕</button>
+          <button type="button" onClick={onClose} className="text-subtle hover:text-foreground">✕</button>
         </div>
         <div className="p-4">
-          <label className="text-[10px] text-gray-400 uppercase mb-1 block">Название</label>
+          <label className="text-[10px] text-muted uppercase mb-1 block">Название</label>
           <input className={inputCls} placeholder="Например: Обзор нового скина" value={title} onChange={e => setTitle(e.target.value)} required />
           
-          <label className="text-[10px] text-gray-400 uppercase mb-1 block">Заметка (опционально)</label>
+          <label className="text-[10px] text-muted uppercase mb-1 block">Заметка (опционально)</label>
           <textarea className={inputCls} rows={3} placeholder="Что нужно сделать?" value={notes} onChange={e => setNotes(e.target.value)} />
           
-          <button disabled={busy} className="w-full h-9 mt-2 bg-[#ededed] text-black font-medium rounded-lg hover:opacity-90 disabled:opacity-50">
+          <button disabled={busy} className="w-full h-9 mt-2 bg-primary text-primary-foreground font-medium rounded-lg hover:opacity-90 disabled:opacity-50">
             {busy ? '...' : 'Добавить'}
           </button>
         </div>

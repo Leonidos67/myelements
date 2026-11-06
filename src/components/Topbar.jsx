@@ -11,7 +11,7 @@ const TITLES = {
 
 const inputCls = 'h-[30px] px-2.5 text-xs bg-surface-2 text-ink border border-line-strong rounded-lg outline-none focus:border-brand';
 const btnGhost = 'h-[30px] px-3 text-xs border border-line-strong rounded-lg text-ink-dim hover:bg-surface-2 hover:text-ink transition-colors';
-const btnPrimary = 'h-[30px] px-3.5 text-xs font-medium bg-brand text-black rounded-lg hover:opacity-90 transition-opacity';
+const btnPrimary = 'h-[30px] px-3.5 text-xs font-medium bg-brand text-primary-foreground rounded-lg hover:opacity-90 transition-opacity';
 
 export default function Topbar({ view, filters, onFilters, onAdd, onExport }) {
   const upd = (k, v) => onFilters({ ...filters, [k]: v });

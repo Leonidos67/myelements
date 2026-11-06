@@ -171,7 +171,7 @@ export default function App() {
     const maxThreshold = Math.floor(matrix.max * mult * 0.75);
 
     if (!likes) {
-      return { status: 'none', color: 'text-gray-500', icon: null, label: '', min: minThreshold, ideal: idealThreshold, max: maxThreshold };
+      return { status: 'none', color: 'text-subtle', icon: null, label: '', min: minThreshold, ideal: idealThreshold, max: maxThreshold };
     }
     if (likes < minThreshold) return { status: 'low', color: 'text-red-400', icon: ArrowDownCircle, label: 'Мало', min: minThreshold, ideal: idealThreshold, max: maxThreshold };
     if (likes >= minThreshold && likes <= idealThreshold) return { status: 'ok', color: 'text-yellow-400', icon: ArrowUpCircle, label: 'Норма', min: minThreshold, ideal: idealThreshold, max: maxThreshold };
@@ -180,7 +180,7 @@ export default function App() {
     return { status: 'high', color: 'text-blue-400', icon: ArrowDownCircle, label: 'Перебор', min: minThreshold, ideal: idealThreshold, max: maxThreshold };
   };
 
-  if (booting) return <div className="p-6 text-gray-400 bg-[#111] min-h-screen">…</div>;
+  if (booting) return <div className="p-6 text-muted bg-surface min-h-screen">…</div>;
   if (!me) return <Login onLogin={(user) => { setMe(user); reload(); }} />;
 
   const displayedVideos = (activeAccount
@@ -190,10 +190,10 @@ export default function App() {
   const daysLeft = goal ? Math.max(0, Math.ceil((new Date(goal.deadlineDate) - new Date()) / (1000 * 60 * 60 * 24))) : 0;
 
   return (
-    <div className="studio-shell min-h-screen bg-[#080808] text-white font-sans">
+    <div className="studio-shell min-h-screen bg-background text-foreground font-sans">
       <header className="studio-header flex flex-wrap justify-between items-center gap-5">
         <div>
-          <div className="mb-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-gray-500"><span className="flex h-6 w-6 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white"><LayoutDashboard size={12} /></span>MyElement<span className="mx-1 text-gray-700">/</span>Workspace</div>
+          <div className="mb-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-subtle"><span className="flex h-6 w-6 items-center justify-center rounded-md border border-line bg-elevated text-foreground"><LayoutDashboard size={12} /></span>MyElement<span className="mx-1 text-subtle">/</span>Workspace</div>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
             {currentView === 'dashboard' && 'Партнёрская программа'}
             {currentView === 'accounts' && 'Аккаунты UBT'}
@@ -202,7 +202,7 @@ export default function App() {
             {currentView === 'savings' && 'Сохраненки'}
             {currentView === 'ai' && 'AI Ассистент'}
           </h1>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-subtle mt-2">
             {currentView === 'dashboard' && 'Управление видео и выплатами'}
             {currentView === 'accounts' && 'Список всех аккаунтов и их статистика'}
             {currentView === 'finance' && 'Анализ выплат и планирование'}
@@ -216,49 +216,49 @@ export default function App() {
 
 
           <div className="relative group">
-            <button className="flex items-center gap-2 h-8 px-3 bg-[#141414] border border-[#2a2a2a] rounded-lg text-xs hover:bg-[#1a1a1a] transition-colors">
-              <CreditCard size={14} className="text-gray-400" />
+            <button className="flex items-center gap-2 h-8 px-3 bg-surface border border-line rounded-lg text-xs hover:bg-elevated transition-colors">
+              <CreditCard size={14} className="text-muted" />
               <span className="max-w-[100px] truncate">{accounts.find(a => a._id === activeAccount)?.name || 'Все аккаунты'}</span>
-              <ChevronDown size={14} className="text-gray-500" />
+              <ChevronDown size={14} className="text-subtle" />
             </button>
-            <div className="absolute right-0 top-full mt-1 w-56 bg-[#141414] border border-[#2a2a2a] rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+            <div className="absolute right-0 top-full mt-1 w-56 bg-surface border border-line rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
               <div className="p-1 max-h-60 overflow-y-auto">
-                <button onClick={() => setActiveAccount('')} className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-[#2a2a2a] rounded">Все аккаунты</button>
+                <button onClick={() => setActiveAccount('')} className="w-full text-left px-3 py-2 text-xs text-foreground hover:bg-elevated rounded">Все аккаунты</button>
                 {accounts.map(a => (
-                  <div key={a._id} className="flex items-center justify-between hover:bg-[#2a2a2a] rounded group/item">
-                    <button onClick={() => setActiveAccount(a._id)} className="flex-1 text-left px-3 py-2 text-xs text-gray-300 truncate">{a.name}</button>
-                    <button onClick={(e) => deleteAccount(a._id, e)} className="px-2 text-gray-500 hover:text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"><Trash2 size={12} /></button>
+                  <div key={a._id} className="flex items-center justify-between hover:bg-elevated rounded group/item">
+                    <button onClick={() => setActiveAccount(a._id)} className="flex-1 text-left px-3 py-2 text-xs text-foreground truncate">{a.name}</button>
+                    <button onClick={(e) => deleteAccount(a._id, e)} className="px-2 text-subtle hover:text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"><Trash2 size={12} /></button>
                   </div>
                 ))}
               </div>
-              <div className="border-t border-[#2a2a2a] p-1">
-                <button onClick={addAccount} className="w-full text-left px-3 py-2 text-xs text-[#ededed] hover:bg-[#2a2a2a] rounded flex items-center gap-2"><Plus size={12} /> Добавить</button>
+              <div className="border-t border-line p-1">
+                <button onClick={addAccount} className="w-full text-left px-3 py-2 text-xs text-foreground hover:bg-elevated rounded flex items-center gap-2"><Plus size={12} /> Добавить</button>
               </div>
             </div>
           </div>
 
-          <div className="w-px h-6 bg-[#2a2a2a]"></div>
-          <div className="flex items-center gap-2 text-xs text-gray-400"><User size={14} /><span>{me.username}</span></div>
-          <button onClick={logout} className="flex items-center gap-1.5 text-xs text-[#ededed] hover:text-[#ffffff] transition-colors"><LogOut size={14} /><span>Выйти</span></button>
+          <div className="w-px h-6 bg-elevated"></div>
+          <div className="flex items-center gap-2 text-xs text-muted"><User size={14} /><span>{me.username}</span></div>
+          <button onClick={logout} className="flex items-center gap-1.5 text-xs text-foreground hover:text-foreground transition-colors"><LogOut size={14} /><span>Выйти</span></button>
         </div>
       </header>
       <nav aria-label="Разделы кабинета" className="studio-nav flex gap-1 overflow-x-auto">
-            <button onClick={() => setCurrentView('dashboard')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'dashboard' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}>
+            <button onClick={() => setCurrentView('dashboard')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'dashboard' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted hover:text-foreground'}`}>
               <LayoutDashboard size={14} /> Дашборд
             </button>
-            <button onClick={() => setCurrentView('accounts')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'accounts' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}>
+            <button onClick={() => setCurrentView('accounts')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'accounts' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted hover:text-foreground'}`}>
               <FolderOpen size={14} /> Аккаунты
             </button>
-            <button onClick={() => setCurrentView('finance')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'finance' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}>
+            <button onClick={() => setCurrentView('finance')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'finance' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted hover:text-foreground'}`}>
               <Wallet size={14} /> Финансы
             </button>
-            <button onClick={() => setCurrentView('calendar')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'calendar' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}>
+            <button onClick={() => setCurrentView('calendar')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'calendar' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted hover:text-foreground'}`}>
               <Calendar size={14} /> Календарь
             </button>
-            <button onClick={() => setCurrentView('savings')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'savings' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}>
+            <button onClick={() => setCurrentView('savings')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'savings' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted hover:text-foreground'}`}>
               <Bookmark size={14} /> Сохраненки
             </button>
-            <button onClick={() => setCurrentView('ai')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'ai' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-white'}`}>
+            <button onClick={() => setCurrentView('ai')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'ai' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted hover:text-foreground'}`}>
               <Bot size={14} /> AI
             </button>
           </nav>
@@ -269,58 +269,58 @@ export default function App() {
         <>
           {stats && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-              <div className="studio-panel bg-[#111] border border-[#252525] rounded-2xl p-5 relative group">
+              <div className="studio-panel bg-surface border border-line rounded-2xl p-6 relative group">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2 text-[11px] text-gray-400 uppercase tracking-wider">
+                  <div className="flex items-center gap-2 text-[11px] text-muted uppercase tracking-wider">
                     <Wallet size={14} /> Выплачено
                   </div>
                   <button 
                     onClick={() => setIsAdjustOpen(true)} 
-                    className="p-1 bg-[#2a2a2a] rounded-md text-[#ededed] hover:bg-[#ededed] hover:text-black transition-colors"
+                    className="p-1 bg-elevated rounded-md text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
                     title="Пополнить баланс"
                   >
                     <Plus size={14} />
                   </button>
                 </div>
-                <div className="text-3xl font-semibold tracking-tight tabular-nums text-[#ededed]">{fmtMoney(stats.totalRevenue)}</div>
+                <div className="text-3xl font-semibold tracking-tight tabular-nums text-foreground">{fmtMoney(stats.totalRevenue)}</div>
                 <button 
                   onClick={() => setIsHistoryOpen(true)} 
-                  className="text-[11px] text-gray-500 hover:text-white transition-colors underline decoration-dotted underline-offset-2 mt-2 inline-block"
+                  className="text-[11px] text-subtle hover:text-foreground transition-colors underline decoration-dotted underline-offset-2 mt-2 inline-block"
                 >
                   история операций
                 </button>
               </div>
-              <div className="studio-panel bg-[#111] border border-[#252525] rounded-2xl p-5">
-                <div className="flex items-center gap-2 text-[11px] text-gray-400 uppercase tracking-wider mb-2"><Eye size={14} /> Просмотры</div>
+              <div className="studio-panel bg-surface border border-line rounded-2xl p-6">
+                <div className="flex items-center gap-2 text-[11px] text-muted uppercase tracking-wider mb-2"><Eye size={14} /> Просмотры</div>
                 <div className="text-3xl font-mono font-semibold">{fmtInt(stats.totalViews)}</div>
-                <div className="text-[11px] text-gray-500 mt-2">{stats.totalVideos} видео</div>
+                <div className="text-[11px] text-subtle mt-2">{stats.totalVideos} видео</div>
               </div>
-              <div className="studio-panel bg-[#111] border border-[#353535] rounded-2xl p-5">
-                <div className="flex items-center gap-2 text-[11px] text-gray-400 uppercase tracking-wider mb-2"><DollarSign size={14} /> Ожидаемая прибыль</div>
+              <div className="studio-panel bg-surface border border-line rounded-2xl p-6">
+                <div className="flex items-center gap-2 text-[11px] text-muted uppercase tracking-wider mb-2"><DollarSign size={14} /> Ожидаемая прибыль</div>
                 <div className="text-3xl font-mono font-semibold">{fmtMoney(stats.totalGross)}</div>
-                <div className="text-[11px] text-gray-500 mt-2">по остальным статусам</div>
+                <div className="text-[11px] text-subtle mt-2">по остальным статусам</div>
               </div>
-              <div className="studio-panel bg-[#111] border border-[#252525] rounded-2xl p-5">
-                <div className="flex items-center gap-2 text-[11px] text-gray-400 uppercase tracking-wider mb-2"><CreditCard size={14} /> Расходы</div>
+              <div className="studio-panel bg-surface border border-line rounded-2xl p-6">
+                <div className="flex items-center gap-2 text-[11px] text-muted uppercase tracking-wider mb-2"><CreditCard size={14} /> Расходы</div>
                 <div className="text-3xl font-mono font-semibold text-red-400">{fmtMoney(stats.totalExpenses)}</div>
               </div>
             </div>
           )}
 
-          <div className="studio-panel bg-[#111] border border-[#252525] rounded-2xl p-5">
+          <div className="studio-panel bg-surface border border-line rounded-2xl p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-sm font-semibold">Ваши видео {activeAccount && <span className="text-gray-500 text-xs font-normal">(фильтр по аккаунту)</span>}</h2>
+              <h2 className="text-sm font-semibold">Ваши видео {activeAccount && <span className="text-subtle text-xs font-normal">(фильтр по аккаунту)</span>}</h2>
               <div className="flex items-center gap-3">
-                <span className="text-[10px] text-gray-400 font-mono">{displayedVideos.length} шт.</span>
-                <button onClick={() => setIsAddOpen(true)} className="h-8 px-4 bg-[#ededed] text-black font-medium text-xs rounded-lg hover:opacity-90 flex items-center gap-1.5"><Plus size={14} /> Добавить видео</button>
+                <span className="text-[10px] text-muted font-mono">{displayedVideos.length} шт.</span>
+                <button onClick={() => setIsAddOpen(true)} className="h-8 px-4 bg-primary text-primary-foreground font-medium text-xs rounded-lg hover:opacity-90 flex items-center gap-1.5"><Plus size={14} /> Добавить видео</button>
               </div>
             </div>
 
             <div className="studio-table-wrap overflow-x-auto">
               <table className="studio-table w-full text-xs text-left border-collapse min-w-[1220px]">
                 <thead>
-                  <tr className="border-b border-[#2a2a2a] text-gray-400">
-                    <th className="pb-3 w-10 text-center" aria-label="Избранное"><Star size={12} className="mx-auto text-gray-600" aria-hidden="true" /></th>
+                  <tr className="border-b border-line text-muted">
+                    <th className="pb-3 w-10 text-center" aria-label="Избранное"><Star size={12} className="mx-auto text-subtle" aria-hidden="true" /></th>
                     <th className="pb-3 font-medium">Админ</th>
                     <th className="pb-3 font-medium">Дата</th>
                     <th className="pb-3 font-medium">Ссылка</th>
@@ -346,7 +346,7 @@ export default function App() {
                   const comments = commentSummary?.[v._id];
 
                   const statusColors = {
-                    moderation: 'bg-gray-500/20 text-gray-400',
+                    moderation: 'bg-gray-500/20 text-muted',
                     published: 'bg-blue-500/20 text-blue-400',
                     rejected: 'bg-red-500/20 text-red-400',
                     paid: 'bg-green-500/20 text-green-400',
@@ -362,17 +362,17 @@ export default function App() {
                   const dateStr = new Date(v.createdAt).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
 
                   return (
-                    <tr key={v._id} className="border-b border-[#2a2a2a]/50 hover:bg-[#1a1a1a] transition-colors">
-                      <td className="py-3 pr-2 text-center"><button disabled={videoActionIds.has(v._id)} onClick={() => toggleVideoFlag(v, 'isFavorite')} title={v.isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'} aria-label={v.isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'} aria-pressed={!!v.isFavorite} className={'p-1.5 rounded-lg transition-colors hover:bg-white/5 disabled:opacity-40 ' + (v.isFavorite ? 'text-amber-400' : 'text-gray-600 hover:text-amber-300')}><Star size={15} fill={v.isFavorite ? 'currentColor' : 'none'} /></button></td>
-                      <td className="py-3 text-gray-300 font-mono text-[11px]">{adminName}</td>
-                      <td className="py-3 text-gray-400 font-mono text-[11px]">{dateStr}</td>
+                    <tr key={v._id} className="border-b border-line/50 hover:bg-elevated transition-colors">
+                      <td className="py-3 pr-2 text-center"><button disabled={videoActionIds.has(v._id)} onClick={() => toggleVideoFlag(v, 'isFavorite')} title={v.isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'} aria-label={v.isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'} aria-pressed={!!v.isFavorite} className={'p-1.5 rounded-lg transition-colors hover:bg-elevated disabled:opacity-40 ' + (v.isFavorite ? 'text-amber-400' : 'text-subtle hover:text-amber-300')}><Star size={15} fill={v.isFavorite ? 'currentColor' : 'none'} /></button></td>
+                      <td className="py-3 text-foreground font-mono text-[11px]">{adminName}</td>
+                      <td className="py-3 text-muted font-mono text-[11px]">{dateStr}</td>
                       <td className="py-3">
-                        <a href={v.url} target="_blank" rel="noreferrer" className="text-[#ededed] hover:underline break-all block max-w-[150px] truncate" title={v.title || v.url}>{v.title || v.url}</a>
-                        {v.isPinned && <span className="mt-1 inline-flex items-center gap-1 text-[9px] text-gray-500"><Pin size={10} />Закреплено</span>}
+                        <a href={v.url} target="_blank" rel="noreferrer" className="text-foreground hover:underline break-all block max-w-[150px] truncate" title={v.title || v.url}>{v.title || v.url}</a>
+                        {v.isPinned && <span className="mt-1 inline-flex items-center gap-1 text-[9px] text-subtle"><Pin size={10} />Закреплено</span>}
                       </td>
-                      <td className="py-3 text-gray-300">
+                      <td className="py-3 text-foreground">
                         <div className="flex items-center gap-2" title={cat.label}>
-                          <CatIcon size={14} className="text-gray-500" />
+                          <CatIcon size={14} className="text-subtle" />
                           <span>{cat.label.replace(/^[^\s]+\s/, '')}</span>
                         </div>
                       </td>
@@ -390,7 +390,7 @@ export default function App() {
                               const n = +e.target.value || 0;
                               if (n !== v.views) { await api.updateVideo(v._id, { views: n }); reload(); }
                             }} 
-                            className={`w-20 bg-[#111] border rounded px-2 py-1 text-right font-mono text-xs outline-none focus:border-[#ededed] ${!isMin ? 'border-red-500/50' : 'border-[#2a2a2a]'}`}
+                            className={`w-20 bg-surface border rounded px-2 py-1 text-right font-mono text-xs outline-none focus:border-foreground ${!isMin ? 'border-red-500/50' : 'border-line'}`}
                             title={!isMin ? `Внимание: минимум ${cat.minViews} просмотров` : ''} 
                           />
                         </div>
@@ -398,7 +398,7 @@ export default function App() {
                       {/* ЯЧЕЙКА ЛАЙКОВ */}
                       <td className="py-3">
                         <div className="flex flex-col items-center">
-                          <div className="text-[9px] text-gray-500 mb-0.5">
+                          <div className="text-[9px] text-subtle mb-0.5">
                             {likesStatus ? `Идеал: ~${fmtInt(likesStatus.ideal)}` : 'Идеал: —'}
                           </div>
 
@@ -411,7 +411,7 @@ export default function App() {
                                 const n = +e.target.value || 0;
                                 if (n !== (v.likes || 0)) { await api.updateVideo(v._id, { likes: n }); reload(); }
                               }} 
-                              className="w-16 bg-[#111] border border-[#2a2a2a] rounded px-2 py-1 text-center font-mono text-xs outline-none focus:border-[#ededed]"
+                              className="w-16 bg-surface border border-line rounded px-2 py-1 text-center font-mono text-xs outline-none focus:border-foreground"
                             />
 
                             {/* Иконка + Текст статуса */}
@@ -452,15 +452,15 @@ export default function App() {
                         </div>
                       </td>
                       <td className="py-3 px-3 text-center">
-                        {commentSummaryError ? <button onClick={refreshCommentSummary} className="text-gray-400 text-[10px] hover:text-white" title="Не удалось загрузить прогресс. Повторить">Обновить</button> : !commentSummary ? <span className="text-gray-500">…</span> : comments ? <div className="flex items-center justify-center gap-2 whitespace-nowrap">
-                          <span className={comments.issued === comments.total ? 'font-mono text-green-400' : 'font-mono text-gray-300'} title="Выдано комментариев">{comments.issued} из {comments.total}</span>
-                          <button onClick={() => setCommentVideo(v)} title="Подробнее о комментариях" aria-label="Подробнее о комментариях" className="p-1 rounded text-gray-400 hover:text-[#ededed] hover:bg-[#2a2a2a]"><Info size={15} /></button>
-                        </div> : <button onClick={() => setCommentVideo(v)} className="px-2 py-1 rounded text-[#ededed] hover:bg-[#2a2a2a] inline-flex items-center gap-1"><Plus size={12} /> Добавить</button>}
+                        {commentSummaryError ? <button onClick={refreshCommentSummary} className="text-muted text-[10px] hover:text-foreground" title="Не удалось загрузить прогресс. Повторить">Обновить</button> : !commentSummary ? <span className="text-subtle">…</span> : comments ? <div className="flex items-center justify-center gap-2 whitespace-nowrap">
+                          <span className={comments.issued === comments.total ? 'font-mono text-green-400' : 'font-mono text-foreground'} title="Выдано комментариев">{comments.issued} из {comments.total}</span>
+                          <button onClick={() => setCommentVideo(v)} title="Подробнее о комментариях" aria-label="Подробнее о комментариях" className="p-1 rounded text-muted hover:text-foreground hover:bg-elevated"><Info size={15} /></button>
+                        </div> : <button onClick={() => setCommentVideo(v)} className="px-2 py-1 rounded text-foreground hover:bg-elevated inline-flex items-center gap-1"><Plus size={12} /> Добавить</button>}
                       </td>
-                      <td className="py-3 text-right font-mono text-gray-400 text-[11px]" title="Стоимость 1000 просмотров">${cpm}</td>
-                      <td className="py-3 text-right font-mono text-gray-300">${v.grossRevenue.toFixed(2)}</td>
+                      <td className="py-3 text-right font-mono text-muted text-[11px]" title="Стоимость 1000 просмотров">${cpm}</td>
+                      <td className="py-3 text-right font-mono text-foreground">${v.grossRevenue.toFixed(2)}</td>
                       <td className="py-3 text-right font-mono text-red-400">-${v.totalExpenses.toFixed(2)}</td>
-                      <td className="py-3 text-right font-mono text-[#ededed] font-semibold">${v.revenue.toFixed(2)}</td>
+                      <td className="py-3 text-right font-mono text-foreground font-semibold">${v.revenue.toFixed(2)}</td>
                       <td className="py-3 text-center relative">
                         <button onClick={() => setOpenStatusId(openStatusId === v._id ? null : v._id)} className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] uppercase font-semibold transition-opacity hover:opacity-80 ${statusColors[v.status]}`}>
                           {statusLabels[v.status]} <ChevronDown size={10} className="opacity-50" />
@@ -468,14 +468,14 @@ export default function App() {
                         {openStatusId === v._id && (
                           <>
                             <div className="fixed inset-0 z-40" onClick={() => setOpenStatusId(null)} />
-                            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 w-36 bg-[#141414] border border-[#2a2a2a] rounded-lg shadow-xl py-1">
+                            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 w-36 bg-surface border border-line rounded-lg shadow-xl py-1">
                               {Object.entries(statusLabels).map(([key, label]) => (
                                 <button key={key} onClick={async () => {
                                   setOpenStatusId(null);
                                   if (v.status !== key) { await api.updateVideo(v._id, { status: key }); reload(); }
-                                }} className={`w-full text-left px-3 py-2 text-[11px] transition-colors flex items-center justify-between ${v.status === key ? 'bg-[#2a2a2a] text-white' : 'text-gray-300 hover:bg-[#2a2a2a]'}`}>
+                                }} className={`w-full text-left px-3 py-2 text-[11px] transition-colors flex items-center justify-between ${v.status === key ? 'bg-elevated text-foreground' : 'text-foreground hover:bg-elevated'}`}>
                                   {label}
-                                  {v.status === key && <div className="w-1.5 h-1.5 rounded-full bg-[#ededed]" />}
+                                  {v.status === key && <div className="w-1.5 h-1.5 rounded-full bg-primary" />}
                                 </button>
                               ))}
                             </div>
@@ -483,25 +483,25 @@ export default function App() {
                         )}
                       </td>
                       <td className="py-3 text-right relative">
-                        <button onClick={() => { setVideoMenuPage('main'); setOpenMenuId(openMenuId === v._id ? null : v._id); }} className="p-1 text-gray-500 hover:text-white rounded hover:bg-[#2a2a2a] transition-colors"><MoreVertical size={16} /></button>
+                        <button onClick={() => { setVideoMenuPage('main'); setOpenMenuId(openMenuId === v._id ? null : v._id); }} className="p-1 text-subtle hover:text-foreground rounded hover:bg-elevated transition-colors"><MoreVertical size={16} /></button>
                         {openMenuId === v._id && (
                           <>
                             <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
-                            <div className="absolute right-8 top-2 z-50 w-52 overflow-hidden bg-[#141414] border border-[#2a2a2a] rounded-xl shadow-xl py-1">
+                            <div className="absolute right-8 top-2 z-50 w-52 overflow-hidden bg-surface border border-line rounded-xl shadow-xl py-1">
                               {videoMenuPage === 'layout' ? <>
-                                <button onClick={() => setVideoMenuPage('main')} className="flex w-full items-center gap-2 border-b border-white/5 px-3 py-2.5 text-left text-xs font-medium text-white hover:bg-white/5"><ChevronLeft size={14} />Макет</button>
-                                <button disabled={openingProject} onClick={() => openProject(v)} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-white hover:bg-white/5 disabled:opacity-40"><FolderOpen size={13} />{openingProject?'Открываем…':'Проект и параметры'}</button>
-                                <button onClick={() => {setOpenMenuId(null);setScriptVideo(v);}} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-300 hover:bg-white/5"><FileCode2 size={13} />Извлечь JS</button>
-                                <button onClick={() => {scriptFileVideo.current=v;setOpenMenuId(null);scriptFileInput.current.click();}} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-300 hover:bg-white/5"><Upload size={13} />Загрузить новый JS</button>
-                                <a href={'/tt-stat/' + v._id} target="_blank" rel="noreferrer" onClick={() => setOpenMenuId(null)} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-300 hover:bg-white/5"><Eye size={13} />Предпросмотр<ChevronRight size={12} className="ml-auto text-gray-500" /></a>
+                                <button onClick={() => setVideoMenuPage('main')} className="flex w-full items-center gap-2 border-b border-line px-3 py-2.5 text-left text-xs font-medium text-foreground hover:bg-elevated"><ChevronLeft size={14} />Макет</button>
+                                <button disabled={openingProject} onClick={() => openProject(v)} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-foreground hover:bg-elevated disabled:opacity-40"><FolderOpen size={13} />{openingProject?'Открываем…':'Проект и параметры'}</button>
+                                <button onClick={() => {setOpenMenuId(null);setScriptVideo(v);}} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-foreground hover:bg-elevated"><FileCode2 size={13} />Извлечь JS</button>
+                                <button onClick={() => {scriptFileVideo.current=v;setOpenMenuId(null);scriptFileInput.current.click();}} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-foreground hover:bg-elevated"><Upload size={13} />Загрузить новый JS</button>
+                                <a href={'/tt-stat/' + v._id} target="_blank" rel="noreferrer" onClick={() => setOpenMenuId(null)} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-foreground hover:bg-elevated"><Eye size={13} />Предпросмотр<ChevronRight size={12} className="ml-auto text-subtle" /></a>
                               </> : <>
-                              <button disabled={videoActionIds.has(v._id)} onClick={() => { setOpenMenuId(null); toggleVideoFlag(v, 'isPinned'); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-[#2a2a2a] flex items-center gap-2 transition-colors disabled:opacity-40">{v.isPinned ? <PinOff size={12} /> : <Pin size={12} />}{v.isPinned ? 'Открепить' : 'Закрепить'}</button>
-                              <button onClick={() => setVideoMenuPage('layout')} className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-white/5 flex items-center gap-2"><FileCode2 size={13} />Макет<ChevronRight size={12} className="ml-auto text-gray-500" /></button>
-                              <button onClick={() => { setOpenMenuId(null); setEditVideo(v); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-[#2a2a2a] flex items-center gap-2 transition-colors"><Settings size={12} /> Настройки</button>
+                              <button disabled={videoActionIds.has(v._id)} onClick={() => { setOpenMenuId(null); toggleVideoFlag(v, 'isPinned'); }} className="w-full text-left px-3 py-1.5 text-xs text-foreground hover:bg-elevated flex items-center gap-2 transition-colors disabled:opacity-40">{v.isPinned ? <PinOff size={12} /> : <Pin size={12} />}{v.isPinned ? 'Открепить' : 'Закрепить'}</button>
+                              <button onClick={() => setVideoMenuPage('layout')} className="w-full text-left px-3 py-2 text-xs text-foreground hover:bg-elevated flex items-center gap-2"><FileCode2 size={13} />Макет<ChevronRight size={12} className="ml-auto text-subtle" /></button>
+                              <button onClick={() => { setOpenMenuId(null); setEditVideo(v); }} className="w-full text-left px-3 py-1.5 text-xs text-foreground hover:bg-elevated flex items-center gap-2 transition-colors"><Settings size={12} /> Настройки</button>
                               <button onClick={async () => { 
                                 setOpenMenuId(null);
                                 if (confirm('Удалить?')) { await api.deleteVideo(v._id); reload(); }
-                              }} className="w-full text-left px-3 py-1.5 text-xs text-red-400 hover:bg-[#2a2a2a] flex items-center gap-2 transition-colors"><Trash2 size={12} /> Удалить</button>
+                              }} className="w-full text-left px-3 py-1.5 text-xs text-red-400 hover:bg-elevated flex items-center gap-2 transition-colors"><Trash2 size={12} /> Удалить</button>
                               </>}
                             </div>
                           </>
@@ -511,7 +511,7 @@ export default function App() {
                   );
                 })}
                   {displayedVideos.length === 0 && (
-                    <tr><td colSpan={14} className="text-center py-8 text-gray-500">нет видео</td></tr>
+                    <tr><td colSpan={14} className="text-center py-8 text-subtle">нет видео</td></tr>
                   )}
                 </tbody>
               </table>
@@ -530,64 +530,64 @@ export default function App() {
               : 'Не назначен';
 
             return (
-              <div key={acc._id} className="studio-panel bg-[#111] border border-[#252525] rounded-2xl p-5 flex flex-col hover:border-[#ededed]/50 transition-colors cursor-pointer" onClick={() => { setActiveAccount(acc._id); setCurrentView('dashboard'); }}>
+              <div key={acc._id} className="studio-panel bg-surface border border-line rounded-2xl p-6 flex flex-col hover:border-foreground/50 transition-colors cursor-pointer" onClick={() => { setActiveAccount(acc._id); setCurrentView('dashboard'); }}>
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#2a2a2a] flex items-center justify-center text-[#ededed]"><CreditCard size={20} /></div>
+                    <div className="w-10 h-10 rounded-full bg-elevated flex items-center justify-center text-foreground"><CreditCard size={20} /></div>
                     <div>
-                      <h3 className="text-sm font-semibold text-white">{acc.name}</h3>
-                      <p className="text-[11px] text-gray-400 font-mono mt-0.5 flex items-center gap-1">
-                        <User size={10} className="text-gray-500" /> Админ: <span className="text-[#ededed]">{adminName}</span>
+                      <h3 className="text-sm font-semibold text-foreground">{acc.name}</h3>
+                      <p className="text-[11px] text-muted font-mono mt-0.5 flex items-center gap-1">
+                        <User size={10} className="text-subtle" /> Админ: <span className="text-foreground">{adminName}</span>
                       </p>
                     </div>
                   </div>
-                  <button onClick={(e) => deleteAccount(acc._id, e)} className="text-gray-500 hover:text-red-500 p-1"><Trash2 size={16} /></button>
+                  <button onClick={(e) => deleteAccount(acc._id, e)} className="text-subtle hover:text-red-500 p-1"><Trash2 size={16} /></button>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 mt-auto pt-4 border-t border-[#2a2a2a]">
+                <div className="grid grid-cols-3 gap-2 mt-auto pt-4 border-t border-line">
                   <div>
-                    <div className="text-[10px] text-gray-500 uppercase mb-1 flex items-center gap-1"><FolderOpen size={10} /> Видео</div>
+                    <div className="text-[10px] text-subtle uppercase mb-1 flex items-center gap-1"><FolderOpen size={10} /> Видео</div>
                     <div className="text-sm font-mono font-semibold">{acc.videos} шт.</div>
                   </div>
                   <div>
-                    <div className="text-[10px] text-gray-500 uppercase mb-1 flex items-center gap-1"><Eye size={10} /> Смотрели</div>
+                    <div className="text-[10px] text-subtle uppercase mb-1 flex items-center gap-1"><Eye size={10} /> Смотрели</div>
                     <div className="text-sm font-mono font-semibold">{fmtInt(acc.views)}</div>
                   </div>
                   <div>
-                    <div className="text-[10px] text-gray-500 uppercase mb-1 flex items-center gap-1"><Wallet size={10} /> Выплачено</div>
-                    <div className="text-sm font-mono font-semibold text-[#ededed]">{fmtMoney(acc.revenue)}</div>
+                    <div className="text-[10px] text-subtle uppercase mb-1 flex items-center gap-1"><Wallet size={10} /> Выплачено</div>
+                    <div className="text-sm font-mono font-semibold text-foreground">{fmtMoney(acc.revenue)}</div>
                   </div>
                 </div>
               </div>
             );
           })}
-          <button onClick={addAccount} className="border border-dashed border-[#2a2a2a] hover:border-[#ededed]/50 hover:bg-[#141414] rounded-2xl p-5 flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-[#ededed] transition-all min-h-[160px]">
+          <button onClick={addAccount} className="border border-dashed border-line hover:border-foreground/50 hover:bg-surface rounded-2xl p-6 flex flex-col items-center justify-center gap-2 text-subtle hover:text-foreground transition-all min-h-[160px]">
             <Plus size={24} /><span className="text-xs font-medium">Новый аккаунт</span>
           </button>
           {accounts.length === 0 && (
-            <div className="col-span-full text-center py-12 text-gray-500 text-sm">У вас пока нет аккаунтов. Создайте первый.</div>
+            <div className="col-span-full text-center py-12 text-subtle text-sm">У вас пока нет аккаунтов. Создайте первый.</div>
           )}
         </div>
       )}
 
       {currentView === 'finance' && stats && (
         <div className="space-y-6">
-          <div className="studio-panel bg-[#111] border border-[#252525] rounded-2xl p-6 flex items-center justify-between">
+          <div className="studio-panel bg-surface border border-line rounded-2xl p-6 flex items-center justify-between">
             <div>
-              <div className="flex items-center gap-2 text-[11px] text-gray-400 uppercase tracking-wider mb-2"><Wallet size={16} /> Всего выплачено</div>
-              <div className="text-4xl font-mono font-semibold text-[#ededed]">{fmtMoney(stats.totalRevenue)}</div>
-              <div className="text-[11px] text-gray-500 mt-2">по статусу "Выплатили"</div>
+              <div className="flex items-center gap-2 text-[11px] text-muted uppercase tracking-wider mb-2"><Wallet size={16} /> Всего выплачено</div>
+              <div className="text-4xl font-mono font-semibold text-foreground">{fmtMoney(stats.totalRevenue)}</div>
+              <div className="text-[11px] text-subtle mt-2">по статусу "Выплатили"</div>
             </div>
             <div className="text-right">
-              <div className="text-[11px] text-gray-400 uppercase tracking-wider mb-2">Ожидается</div>
-              <div className="text-xl font-mono font-semibold text-gray-300">{fmtMoney(stats.totalGross)}</div>
-              <div className="text-[11px] text-gray-500 mt-1">по остальным статусам</div>
+              <div className="text-[11px] text-muted uppercase tracking-wider mb-2">Ожидается</div>
+              <div className="text-xl font-mono font-semibold text-foreground">{fmtMoney(stats.totalGross)}</div>
+              <div className="text-[11px] text-subtle mt-1">по остальным статусам</div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="studio-panel bg-[#111] border border-[#252525] rounded-2xl p-6 flex flex-col">
-              <div className="flex items-center gap-2 text-sm font-semibold mb-4"><Target size={18} className="text-[#ededed]"/> Моя цель</div>
+            <div className="studio-panel bg-surface border border-line rounded-2xl p-6 flex flex-col">
+              <div className="flex items-center gap-2 text-sm font-semibold mb-4"><Target size={18} className="text-foreground"/> Моя цель</div>
 
               <form onSubmit={async (e) => {
                 e.preventDefault();
@@ -601,42 +601,42 @@ export default function App() {
                 reload();
               }} className="flex flex-col gap-3">
                 <div>
-                  <label className="text-[10px] text-gray-500 uppercase mb-1 block">Название</label>
-                  <input name="title" defaultValue={goal?.title} required className="w-full bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#ededed]" placeholder="Например: Новый ПК" />
+                  <label className="text-[10px] text-subtle uppercase mb-1 block">Название</label>
+                  <input name="title" defaultValue={goal?.title} required className="w-full bg-surface border border-line rounded-lg h-9 px-3 text-xs outline-none focus:border-foreground" placeholder="Например: Новый ПК" />
                 </div>
                 <div>
-                  <label className="text-[10px] text-gray-500 uppercase mb-1 block">URL картинки</label>
-                  <input name="imageUrl" defaultValue={goal?.imageUrl} className="w-full bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#ededed]" placeholder="https://..." />
+                  <label className="text-[10px] text-subtle uppercase mb-1 block">URL картинки</label>
+                  <input name="imageUrl" defaultValue={goal?.imageUrl} className="w-full bg-surface border border-line rounded-lg h-9 px-3 text-xs outline-none focus:border-foreground" placeholder="https://..." />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[10px] text-gray-500 uppercase mb-1 block">Сумма ($)</label>
-                    <input name="targetAmount" type="number" defaultValue={goal?.targetAmount} required className="w-full bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#ededed]" placeholder="500" />
+                    <label className="text-[10px] text-subtle uppercase mb-1 block">Сумма ($)</label>
+                    <input name="targetAmount" type="number" defaultValue={goal?.targetAmount} required className="w-full bg-surface border border-line rounded-lg h-9 px-3 text-xs outline-none focus:border-foreground" placeholder="500" />
                   </div>
                   <div>
-                    <label className="text-[10px] text-gray-500 uppercase mb-1 block">Дедлайн (дата)</label>
-                    <input name="deadlineDate" type="date" defaultValue={goal?.deadlineDate ? new Date(goal.deadlineDate).toISOString().split('T')[0] : ''} required className="w-full bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#ededed]" />
+                    <label className="text-[10px] text-subtle uppercase mb-1 block">Дедлайн (дата)</label>
+                    <input name="deadlineDate" type="date" defaultValue={goal?.deadlineDate ? new Date(goal.deadlineDate).toISOString().split('T')[0] : ''} required className="w-full bg-surface border border-line rounded-lg h-9 px-3 text-xs outline-none focus:border-foreground" />
                   </div>
                 </div>
-                <button className="w-full h-9 mt-2 bg-[#ededed] text-black font-medium rounded-lg hover:opacity-90">Сохранить цель</button>
+                <button className="w-full h-9 mt-2 bg-primary text-primary-foreground font-medium rounded-lg hover:opacity-90">Сохранить цель</button>
               </form>
 
               {goal && (
-                <div className="mt-6 rounded-xl overflow-hidden border border-[#2a2a2a]">
+                <div className="mt-6 rounded-xl overflow-hidden border border-line">
                   {goal.imageUrl ? (
                     <img src={goal.imageUrl} alt={goal.title} className="w-full h-32 object-cover" />
                   ) : (
-                    <div className="w-full h-32 bg-[#1a1a1a] flex items-center justify-center text-gray-600"><Target size={32} /></div>
+                    <div className="w-full h-32 bg-elevated flex items-center justify-center text-subtle"><Target size={32} /></div>
                   )}
-                  <div className="p-3 bg-[#111]">
+                  <div className="p-3 bg-surface">
                     <div className="text-xs font-semibold">{goal.title}</div>
-                    <div className="text-[10px] text-gray-500 mt-1 flex items-center gap-1"><Calendar size={10}/> до {new Date(goal.deadlineDate).toLocaleDateString('ru-RU')}</div>
+                    <div className="text-[10px] text-subtle mt-1 flex items-center gap-1"><Calendar size={10}/> до {new Date(goal.deadlineDate).toLocaleDateString('ru-RU')}</div>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="lg:col-span-2 studio-panel bg-[#111] border border-[#252525] rounded-2xl p-6 flex flex-col">
+            <div className="lg:col-span-2 studio-panel bg-surface border border-line rounded-2xl p-6 flex flex-col">
               {goal ? (() => {
                 const target = goal.targetAmount;
                 const current = stats.totalRevenue;
@@ -658,9 +658,9 @@ export default function App() {
                   <div className="flex flex-col h-full">
                     <div className="flex justify-between items-end mb-6">
                       <div>
-                        <div className="text-[11px] text-gray-400 uppercase tracking-wider mb-1">Осталось собрать</div>
-                        <div className="text-3xl font-mono font-semibold text-[#ededed]">{fmtMoney(remaining)}</div>
-                        <div className="text-[11px] text-gray-500 mt-2">
+                        <div className="text-[11px] text-muted uppercase tracking-wider mb-1">Осталось собрать</div>
+                        <div className="text-3xl font-mono font-semibold text-foreground">{fmtMoney(remaining)}</div>
+                        <div className="text-[11px] text-subtle mt-2">
                           {isPast ? (
                             <span className="text-red-500">Дедлайн просрочен</span>
                           ) : (
@@ -669,16 +669,16 @@ export default function App() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-[11px] text-gray-400 uppercase tracking-wider mb-1">Прогресс</div>
+                        <div className="text-[11px] text-muted uppercase tracking-wider mb-1">Прогресс</div>
                         <div className="text-xl font-mono font-semibold">{progress.toFixed(1)}%</div>
                       </div>
                     </div>
 
-                    <div className="w-full h-3 bg-[#2a2a2a] rounded-full mb-8 overflow-hidden">
-                      <div className="h-full bg-[#ededed] rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
+                    <div className="w-full h-3 bg-elevated rounded-full mb-8 overflow-hidden">
+                      <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
                     </div>
 
-                    <div className="text-[11px] text-gray-400 uppercase tracking-wider mb-3">
+                    <div className="text-[11px] text-muted uppercase tracking-wider mb-3">
                       {isPast ? 'Дедлайн прошел, нужно обновить цель' : `Сколько просмотров в день нужно (по тематикам)`}
                     </div>
 
@@ -690,32 +690,32 @@ export default function App() {
                           const viewsPerDay = Math.ceil(totalNeededViews / Math.max(1, daysLeft));
 
                           return (
-                            <div key={key} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-3 flex items-center justify-between">
+                            <div key={key} className="bg-elevated border border-line rounded-xl p-3 flex items-center justify-between">
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-[#2a2a2a] flex items-center justify-center text-gray-400"><CatIcon size={14} /></div>
+                                <div className="w-8 h-8 rounded-full bg-elevated flex items-center justify-center text-muted"><CatIcon size={14} /></div>
                                 <div>
-                                  <div className="text-xs font-medium text-gray-200">{cat.label.replace(/^[^\s]+\s/, '')}</div>
-                                  <div className="text-[10px] text-gray-500">${cat.rate1k} / 1k</div>
+                                  <div className="text-xs font-medium text-foreground">{cat.label.replace(/^[^\s]+\s/, '')}</div>
+                                  <div className="text-[10px] text-subtle">${cat.rate1k} / 1k</div>
                                 </div>
                               </div>
                               <div className="text-right">
-                                <div className="text-sm font-mono font-semibold text-[#ededed]">{fmtInt(viewsPerDay)}</div>
-                                <div className="text-[10px] text-gray-500">в день</div>
-                                <div className="text-[9px] text-gray-600 mt-0.5">всего {fmtInt(totalNeededViews)}</div>
+                                <div className="text-sm font-mono font-semibold text-foreground">{fmtInt(viewsPerDay)}</div>
+                                <div className="text-[10px] text-subtle">в день</div>
+                                <div className="text-[9px] text-subtle mt-0.5">всего {fmtInt(totalNeededViews)}</div>
                               </div>
                             </div>
                           );
                         })}
                       </div>
                     ) : (
-                      <div className="text-sm text-gray-500 mt-4">
+                      <div className="text-sm text-subtle mt-4">
                         {remaining <= 0 ? 'Цель достигнута! 🎉' : 'Дедлайн истек, установите новую дату.'}
                       </div>
                     )}
                   </div>
                 );
               })() : (
-                <div className="flex-1 flex flex-col items-center justify-center text-gray-500 text-sm">
+                <div className="flex-1 flex flex-col items-center justify-center text-subtle text-sm">
                   <Target size={48} className="mb-4 opacity-20" />
                   <p>Установите цель слева, чтобы увидеть расчёты</p>
                 </div>
@@ -803,37 +803,37 @@ function AddVideoModal({ accounts, activeAccountId, categories, onClose, onAdd }
     }
   };
 
-  const inputCls = 'bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#ededed] w-full mb-3';
+  const inputCls = 'bg-surface border border-line rounded-lg h-9 px-3 text-xs outline-none focus:border-foreground w-full mb-3';
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-5">
-      <form onSubmit={submit} className="studio-panel bg-[#111] border border-[#252525] rounded-2xl w-full max-w-md overflow-hidden">
-        <div className="p-5 border-b border-[#2a2a2a] flex justify-between items-center">
+    <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-6">
+      <form onSubmit={submit} className="studio-panel bg-surface border border-line rounded-2xl w-full max-w-md overflow-hidden">
+        <div className="p-6 border-b border-line flex justify-between items-center">
           <h2 className="text-sm font-semibold">Добавить видео</h2>
-          <button type="button" onClick={onClose} className="text-gray-500 hover:text-white"><X size={16} /></button>
+          <button type="button" onClick={onClose} className="text-subtle hover:text-foreground"><X size={16} /></button>
         </div>
-        <div className="p-5">
-          <label className="text-[10px] text-gray-400 uppercase mb-1 block">Ссылка на видео</label>
+        <div className="p-6">
+          <label className="text-[10px] text-muted uppercase mb-1 block">Ссылка на видео</label>
           <input className={inputCls} placeholder="https://..." value={url} onChange={e => setUrl(e.target.value)} required />
 
-          <label className="text-[10px] text-gray-400 uppercase mb-1 block">Аккаунт UBT</label>
+          <label className="text-[10px] text-muted uppercase mb-1 block">Аккаунт UBT</label>
           <select className={inputCls} value={account} onChange={e => setAccount(e.target.value)}>
             {accounts.map(a => <option key={a._id} value={a._id}>{a.name}</option>)}
           </select>
 
-          <label className="text-[10px] text-gray-400 uppercase mb-1 block">Тематика</label>
+          <label className="text-[10px] text-muted uppercase mb-1 block">Тематика</label>
           <select className={inputCls} value={category} onChange={e => setCategory(e.target.value)}>
             {Object.entries(cats).map(([k, v]) => (
               <option key={k} value={k}>{v.label} — ${v.rate1k} / 1k (от {v.minViews})</option>
             ))}
           </select>
 
-          <label className="text-[10px] text-gray-400 uppercase mb-1 block">Начальные просмотры</label>
+          <label className="text-[10px] text-muted uppercase mb-1 block">Начальные просмотры</label>
           <input type="number" className={inputCls} value={views} onChange={e => setViews(+e.target.value)} />
 
           {error && <div className="text-red-500 text-xs mb-3">{error}</div>}
 
-          <button disabled={busy} className="w-full h-9 mt-2 bg-[#ededed] text-black font-medium rounded-lg hover:opacity-90 disabled:opacity-50">
+          <button disabled={busy} className="w-full h-9 mt-2 bg-primary text-primary-foreground font-medium rounded-lg hover:opacity-90 disabled:opacity-50">
             {busy ? '…' : 'Сохранить'}
           </button>
         </div>
@@ -891,17 +891,17 @@ function EditVideoModal({ video, onClose, onSave }) {
     });
   };
 
-  const inputCls = 'bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#ededed] w-full';
+  const inputCls = 'bg-surface border border-line rounded-lg h-9 px-3 text-xs outline-none focus:border-foreground w-full';
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-5">
-      <form onSubmit={submit} className="studio-panel bg-[#111] border border-[#252525] rounded-2xl w-full max-w-md overflow-hidden">
-        <div className="p-5 border-b border-[#2a2a2a] flex justify-between items-center">
+    <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-6">
+      <form onSubmit={submit} className="studio-panel bg-surface border border-line rounded-2xl w-full max-w-md overflow-hidden">
+        <div className="p-6 border-b border-line flex justify-between items-center">
           <h2 className="text-sm font-semibold">Настройки видео</h2>
-          <button type="button" onClick={onClose} className="text-gray-500 hover:text-white"><X size={16} /></button>
+          <button type="button" onClick={onClose} className="text-subtle hover:text-foreground"><X size={16} /></button>
         </div>
-        <div className="p-5">
-          <label className="text-[10px] text-gray-400 uppercase mb-1 block">Статус</label>
+        <div className="p-6">
+          <label className="text-[10px] text-muted uppercase mb-1 block">Статус</label>
           <select className={`${inputCls} mb-4`} value={status} onChange={e => setStatus(e.target.value)}>
             <option value="moderation">На модерации</option>
             <option value="published">Опубликовано</option>
@@ -909,9 +909,9 @@ function EditVideoModal({ video, onClose, onSave }) {
             <option value="paid">Выплатили</option>
           </select>
 
-          <div className="flex items-center justify-between border-t border-[#2a2a2a] pt-4 mb-2">
-            <label className="text-[10px] text-gray-400 uppercase block">Траты (в рублях ₽)</label>
-            {rate > 0 && <span className="text-[10px] text-gray-500 font-mono">Курс: {rate.toFixed(2)} ₽/$</span>}
+          <div className="flex items-center justify-between border-t border-line pt-4 mb-2">
+            <label className="text-[10px] text-muted uppercase block">Траты (в рублях ₽)</label>
+            {rate > 0 && <span className="text-[10px] text-subtle font-mono">Курс: {rate.toFixed(2)} ₽/$</span>}
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-4">
@@ -922,12 +922,12 @@ function EditVideoModal({ video, onClose, onSave }) {
             <input type="number" className={`${inputCls} col-span-2`} placeholder="Пункт 5 (₽)" value={p5 || ''} onChange={e => setP5(+e.target.value)} />
           </div>
 
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3 mb-4 flex justify-between items-center">
-            <span className="text-xs text-gray-400">Итого спишется ($):</span>
+          <div className="bg-elevated border border-line rounded-lg p-3 mb-4 flex justify-between items-center">
+            <span className="text-xs text-muted">Итого спишется ($):</span>
             <span className="text-sm font-mono font-semibold text-red-400">-${totalUsd.toFixed(2)}</span>
           </div>
 
-          <button className="w-full h-9 bg-[#ededed] text-black font-medium rounded-lg hover:opacity-90">Применить</button>
+          <button className="w-full h-9 bg-primary text-primary-foreground font-medium rounded-lg hover:opacity-90">Применить</button>
         </div>
       </form>
     </div>
@@ -957,29 +957,29 @@ function AdjustModal({ onClose, onAdd }) {
     } finally { setBusy(false); }
   };
 
-  const inputCls = 'bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#ededed] w-full mb-3';
+  const inputCls = 'bg-surface border border-line rounded-lg h-9 px-3 text-xs outline-none focus:border-foreground w-full mb-3';
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-5">
-      <form onSubmit={submit} className="studio-panel bg-[#111] border border-[#252525] rounded-2xl w-full max-w-sm overflow-hidden">
-        <div className="p-4 border-b border-[#2a2a2a] flex justify-between items-center">
+    <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-6">
+      <form onSubmit={submit} className="studio-panel bg-surface border border-line rounded-2xl w-full max-w-sm overflow-hidden">
+        <div className="p-4 border-b border-line flex justify-between items-center">
           <h2 className="text-sm font-semibold">Корректировка баланса</h2>
-          <button type="button" onClick={onClose} className="text-gray-500 hover:text-white"><X size={16} /></button>
+          <button type="button" onClick={onClose} className="text-subtle hover:text-foreground"><X size={16} /></button>
         </div>
         <div className="p-4">
-          <label className="text-[10px] text-gray-400 uppercase mb-1 block">Сумма</label>
+          <label className="text-[10px] text-muted uppercase mb-1 block">Сумма</label>
           <div className="flex gap-2 mb-3">
             <input 
               type="number" 
               step="0.01"
-              className="bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#ededed] flex-1"
+              className="bg-surface border border-line rounded-lg h-9 px-3 text-xs outline-none focus:border-foreground flex-1"
               value={amount} 
               onChange={e => setAmount(e.target.value)} 
               placeholder={currency === 'usd' ? '100' : '9500'}
               required
             />
             <select 
-              className="bg-[#111] border border-[#2a2a2a] rounded-lg h-9 px-3 text-xs outline-none focus:border-[#ededed] w-20"
+              className="bg-surface border border-line rounded-lg h-9 px-3 text-xs outline-none focus:border-foreground w-20"
               value={currency} 
               onChange={e => setCurrency(e.target.value)}
             >
@@ -989,14 +989,14 @@ function AdjustModal({ onClose, onAdd }) {
           </div>
 
           {amount && rate > 0 && (
-            <div className="text-[11px] text-gray-500 mb-3 font-mono">
+            <div className="text-[11px] text-subtle mb-3 font-mono">
               {currency === 'usd' 
                 ? `≈ ${(parseFloat(amount) * rate).toFixed(0)} ₽` 
                 : `≈ $${(parseFloat(amount) / rate).toFixed(2)}`}
             </div>
           )}
 
-          <label className="text-[10px] text-gray-400 uppercase mb-1 block">Комментарий (опционально)</label>
+          <label className="text-[10px] text-muted uppercase mb-1 block">Комментарий (опционально)</label>
           <input 
             className={inputCls} 
             placeholder="Например: ручное пополнение из банка"
@@ -1008,13 +1008,13 @@ function AdjustModal({ onClose, onAdd }) {
             <button 
               type="button"
               onClick={() => setAmount((Math.abs(parseFloat(amount) || 0) * -1).toString())}
-              className="flex-1 h-9 border border-[#2a2a2a] text-xs text-red-400 rounded-lg hover:bg-[#2a2a2a]"
+              className="flex-1 h-9 border border-line text-xs text-red-400 rounded-lg hover:bg-elevated"
             >
               Сделать списанием
             </button>
             <button 
               disabled={busy} 
-              className="flex-1 h-9 bg-[#ededed] text-black font-medium rounded-lg hover:opacity-90 disabled:opacity-50"
+              className="flex-1 h-9 bg-primary text-primary-foreground font-medium rounded-lg hover:opacity-90 disabled:opacity-50"
             >
               {busy ? '...' : 'Применить'}
             </button>
@@ -1027,23 +1027,23 @@ function AdjustModal({ onClose, onAdd }) {
 
 function HistoryModal({ adjustments, onClose, reload }) {
   return (
-    <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-5">
-      <div className="studio-panel bg-[#111] border border-[#252525] rounded-2xl w-full max-w-lg overflow-hidden max-h-[80vh] flex flex-col">
-        <div className="p-4 border-b border-[#2a2a2a] flex justify-between items-center">
+    <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-6">
+      <div className="studio-panel bg-surface border border-line rounded-2xl w-full max-w-lg overflow-hidden max-h-[80vh] flex flex-col">
+        <div className="p-4 border-b border-line flex justify-between items-center">
           <h2 className="text-sm font-semibold">История корректировок</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-white"><X size={16} /></button>
+          <button onClick={onClose} className="text-subtle hover:text-foreground"><X size={16} /></button>
         </div>
         <div className="flex-1 overflow-y-auto p-2">
           {adjustments.length === 0 && (
-            <div className="text-center text-gray-500 text-xs py-10">Нет операций</div>
+            <div className="text-center text-subtle text-xs py-10">Нет операций</div>
           )}
           {adjustments.map(a => (
-            <div key={a._id} className="flex items-center justify-between p-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg mb-2 group">
+            <div key={a._id} className="flex items-center justify-between p-3 bg-elevated border border-line rounded-lg mb-2 group">
               <div>
-                <div className="text-xs text-gray-300">
+                <div className="text-xs text-foreground">
                   {a.note || 'Без комментария'}
                 </div>
-                <div className="text-[10px] text-gray-500 mt-1 font-mono">
+                <div className="text-[10px] text-subtle mt-1 font-mono">
                   {new Date(a.createdAt).toLocaleString('ru-RU')}
                 </div>
               </div>
@@ -1055,7 +1055,7 @@ function HistoryModal({ adjustments, onClose, reload }) {
                   onClick={async () => {
                     if (confirm('Удалить запись?')) { await api.deleteAdjustment(a._id); reload(); }
                   }}
-                  className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-500 transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 text-subtle hover:text-red-500 transition-opacity"
                 >
                   <Trash2 size={12} />
                 </button>
@@ -1063,8 +1063,8 @@ function HistoryModal({ adjustments, onClose, reload }) {
             </div>
           ))}
         </div>
-        <div className="p-4 border-t border-[#2a2a2a] flex justify-end">
-          <button onClick={onClose} className="h-8 px-4 text-xs bg-[#2a2a2a] rounded-lg hover:bg-[#333]">
+        <div className="p-4 border-t border-line flex justify-end">
+          <button onClick={onClose} className="h-8 px-4 text-xs bg-elevated rounded-lg hover:bg-elevated">
             Закрыть
           </button>
         </div>

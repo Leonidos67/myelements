@@ -20,6 +20,7 @@ import statProjectsRouter from './routes/statProjects.js';
 
 const app = express();
 app.use('/api/video-scripts', express.json({ limit: '2mb' }));
+app.use('/api/stat-projects', express.json({ limit: '512kb' }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({

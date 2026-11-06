@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import auth from '../middleware/auth.js';
 import Video from '../models/Video.js';
 import StatProject from '../models/StatProject.js';
+import {getProjectAdvice} from '../services/projectAssistant.js';
 import {defaultProjectConfig,validateProjectConfig,projectDataSource} from '../services/statProjectData.js';
 const engine=readFileSync(new URL('../data/tt-stat/engine.js',import.meta.url),'utf8');
 const router=express.Router(); router.use(auth);
@@ -34,6 +35,13 @@ router.get('/:id/script',wrap(async(req,res)=>{
   res.set('Cache-Control','no-store');const project=await StatProject.findById(req.params.id).lean();
   if(!project)return res.status(404).json({error:'Проект удалён или не найден'});
   res.json({code:projectDataSource(project.config)+engine,revision:project.revision,source:'project'});
+}));
+router.post('/:id/assistant',wrap(async(req,res)=>{
+ const project=await StatProject.findById(req.params.id).select('title').lean();
+ if(!project)return res.status(404).json({error:'Проект удалён или не найден'});
+ if(!process.env.ROUTERAI_API_KEY)return res.status(503).json({error:'Для AI-ассистента задайте ROUTERAI_API_KEY на сервере'});
+ try{const result=await getProjectAdvice({config:req.body?.config,title:typeof req.body?.title==='string'?req.body.title.slice(0,200):project.title,messages:req.body?.messages});res.set('Cache-Control','no-store');res.json(result);}
+ catch(e){res.status(e.name==='TimeoutError'?504:422).json({error:e.name==='TimeoutError'?'AI не успел ответить. Повторите запрос.':e.message});}
 }));
 router.put('/:id',wrap(async(req,res)=>{
   const {title,config:raw,revision}=req.body||{};
