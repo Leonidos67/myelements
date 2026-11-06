@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from './api';
 import Login from './Login';
+import WorkspaceShell from './WorkspaceShell';
 import CommentPageModal from './CommentPageModal';
 import VideoScriptModal from './VideoScriptModal';
 import AIChat from './AIChat';
@@ -8,7 +9,7 @@ import CalendarView from './CalendarView';
 import SavingsView from './SavingsView';
 import { getUsdRate } from './currency';
 import { 
-  Plus, LogOut, User, Wallet, Eye, 
+  Search, Plus, LogOut, User, Wallet, Eye,
   Gift, Gamepad2, Sparkles, Palette, 
   Settings, Trash2, X, ChevronDown, CreditCard, DollarSign,
   LayoutDashboard, FolderOpen, MoreVertical, Target, Calendar, Bot, Bookmark,
@@ -56,8 +57,8 @@ export default function App() {
   const [err, setErr] = useState('');
   const [goal, setGoal] = useState(null);
 
-  const [currentView, setCurrentView] = useState('dashboard');
-  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [currentView, setCurrentView] = useState(() => { const view=new URLSearchParams(window.location.search).get('view'); return ['dashboard','accounts','finance','calendar','savings','ai'].includes(view)?view:'dashboard'; });
+  const [isAddOpen, setIsAddOpen] = useState(() => new URLSearchParams(window.location.search).get('create')==='video');
   const [editVideo, setEditVideo] = useState(null);
   const [commentVideo, setCommentVideo] = useState(null);
   const [scriptVideo, setScriptVideo] = useState(null);
@@ -68,6 +69,8 @@ export default function App() {
     catch(e){setErr(e.status===404?'API проектов пока недоступно. Перезапустите обновлённый сервер MyElement.':e.message);}
     finally{setOpeningProject(false);}
   }
+  const [videoQuery,setVideoQuery]=useState('');
+  const [onlyFavorites,setOnlyFavorites]=useState(false);
   const [videoMenuPage, setVideoMenuPage] = useState('main');
   const scriptFileInput = useRef(null);
   const scriptFileVideo = useRef(null);
@@ -185,15 +188,15 @@ export default function App() {
 
   const displayedVideos = (activeAccount
     ? videos.filter(v => (typeof v.account === 'string' ? v.account : v.account?._id) === activeAccount)
-    : [...videos]).sort((a, b) => Number(!!b.isPinned) - Number(!!a.isPinned) || new Date(b.createdAt) - new Date(a.createdAt));
+    : [...videos]).filter(v => (!onlyFavorites || v.isFavorite) && [v.title,v.url,v.createdBy?.username].filter(Boolean).join(' ').toLowerCase().includes(videoQuery.trim().toLowerCase())).sort((a, b) => Number(!!b.isPinned) - Number(!!a.isPinned) || new Date(b.createdAt) - new Date(a.createdAt));
 
   const daysLeft = goal ? Math.max(0, Math.ceil((new Date(goal.deadlineDate) - new Date()) / (1000 * 60 * 60 * 24))) : 0;
 
   return (
-    <div className="studio-shell min-h-screen bg-background text-foreground font-sans">
+    <WorkspaceShell view={currentView} onNavigate={setCurrentView} username={me.username} onCreate={() => setIsAddOpen(true)} onAgent={() => setCurrentView('ai')} onLogout={logout}><div className="studio-shell text-foreground font-sans">
       <header className="studio-header flex flex-wrap justify-between items-center gap-5">
         <div>
-          <div className="mb-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-subtle"><span className="flex h-6 w-6 items-center justify-center rounded-md border border-line bg-elevated text-foreground"><LayoutDashboard size={12} /></span>MyElement<span className="mx-1 text-subtle">/</span>Workspace</div>
+
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
             {currentView === 'dashboard' && 'Партнёрская программа'}
             {currentView === 'accounts' && 'Аккаунты UBT'}
@@ -237,31 +240,10 @@ export default function App() {
             </div>
           </div>
 
-          <div className="w-px h-6 bg-elevated"></div>
-          <div className="flex items-center gap-2 text-xs text-muted"><User size={14} /><span>{me.username}</span></div>
-          <button onClick={logout} className="flex items-center gap-1.5 text-xs text-foreground hover:text-foreground transition-colors"><LogOut size={14} /><span>Выйти</span></button>
+
         </div>
       </header>
-      <nav aria-label="Разделы кабинета" className="studio-nav flex gap-1 overflow-x-auto">
-            <button onClick={() => setCurrentView('dashboard')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'dashboard' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted hover:text-foreground'}`}>
-              <LayoutDashboard size={14} /> Дашборд
-            </button>
-            <button onClick={() => setCurrentView('accounts')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'accounts' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted hover:text-foreground'}`}>
-              <FolderOpen size={14} /> Аккаунты
-            </button>
-            <button onClick={() => setCurrentView('finance')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'finance' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted hover:text-foreground'}`}>
-              <Wallet size={14} /> Финансы
-            </button>
-            <button onClick={() => setCurrentView('calendar')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'calendar' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted hover:text-foreground'}`}>
-              <Calendar size={14} /> Календарь
-            </button>
-            <button onClick={() => setCurrentView('savings')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'savings' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted hover:text-foreground'}`}>
-              <Bookmark size={14} /> Сохраненки
-            </button>
-            <button onClick={() => setCurrentView('ai')} className={`flex items-center gap-2 px-3.5 py-2 text-xs rounded-lg transition-colors ${currentView === 'ai' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted hover:text-foreground'}`}>
-              <Bot size={14} /> AI
-            </button>
-          </nav>
+
 
       {err && <div className="mb-6 rounded-xl border border-red-400/15 bg-red-400/5 px-4 py-3 text-red-400 text-sm">{err}</div>}
 
@@ -316,6 +298,7 @@ export default function App() {
               </div>
             </div>
 
+            <div className="workspace-filters"><label className="workspace-video-search"><Search size={14}/><input aria-label="Найти видео" value={videoQuery} onChange={e=>setVideoQuery(e.target.value)} placeholder="Найти видео…"/></label><button aria-pressed={onlyFavorites} onClick={()=>setOnlyFavorites(v=>!v)} className={'workspace-filter-chip '+(onlyFavorites?'selected':'')}><Star size={13} fill={onlyFavorites?'currentColor':'none'}/>Избранные</button>{activeAccount&&<button onClick={()=>setActiveAccount('')} className="workspace-filter-chip dashed"><span className="text-subtle">Аккаунт</span>{accounts.find(a=>a._id===activeAccount)?.name}<X size={12}/></button>}</div>
             <div className="studio-table-wrap overflow-x-auto">
               <table className="studio-table w-full text-xs text-left border-collapse min-w-[1220px]">
                 <thead>
@@ -511,7 +494,7 @@ export default function App() {
                   );
                 })}
                   {displayedVideos.length === 0 && (
-                    <tr><td colSpan={14} className="text-center py-8 text-subtle">нет видео</td></tr>
+                    <tr><td colSpan={14}><div className="workspace-empty"><span className="workspace-empty-icon"><FolderOpen size={24}/></span><h3>{videoQuery||onlyFavorites?'Ничего не найдено':'Пока нет видео'}</h3><p>{videoQuery||onlyFavorites?'Попробуйте изменить запрос или сбросить фильтры.':'Добавьте первое видео, чтобы отслеживать статистику и создавать макеты.'}</p><button onClick={()=>{if(videoQuery||onlyFavorites){setVideoQuery('');setOnlyFavorites(false);}else setIsAddOpen(true);}} className="rounded-md bg-primary px-4 py-2 text-xs font-medium text-primary-foreground">{videoQuery||onlyFavorites?'Сбросить фильтры':'Добавить видео'}</button></div></td></tr>
                   )}
                 </tbody>
               </table>
@@ -766,7 +749,7 @@ export default function App() {
       {editVideo && <EditVideoModal video={editVideo} onClose={() => setEditVideo(null)} onSave={async (data) => { await api.updateVideo(editVideo._id, data); setEditVideo(null); reload(); }} />}
       {isAdjustOpen && <AdjustModal onClose={() => setIsAdjustOpen(false)} onAdd={() => { setIsAdjustOpen(false); reload(); }} />}
       {isHistoryOpen && <HistoryModal adjustments={adjustments} onClose={() => setIsHistoryOpen(false)} reload={reload} />}
-    </div>
+    </div></WorkspaceShell>
   );
 }
 

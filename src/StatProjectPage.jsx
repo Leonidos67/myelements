@@ -3,6 +3,7 @@ import {ArrowLeft,ArrowUpRight,Save,Trash2,Plus,X,Download,Check,RefreshCw} from
 import {api} from './api';
 import Login from './Login';
 import ProjectAssistant from './ProjectAssistant';
+import WorkspaceShell from './WorkspaceShell';
 import {validateProjectConfig,projectDataSource} from '../server/services/statProjectData';
 import engine from '../server/data/tt-stat/engine.js?raw';
 const input='mt-2 w-full rounded-xl border border-line bg-inset px-3 py-2.5 text-sm text-foreground outline-none focus:border-foreground/40';
@@ -32,7 +33,7 @@ export default function StatProjectPage({id}){
  const tabs=[['video','Видео и счётчики'],['watch','Время просмотра'],['charts','Графики'],['audience','Аудитория']];
  const field=(label,path,options={})=>{let value=config;for(const key of path.split('.'))value=value[key];return <Field label={label} value={value} onChange={v=>change(path,v)} {...options}/>;};
  const series=(label,path,max,help)=>{let values=config;for(const key of path.split('.'))values=values[key];return <Series key={path} label={label} values={values} onChange={v=>change(path,v)} max={max} help={help}/>;};
- return <main className="min-h-screen bg-background text-foreground px-4 py-7 sm:px-8"><div className="mx-auto max-w-7xl">
+ return <WorkspaceShell breadcrumb={title||'Проект макета'} onAgent={()=>document.querySelector('textarea[aria-label="Запрос к AI-ассистенту"]')?.focus()}><main className="project-page text-foreground"><div className="mx-auto max-w-[1440px]">
   <a href="/" className="inline-flex items-center gap-2 text-xs text-subtle hover:text-foreground"><ArrowLeft size={13}/>Ваши видео</a>
   <header className="mt-6 flex flex-wrap justify-between items-start gap-5"><div><p className="text-[10px] uppercase tracking-widest text-subtle">MyElement / Макеты</p><h1 className="mt-2 text-2xl font-semibold tracking-tight">Проект видео</h1><p className="mt-2 font-mono text-[10px] text-subtle">ID: {id} · v{project.revision}</p></div><div className="flex flex-wrap gap-2"><a href={'/projects/'+id+'/preview'} target="_blank" rel="noreferrer" className={button} title={dirty?'Откроется последняя сохранённая версия':'Открыть сохранённый макет'}>Перейти к макету<ArrowUpRight size={14}/></a><button onClick={download} className={button}><Download size={13}/>Скачать JS</button><button disabled={busy} onClick={save} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground disabled:opacity-40"><Save size={13}/>{busy?'Сохраняем…':'Сохранить'}</button></div></header>
   {error&&<p role="alert" className="mt-5 rounded-xl border border-red-400/15 bg-red-400/5 p-3 text-xs text-red-300">{error} <button onClick={()=>{if(!dirty||window.confirm('Перезагрузить данные? Несохранённые изменения будут потеряны.'))load();}} className="ml-2 underline">Перезагрузить данные</button></p>}
@@ -69,5 +70,5 @@ export default function StatProjectPage({id}){
   <ProjectAssistant projectId={id} title={title} config={config} onApply={next=>{setConfig(validateProjectConfig(next));setDirty(true);setNotice('Предложение AI применено к полям. Сохраните проект, чтобы обновить макет.');setFormEpoch(v=>v+1);}} />
   </div>
   <footer className="mt-6 flex flex-wrap items-center justify-between gap-4 text-[10px] text-subtle"><p>Сохранено: {new Date(project.updatedAt).toLocaleString('ru-RU')} · Данные этого проекта не меняют статистику видео в кабинете.</p><button onClick={remove} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg border border-red-400/15 px-3 py-2 text-xs text-red-400 hover:bg-red-400/5 disabled:opacity-40"><Trash2 size={12}/>Удалить проект</button></footer>
- </div></main>;
+ </div></main></WorkspaceShell>;
 }

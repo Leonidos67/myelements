@@ -4,4 +4,4 @@ export function applyTheme(theme){
  try{localStorage.setItem('myelement-theme',value);}catch{}
  window.dispatchEvent(new CustomEvent('myelement-theme',{detail:value}));return value;
 }
-export function initTheme(){let theme='dark';try{theme=localStorage.getItem('myelement-theme')||'dark';}catch{}return applyTheme(theme);}
+export function initTheme(){let theme='light';try{theme=localStorage.getItem('myelement-theme')||'light';}catch{}return applyTheme(theme);}
