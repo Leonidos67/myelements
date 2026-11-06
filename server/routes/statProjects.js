@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import auth from '../middleware/auth.js';
 import Video from '../models/Video.js';
 import StatProject from '../models/StatProject.js';
+import {repairProjectPercentages} from '../services/statPercentages.js';
 import {getProjectAdvice} from '../services/projectAssistant.js';
 import {defaultProjectConfig,validateProjectConfig,projectDataSource} from '../services/statProjectData.js';
 const engine=readFileSync(new URL('../data/tt-stat/engine.js',import.meta.url),'utf8');
@@ -29,7 +30,7 @@ router.get('/by-video/:videoId',wrap(async(req,res)=>{
 }));
 router.get('/:id',wrap(async(req,res)=>{
   res.set('Cache-Control','no-store');const project=await StatProject.findById(req.params.id).lean();
-  if(!project)return res.status(404).json({error:'Проект удалён или не найден'});res.json(project);
+  if(!project)return res.status(404).json({error:'Проект удалён или не найден'});const config=repairProjectPercentages(project.config);res.json({...project,config,percentagesAdjusted:JSON.stringify(config)!==JSON.stringify(project.config)});
 }));
 router.get('/:id/script',wrap(async(req,res)=>{
   res.set('Cache-Control','no-store');const project=await StatProject.findById(req.params.id).lean();

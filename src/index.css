@@ -198,3 +198,20 @@ input[type='checkbox'], input[type='radio'] { accent-color:var(--ui-primary); }
 :root[data-theme='light'] .workspace-layout .studio-panel:has(.studio-table) { background:transparent; }
 
 @media(max-width:1023px) { .workspace-sidebar { visibility:hidden; } .workspace-sidebar.is-open { visibility:visible; } }
+
+.workspace-filter-select { gap:6px; padding-right:9px; }
+.workspace-filter-select select { max-width:200px; height:100%; min-width:0; background:transparent; color:inherit; border:0; outline:none; font:inherit; cursor:pointer; }
+.workspace-filter-select select:focus-visible { outline:none; }
+.workspace-filter-select:focus-within { outline:2px solid var(--ui-line-strong); outline-offset:2px; }
+.workspace-filter-select option { background:var(--ui-surface); color:var(--ui-text); }
+.workspace-sort { margin-left:auto; }
+.workspace-filter-reset { display:inline-flex; align-items:center; gap:4px; padding:6px 2px; font-size:10px; color:var(--ui-subtle); }
+.workspace-filter-reset:hover { color:var(--ui-text); }
+@media(max-width:640px) { .workspace-sort { margin-left:0; } .workspace-filter-select select { max-width:180px; } }
+
+.workspace-layout .studio-panel.expected-profit-card { background:#101d33; border-color:#315385; }
+.workspace-layout .expected-profit-card :is(.text-foreground,.text-subtle,.text-muted) { color:#b7cbed; }
+.workspace-layout .expected-profit-card>.text-3xl { color:#e0ebff; }
+:root[data-theme='light'] .workspace-layout .studio-panel.expected-profit-card { background:#eef5ff; border-color:#b5cdf7; }
+:root[data-theme='light'] .workspace-layout .expected-profit-card :is(.text-foreground,.text-subtle,.text-muted) { color:#4c6792; }
+:root[data-theme='light'] .workspace-layout .expected-profit-card>.text-3xl { color:#1d3f75; }

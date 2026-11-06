@@ -9,7 +9,7 @@ import CalendarView from './CalendarView';
 import SavingsView from './SavingsView';
 import { getUsdRate } from './currency';
 import { 
-  Search, Plus, LogOut, User, Wallet, Eye,
+  Filter, ArrowDownWideNarrow, Search, Plus, LogOut, User, Wallet, Eye,
   Gift, Gamepad2, Sparkles, Palette, 
   Settings, Trash2, X, ChevronDown, CreditCard, DollarSign,
   LayoutDashboard, FolderOpen, MoreVertical, Target, Calendar, Bot, Bookmark,
@@ -71,6 +71,11 @@ export default function App() {
   }
   const [videoQuery,setVideoQuery]=useState('');
   const [onlyFavorites,setOnlyFavorites]=useState(false);
+  const [videoCategory,setVideoCategory]=useState('');
+  const [videoStatus,setVideoStatus]=useState('');
+  const [videoSort,setVideoSort]=useState('newest');
+  const hasVideoFilters=!!(videoQuery.trim()||onlyFavorites||videoCategory||videoStatus||activeAccount);
+  function resetVideoFilters(){setVideoQuery('');setOnlyFavorites(false);setVideoCategory('');setVideoStatus('');setVideoSort('newest');setActiveAccount('');}
   const [videoMenuPage, setVideoMenuPage] = useState('main');
   const scriptFileInput = useRef(null);
   const scriptFileVideo = useRef(null);
@@ -186,9 +191,16 @@ export default function App() {
   if (booting) return <div className="p-6 text-muted bg-surface min-h-screen">…</div>;
   if (!me) return <Login onLogin={(user) => { setMe(user); reload(); }} />;
 
-  const displayedVideos = (activeAccount
-    ? videos.filter(v => (typeof v.account === 'string' ? v.account : v.account?._id) === activeAccount)
-    : [...videos]).filter(v => (!onlyFavorites || v.isFavorite) && [v.title,v.url,v.createdBy?.username].filter(Boolean).join(' ').toLowerCase().includes(videoQuery.trim().toLowerCase())).sort((a, b) => Number(!!b.isPinned) - Number(!!a.isPinned) || new Date(b.createdAt) - new Date(a.createdAt));
+  const accountVideos=activeAccount?videos.filter(v=>(typeof v.account==='string'?v.account:v.account?._id)===activeAccount):videos;
+  const displayedVideos=accountVideos.filter(v=>(!onlyFavorites||v.isFavorite)&&(!videoCategory||v.category===videoCategory)&&(!videoStatus||v.status===videoStatus)&&[v.title,v.url,v.createdBy?.username].filter(Boolean).join(' ').toLowerCase().includes(videoQuery.trim().toLowerCase())).sort((a,b)=>{
+    const pinned=Number(!!b.isPinned)-Number(!!a.isPinned);if(pinned)return pinned;
+    const date=(new Date(b.createdAt).getTime()||0)-(new Date(a.createdAt).getTime()||0);
+    if(videoSort==='oldest')return -date;
+    if(videoSort==='views')return (Number(b.views)||0)-(Number(a.views)||0)||date;
+    if(videoSort==='likes')return (Number(b.likes)||0)-(Number(a.likes)||0)||date;
+    if(videoSort==='revenue')return (Number(b.revenue)||0)-(Number(a.revenue)||0)||date;
+    return date;
+  });
 
   const daysLeft = goal ? Math.max(0, Math.ceil((new Date(goal.deadlineDate) - new Date()) / (1000 * 60 * 60 * 24))) : 0;
 
@@ -277,7 +289,7 @@ export default function App() {
                 <div className="text-3xl font-mono font-semibold">{fmtInt(stats.totalViews)}</div>
                 <div className="text-[11px] text-subtle mt-2">{stats.totalVideos} видео</div>
               </div>
-              <div className="studio-panel bg-surface border border-line rounded-2xl p-6">
+              <div className="studio-panel expected-profit-card bg-surface border border-line rounded-2xl p-6">
                 <div className="flex items-center gap-2 text-[11px] text-muted uppercase tracking-wider mb-2"><DollarSign size={14} /> Ожидаемая прибыль</div>
                 <div className="text-3xl font-mono font-semibold">{fmtMoney(stats.totalGross)}</div>
                 <div className="text-[11px] text-subtle mt-2">по остальным статусам</div>
@@ -293,12 +305,20 @@ export default function App() {
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-sm font-semibold">Ваши видео {activeAccount && <span className="text-subtle text-xs font-normal">(фильтр по аккаунту)</span>}</h2>
               <div className="flex items-center gap-3">
-                <span className="text-[10px] text-muted font-mono">{displayedVideos.length} шт.</span>
+                <span className="text-[10px] text-muted font-mono">{displayedVideos.length} из {accountVideos.length}</span>
                 <button onClick={() => setIsAddOpen(true)} className="h-8 px-4 bg-primary text-primary-foreground font-medium text-xs rounded-lg hover:opacity-90 flex items-center gap-1.5"><Plus size={14} /> Добавить видео</button>
               </div>
             </div>
 
-            <div className="workspace-filters"><label className="workspace-video-search"><Search size={14}/><input aria-label="Найти видео" value={videoQuery} onChange={e=>setVideoQuery(e.target.value)} placeholder="Найти видео…"/></label><button aria-pressed={onlyFavorites} onClick={()=>setOnlyFavorites(v=>!v)} className={'workspace-filter-chip '+(onlyFavorites?'selected':'')}><Star size={13} fill={onlyFavorites?'currentColor':'none'}/>Избранные</button>{activeAccount&&<button onClick={()=>setActiveAccount('')} className="workspace-filter-chip dashed"><span className="text-subtle">Аккаунт</span>{accounts.find(a=>a._id===activeAccount)?.name}<X size={12}/></button>}</div>
+            <div className="workspace-filters">
+              <label className="workspace-video-search"><Search size={14}/><input aria-label="Найти видео" value={videoQuery} onChange={e=>setVideoQuery(e.target.value)} placeholder="Найти видео…"/></label>
+              <button aria-pressed={onlyFavorites} onClick={()=>setOnlyFavorites(v=>!v)} className={'workspace-filter-chip '+(onlyFavorites?'selected':'')}><Star size={13} fill={onlyFavorites?'currentColor':'none'}/>Избранные</button>
+              <label className={'workspace-filter-chip workspace-filter-select '+(videoCategory?'selected':'')}><Filter size={13}/><select aria-label="Тематика видео" value={videoCategory} onChange={e=>setVideoCategory(e.target.value)}><option value="">Тематика: все</option>{Object.entries(stats?.categories||{}).map(([key,cat])=><option key={key} value={key}>{cat.label}</option>)}</select></label>
+              <label className={'workspace-filter-chip workspace-filter-select '+(videoStatus?'selected':'')}><select aria-label="Статус видео" value={videoStatus} onChange={e=>setVideoStatus(e.target.value)}><option value="">Статус: все</option><option value="moderation">На модерации</option><option value="published">Опубликовано</option><option value="rejected">Отказано</option><option value="paid">Выплатили</option></select></label>
+              {activeAccount&&<button onClick={()=>setActiveAccount('')} className="workspace-filter-chip dashed"><span className="text-subtle">Аккаунт</span>{accounts.find(a=>a._id===activeAccount)?.name}<X size={12}/></button>}
+              {(hasVideoFilters||videoSort!=='newest')&&<button onClick={resetVideoFilters} className="workspace-filter-reset"><X size={12}/>Сбросить</button>}
+              <label className="workspace-filter-chip workspace-filter-select workspace-sort" title="Закреплённые видео всегда сверху"><ArrowDownWideNarrow size={13}/><select aria-label="Сортировка видео" value={videoSort} onChange={e=>setVideoSort(e.target.value)}><option value="newest">Новые сначала</option><option value="oldest">Старые сначала</option><option value="views">Больше просмотров</option><option value="likes">Больше лайков</option><option value="revenue">Больше дохода</option></select></label>
+            </div>
             <div className="studio-table-wrap overflow-x-auto">
               <table className="studio-table w-full text-xs text-left border-collapse min-w-[1220px]">
                 <thead>
@@ -494,7 +514,7 @@ export default function App() {
                   );
                 })}
                   {displayedVideos.length === 0 && (
-                    <tr><td colSpan={14}><div className="workspace-empty"><span className="workspace-empty-icon"><FolderOpen size={24}/></span><h3>{videoQuery||onlyFavorites?'Ничего не найдено':'Пока нет видео'}</h3><p>{videoQuery||onlyFavorites?'Попробуйте изменить запрос или сбросить фильтры.':'Добавьте первое видео, чтобы отслеживать статистику и создавать макеты.'}</p><button onClick={()=>{if(videoQuery||onlyFavorites){setVideoQuery('');setOnlyFavorites(false);}else setIsAddOpen(true);}} className="rounded-md bg-primary px-4 py-2 text-xs font-medium text-primary-foreground">{videoQuery||onlyFavorites?'Сбросить фильтры':'Добавить видео'}</button></div></td></tr>
+                    <tr><td colSpan={14}><div className="workspace-empty"><span className="workspace-empty-icon"><FolderOpen size={24}/></span><h3>{hasVideoFilters?'Ничего не найдено':'Пока нет видео'}</h3><p>{hasVideoFilters?'Попробуйте изменить запрос или сбросить фильтры.':'Добавьте первое видео, чтобы отслеживать статистику и создавать макеты.'}</p><button onClick={()=>{if(hasVideoFilters){resetVideoFilters();}else setIsAddOpen(true);}} className="rounded-md bg-primary px-4 py-2 text-xs font-medium text-primary-foreground">{hasVideoFilters?'Сбросить фильтры':'Добавить видео'}</button></div></td></tr>
                   )}
                 </tbody>
               </table>
