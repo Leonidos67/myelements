@@ -25,6 +25,7 @@ export const api = {
   saveVideoScript: (id, data) => req('/video-scripts/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify(data) }),
   resetCommentTimer: (id) => req('/comment-pages/' + encodeURIComponent(id) + '/reset-timer', { method: 'POST' }),
   addCustomComment: (id, data) => req('/comment-pages/' + encodeURIComponent(id) + '/comments', { method: 'POST', body: JSON.stringify(data) }),
+  deletePendingComment: (id, comment) => req('/comment-pages/' + encodeURIComponent(id) + '/comments', { method: 'DELETE', body: JSON.stringify({ comment }) }),
   replaceComment: (id, comment) => req('/comment-pages/' + encodeURIComponent(id) + '/replace', { method: 'POST', body: JSON.stringify({ comment }) }),
   deleteCommentTask: (video) => req('/comment-pages?video=' + encodeURIComponent(video), { method: 'DELETE' }),
   commentSummary: () => req('/comment-pages/summary'),

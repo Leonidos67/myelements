@@ -127,7 +127,7 @@ function AddSavingModal({ onClose, onAdd }) {
   const inputCls = 'bg-surface border border-line rounded-lg h-9 px-3 text-xs outline-none focus:border-foreground w-full mb-3';
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-6">
+    <div className="modal-backdrop fixed inset-0 z-[110] bg-black/70 flex items-center justify-center p-6">
       <form onSubmit={submit} className="bg-surface border border-line rounded-2xl w-full max-w-md overflow-hidden">
         <div className="p-6 border-b border-line flex justify-between items-center">
           <h2 className="text-sm font-semibold">Новое сохранение</h2>

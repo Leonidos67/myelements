@@ -10,7 +10,7 @@ export default function EditModal({ row, onSave, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-6"
+      className="modal-backdrop fixed inset-0 z-[110] bg-black/70 backdrop-blur-sm flex items-center justify-center p-6"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="bg-surface border border-line-strong rounded-2xl w-full max-w-[480px] shadow-modal overflow-hidden">

@@ -786,7 +786,7 @@ function AddVideoModal({ accounts, activeAccountId, categories, onClose, onAdd }
   const inputCls = 'bg-surface border border-line rounded-lg h-9 px-3 text-xs outline-none focus:border-foreground w-full mb-3';
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-6">
+    <div className="modal-backdrop fixed inset-0 z-[110] bg-black/70 flex items-center justify-center p-6">
       <form onSubmit={submit} className="studio-panel bg-surface border border-line rounded-2xl w-full max-w-md overflow-hidden">
         <div className="p-6 border-b border-line flex justify-between items-center">
           <h2 className="text-sm font-semibold">Добавить видео</h2>
@@ -849,7 +849,7 @@ function AdjustModal({ onClose, onAdd }) {
   const inputCls = 'bg-surface border border-line rounded-lg h-9 px-3 text-xs outline-none focus:border-foreground w-full mb-3';
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-6">
+    <div className="modal-backdrop fixed inset-0 z-[110] bg-black/70 flex items-center justify-center p-6">
       <form onSubmit={submit} className="studio-panel bg-surface border border-line rounded-2xl w-full max-w-sm overflow-hidden">
         <div className="p-4 border-b border-line flex justify-between items-center">
           <h2 className="text-sm font-semibold">Корректировка баланса</h2>
@@ -916,7 +916,7 @@ function AdjustModal({ onClose, onAdd }) {
 
 function HistoryModal({ adjustments, onClose, reload }) {
   return (
-    <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-6">
+    <div className="modal-backdrop fixed inset-0 z-[110] bg-black/70 flex items-center justify-center p-6">
       <div className="studio-panel bg-surface border border-line rounded-2xl w-full max-w-lg overflow-hidden max-h-[80vh] flex flex-col">
         <div className="p-4 border-b border-line flex justify-between items-center">
           <h2 className="text-sm font-semibold">История корректировок</h2>

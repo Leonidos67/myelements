@@ -98,7 +98,7 @@ export default function VideoScriptModal({ video, onClose }) {
   const disabled = loading || saving;
   const action = 'inline-flex items-center justify-center gap-1.5 rounded-lg border border-line px-3 py-2 text-xs text-foreground hover:bg-elevated disabled:opacity-30';
   const sourceName = {saved: 'Сохранён в MongoDB', live: 'Получен с tt-stat.vercel.app', bundled: 'Локальная копия из tt-stat-cc'}[metadata?.source];
-  return <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/85 p-4" onClick={close}>
+  return <div className="modal-backdrop fixed inset-0 z-[110] flex items-center justify-center bg-black/85 p-4" onClick={close}>
     <section role="dialog" aria-modal="true" aria-labelledby="script-title" className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-line bg-surface text-foreground shadow-2xl" onClick={e => e.stopPropagation()}>
       <header className="border-b border-line p-6"><div className="flex items-center justify-between gap-4"><h2 id="script-title" className="flex items-center gap-2 text-lg font-semibold"><FileCode2 size={19} />Извлечь JS</h2><button aria-label="Закрыть" disabled={disabled} onClick={close} className="text-subtle hover:text-foreground disabled:opacity-30"><X size={20} /></button></div><p className="mt-2 truncate text-xs text-subtle">{video.title || video.url}</p><p className="mt-1 text-[10px] text-subtle">Отдельная версия для этого видео · Редактирование JS и предпросмотр</p></header>
       <div className="min-h-0 overflow-y-auto p-6">

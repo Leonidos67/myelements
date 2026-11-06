@@ -61,6 +61,19 @@ router.post('/:id/comments', auth, wrap(async (req, res) => {
   }
   res.status(201).json({ ok: true });
 }));
+router.delete('/:id/comments', auth, wrap(async (req, res) => {
+  const raw = req.body?.comment;
+  if (!raw || typeof raw.text !== 'string' || raw.text.length > 5000 || !Array.isArray(raw.tags) || raw.tags.length > 20 || raw.tags.some(t => typeof t !== 'string' || t.length > 500)) return res.status(400).json({ error: 'Некорректный комментарий' });
+  const target = { text: raw.text, tags: raw.tags };
+  const page = await CommentPage.findOneAndUpdate({ _id: req.params.id, remaining: { $elemMatch: target } }, {
+    $pull: { remaining: target }, $push: { discarded: target }, $inc: { total: -1 },
+  }, { new: true }).select('_id').lean();
+  if (!page) {
+    if (!await CommentPage.exists({ _id: req.params.id })) return res.status(404).json({ error: 'Страница не найдена' });
+    return res.status(409).json({ error: 'Комментарий уже получили, заменили или удалили. Обновите список.' });
+  }
+  res.json({ ok: true });
+}));
 router.post('/:id/replace', auth, wrap(async (req, res) => {
   const raw = req.body?.comment;
   if (!raw || typeof raw.text !== 'string' || raw.text.length > 5000 || !Array.isArray(raw.tags) || raw.tags.length > 20 || raw.tags.some(t => typeof t !== 'string' || t.length > 500)) return res.status(400).json({ error: 'Некорректный комментарий' });
