@@ -109,15 +109,20 @@ export default function CommentPageModal({ video, onClose, onChange }) {
     { id: 'pending', label: 'Ещё не получили', icon: MessageSquare, count: total - issued },
     { id: 'completed', label: 'Выполненные', icon: CheckCheck, count: issued },
   ];
-  return <div className="modal-backdrop fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4" onClick={onClose}>
+  return <div className="comments-backdrop modal-backdrop fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4" onClick={onClose}>
     <section role="dialog" aria-modal="true" aria-labelledby="comment-modal-title" className="comments-dialog w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden rounded-2xl border border-line bg-surface text-foreground shadow-2xl" onClick={e => e.stopPropagation()}>
-      <header className="comments-header shrink-0 px-6 pt-5 sm:px-6 border-b border-line">
-        <div className="flex justify-between items-center gap-4"><h2 id="comment-modal-title" className="text-lg font-semibold">Комментарии для видео</h2><button aria-label="Закрыть" onClick={onClose} className="rounded-lg p-1 text-subtle hover:text-foreground hover:bg-elevated"><X size={20} /></button></div>
-        <p className="text-xs text-subtle mt-2 truncate" title={video.title || video.url}>{video.title || video.url}</p>
-        <div role="tablist" aria-label="Разделы задачи" className="comments-tabs my-5 grid grid-cols-3 gap-1.5 rounded-xl border border-line bg-inset p-1.5">{tabs.map(({ id, label, icon: Icon, count: badge }) => <button key={id} role="tab" id={'comment-tab-' + id} aria-selected={tab === id} aria-controls={'comment-panel-' + id} onClick={() => setTab(id)} className={'flex flex-wrap items-center justify-center gap-1.5 rounded-lg px-2 py-2.5 text-[10px] sm:text-xs font-medium transition-all ' + (tab === id ? 'bg-primary text-primary-foreground shadow-sm' : 'text-subtle hover:bg-elevated hover:text-foreground')}><Icon size={14} />{label}{badge !== undefined && <span className={'rounded-md px-1.5 py-0.5 text-[9px] font-mono ' + (tab === id ? 'bg-black/10 text-primary-foreground' : 'bg-elevated text-subtle')}>{badge}</span>}</button>)}</div>
+      <aside className="comments-sidebar">
+        <div className="comments-sidebar-title">Комментарии</div>
+        <div role="tablist" aria-orientation="vertical" aria-label="Разделы задачи" className="comments-tabs my-5 grid grid-cols-3 gap-1.5 rounded-xl border border-line bg-inset p-1.5">{tabs.map(({ id, label, icon: Icon, count: badge }) => <button key={id} role="tab" id={'comment-tab-' + id} aria-selected={tab === id} aria-controls={'comment-panel-' + id} onClick={() => setTab(id)} className={'flex flex-wrap items-center justify-center gap-1.5 rounded-lg px-2 py-2.5 text-[10px] sm:text-xs font-medium transition-all ' + (tab === id ? 'bg-primary text-primary-foreground shadow-sm' : 'text-subtle hover:bg-elevated hover:text-foreground')}><Icon size={14} />{label}{badge !== undefined && <span className={'rounded-md px-1.5 py-0.5 text-[9px] font-mono ' + (tab === id ? 'bg-black/10 text-primary-foreground' : 'bg-elevated text-subtle')}>{badge}</span>}</button>)}</div>
+        <div className="comments-sidebar-summary"><span>Всего в наборах</span><strong>{total}</strong><span className="mt-2">Обновляется автоматически</span></div>
+      </aside>
+      <main className="comments-main">
+      <header className="comments-content-header">
+        <div className="min-w-0"><h2 id="comment-modal-title">Комментарии для видео</h2><p className="truncate" title={video.title || video.url}>{video.title || video.url}</p></div>
+        <button onClick={onClose} aria-label="Закрыть" className="comments-close"><X size={20}/></button>
       </header>
       <div className="comments-body comment-pending-scroll min-h-0 overflow-y-auto p-6 sm:p-6">
-        {activePage && <>{pages.length > 1 && <select aria-label="Выбранный набор" value={activePage._id} onChange={e => setSelectedPageId(e.target.value)} className="mb-3 w-full rounded-lg border border-line bg-elevated p-2.5 text-xs">{pages.map((p, i) => <option key={p._id} value={p._id}>Набор {pages.length - i} · {p.themeLabel}</option>)}</select>}<CommentQueueTimer page={activePage} onReset={refresh} /></>}
+        {activePage && <>{pages.length > 1 && <select aria-label="Выбранный набор" value={activePage._id} onChange={e => setSelectedPageId(e.target.value)} className="mb-3 w-full rounded-lg border border-line bg-elevated p-2.5 text-xs">{pages.map((p, i) => <option key={p._id} value={p._id}>Набор {pages.length - i} · {p.themeLabel}</option>)}</select>}{tab === 'progress' && <CommentQueueTimer page={activePage} onReset={refresh} />}</>}
         {tab === 'pending' && activePage && <div className="mb-5"><button onClick={() => setShowCustom(v => !v)} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground"><Plus size={13} />{showCustom ? 'Скрыть форму' : 'Свой комментарий'}</button>{showCustom && <form onSubmit={addCustom} className="mt-3 space-y-3 rounded-xl border border-line p-4"><label className="block text-xs text-muted">Комментарий<textarea required maxLength={5000} value={customText} onChange={e => setCustomText(e.target.value)} rows={3} className="mt-2 block w-full rounded-lg border border-line bg-inset p-3 text-sm text-foreground outline-none focus:border-foreground/30" /></label><label className="block text-xs text-muted">Упоминания или стикеры — каждое с новой строки<textarea maxLength={10000} value={customTags} onChange={e => setCustomTags(e.target.value)} rows={2} placeholder="@gamers_ru" className="mt-2 block w-full rounded-lg border border-line bg-inset p-3 text-sm text-foreground outline-none focus:border-foreground/30" /></label><button disabled={adding || !customText.trim() || deleting} className="rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground disabled:opacity-40">{adding ? 'Добавляем…' : 'Добавить в набор'}</button></form>}</div>}
         {tab === 'progress' ? <div role="tabpanel" id="comment-panel-progress" aria-labelledby="comment-tab-progress">
       {loading ? <p className="mt-6 text-subtle">Загрузка…</p> : <>
@@ -165,6 +170,7 @@ export default function CommentPageModal({ video, onClose, onChange }) {
         </div>}
         {error && <p role="alert" className="text-red-400 mt-3 text-sm">{error}</p>}
       </div>
+      </main>
     </section>
   </div>;
 }

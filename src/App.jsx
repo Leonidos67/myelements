@@ -89,7 +89,7 @@ export default function App() {
   const [videoMenuPage, setVideoMenuPage] = useState('main');
   const [videoMenuAnchor,setVideoMenuAnchor]=useState(null);
 
-  function menuStyle(){if(!videoMenuAnchor)return{};const below=window.innerHeight-videoMenuAnchor.bottom-12,above=videoMenuAnchor.top-12,desired=videoMenuPage==='layout'?235:470;const down=below>=desired||below>=above;return{left:Math.max(8,Math.min(window.innerWidth-248,videoMenuAnchor.right-240)),top:down?videoMenuAnchor.bottom+6:undefined,bottom:down?undefined:window.innerHeight-videoMenuAnchor.top+6,maxHeight:Math.max(100,(down?below:above)-6)};}
+  function menuStyle(){if(!videoMenuAnchor)return{};const below=window.innerHeight-videoMenuAnchor.bottom-12,above=videoMenuAnchor.top-12,desired=videoMenuPage==='layout'?210:260;const down=below>=desired||below>=above;return{left:Math.max(8,Math.min(window.innerWidth-248,videoMenuAnchor.right-240)),top:down?videoMenuAnchor.bottom+6:undefined,bottom:down?undefined:window.innerHeight-videoMenuAnchor.top+6,maxHeight:Math.max(100,(down?below:above)-6)};}
   const scriptFileInput = useRef(null);
   const scriptFileVideo = useRef(null);
   const [videoActionIds, setVideoActionIds] = useState(() => new Set());
@@ -470,19 +470,20 @@ export default function App() {
                                 <button onClick={() => {scriptFileVideo.current=v;setOpenMenuId(null);scriptFileInput.current.click();}} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-foreground hover:bg-elevated"><Upload size={13} />Загрузить новый JS</button>
                                 <a href={'/tt-stat/' + v._id} target="_blank" rel="noreferrer" onClick={() => setOpenMenuId(null)} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-foreground hover:bg-elevated"><Eye size={13} />Предпросмотр<ChevronRight size={12} className="ml-auto text-subtle" /></a>
                               </> : <>
-                              {safeVideoUrl(v.url)&&<a href={safeVideoUrl(v.url)} target="_blank" rel="noopener noreferrer" onClick={()=>setOpenMenuId(null)} className="video-menu-item"><ExternalLink size={13}/>Открыть видео</a>}
-                              <button onClick={()=>copyVideoLink(v)} className="video-menu-item"><Copy size={13}/>Копировать ссылку</button>
+                              <div className="video-menu-quick">
+                                <button title={v.isPinned?'Открепить':'Закрепить'} aria-label={v.isPinned?'Открепить':'Закрепить'} aria-pressed={!!v.isPinned} disabled={videoActionIds.has(v._id)} onClick={()=>{setOpenMenuId(null);toggleVideoFlag(v,'isPinned');}}>{v.isPinned?<PinOff size={15}/>:<Pin size={15}/>}</button>
+                                <button title={v.isFavorite?'Убрать из избранного':'В избранное'} aria-label={v.isFavorite?'Убрать из избранного':'В избранное'} aria-pressed={!!v.isFavorite} disabled={videoActionIds.has(v._id)} onClick={()=>{setOpenMenuId(null);toggleVideoFlag(v,'isFavorite');}}><Heart size={15} fill={v.isFavorite?'currentColor':'none'}/></button>
+                                <button title="Копировать ссылку" aria-label="Копировать ссылку" onClick={()=>copyVideoLink(v)}><Copy size={15}/></button>
+                                {safeVideoUrl(v.url)?<a title="Открыть видео" aria-label="Открыть видео" href={safeVideoUrl(v.url)} target="_blank" rel="noopener noreferrer" onClick={()=>setOpenMenuId(null)}><ExternalLink size={15}/></a>:<button disabled aria-label="Ссылка недоступна"><ExternalLink size={15}/></button>}
+                              </div>
                               <div className="video-menu-divider"/>
-                              <button disabled={videoActionIds.has(v._id)} onClick={()=>{setOpenMenuId(null);toggleVideoFlag(v,'isPinned');}} className="video-menu-item">{v.isPinned?<PinOff size={13}/>:<Pin size={13}/>} {v.isPinned?'Открепить':'Закрепить'}</button>
-                              <button disabled={videoActionIds.has(v._id)} onClick={()=>{setOpenMenuId(null);toggleVideoFlag(v,'isFavorite');}} className="video-menu-item"><Star size={13} fill={v.isFavorite?'currentColor':'none'}/>{v.isFavorite?'Убрать из избранного':'В избранное'}</button>
                               <button onClick={()=>setVideoMenuPage('layout')} className="video-menu-item"><FileCode2 size={13}/>Макет<ChevronRight size={12} className="ml-auto text-subtle"/></button>
                               <button onClick={()=>{setOpenMenuId(null);setCommentVideo(v);}} className="video-menu-item"><Bot size={13}/>Комментарии</button>
                               <div className="video-menu-divider"/>
-                              <button onClick={()=>{setOpenMenuId(null);setEditVideo(v);}} className="video-menu-item"><Settings size={13}/>Настройки</button>
                               <button disabled={accounts.length<2} title={accounts.length<2?'Сначала добавьте ещё один аккаунт':undefined} onClick={()=>{setOpenMenuId(null);setEditVideo({...v,focusAccount:true});}} className="video-menu-item"><ArrowRightLeft size={13}/>Сменить аккаунт</button>
                               <button disabled={videoActionIds.has(v._id)} onClick={()=>duplicateVideo(v)} className="video-menu-item"><CopyPlus size={13}/>Дублировать</button>
                               <div className="video-menu-divider"/>
-                              <button disabled={videoActionIds.has(v._id)} onClick={()=>removeVideo(v)} className="video-menu-item text-red-400"><Trash2 size={13}/>Удалить видео</button>
+                              <div className="video-menu-footer"><button onClick={()=>{setOpenMenuId(null);setEditVideo(v);}} className="video-menu-item"><Settings size={13}/>Настройки</button><button disabled={videoActionIds.has(v._id)} onClick={()=>removeVideo(v)} className="video-menu-item text-red-400"><Trash2 size={13}/>Удалить видео</button></div>
                               </>}
                             </div>
                           </>, document.body)}
