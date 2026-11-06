@@ -56,13 +56,13 @@ export default function StatProjectPage({id}){
       {series('Метки оси Y просмотров','viewsTicks',1e12)}
       {series('Удержание, %','retention',100,'От двух точек от начала до конца ролика. Временная шкала использует длительность из раздела «Обзор».')}
 </div></div>
-      <Rows label="Источники трафика" rows={config.sources} bounds={config.bounds?.sources} onBoundsChange={v=>change('bounds.sources',v)} onChange={v=>change('sources',v)}/>
+      <Rows label="Источники трафика" rows={config.sources} bounds={config.bounds?.sources} calculation={config.calculation?.sources} onCalculationChange={v=>change('calculation.sources',v)} onBoundsChange={v=>change('bounds.sources',v)} onChange={v=>change('sources',v)}/>
     </>}
     {tab==='viewers'&&<>
       {field('Всего зрителей','totalViewers',{type:'number',min:0,step:'1'})}
 
       <ViewerTypeRanges pairs={config.viewerTypes} bounds={config.bounds?.viewerTypes} onChange={v=>change('viewerTypes',v)} onBoundsChange={v=>change('bounds.viewerTypes',v)}/>
-      <Rows label="Пол" rows={config.gender} bounds={config.bounds?.gender} onBoundsChange={v=>change('bounds.gender',v)} onChange={v=>change('gender',v)}/><Rows label="Возраст" rows={config.ages} bounds={config.bounds?.ages} onBoundsChange={v=>change('bounds.ages',v)} onChange={v=>change('ages',v)}/><Rows label="Места" rows={config.places} bounds={config.bounds?.places} onBoundsChange={v=>change('bounds.places',v)} onChange={v=>change('places',v)}/>
+      <Rows label="Пол" rows={config.gender} bounds={config.bounds?.gender} calculation={config.calculation?.gender} onCalculationChange={v=>change('calculation.gender',v)} onBoundsChange={v=>change('bounds.gender',v)} onChange={v=>change('gender',v)}/><Rows label="Возраст" rows={config.ages} bounds={config.bounds?.ages} calculation={config.calculation?.ages} onCalculationChange={v=>change('calculation.ages',v)} onBoundsChange={v=>change('bounds.ages',v)} onChange={v=>change('ages',v)}/><Rows label="Места" rows={config.places} bounds={config.bounds?.places} calculation={config.calculation?.places} onCalculationChange={v=>change('calculation.places',v)} onBoundsChange={v=>change('bounds.places',v)} onChange={v=>change('places',v)}/>
         </>}
     {tab==='engagement'&&<>      {series('Лайки по ходу видео, %','likes.values',100)}
       {series('Метки оси Y лайков, %','likes.ticks',100)}

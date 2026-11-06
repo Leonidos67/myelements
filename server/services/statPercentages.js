@@ -37,10 +37,20 @@ export function updatePercentage(rows,index,value,bounds=defaultBounds(rows)){
  const allocated=weightedAllocation(others.map(i=>bounds[i]),others.map(i=>rows[i][1]),TOTAL-fixed);
  const result=rows.map(r=>[...r]);result[index][1]=fixed/100;others.forEach((i,j)=>{result[i][1]=allocated[j]/100;});return result;
 }
+export function effectivePercentageBounds(rows,bounds=defaultBounds(rows),frozen=[]){
+ return rows.map((row,i)=>frozen[i]?[row[1],row[1]]:(bounds[i]||[0,100]));
+}
+export function manualPercentage(rows,index,value,bounds=defaultBounds(rows),frozen=[]){
+ if(frozen[index])throw Error('Эта доля заморожена. Сначала снимите заморозку.');
+ const limits=checkedBounds(bounds);const used=rows.reduce((sum,row,i)=>sum+(i===index?0:units(row[1])),0);
+ const max=Math.min(limits[index][1],TOTAL-used);if(max<limits[index][0])throw Error('Для этой доли не хватает свободных процентов. Сначала уменьшите другие значения.');
+ const result=rows.map(row=>[...row]);result[index][1]=Math.max(limits[index][0],Math.min(max,units(Number.isFinite(value)?value:0)))/100;
+ return result;
+}
 export function repairProjectPercentages(raw){
- const c=structuredClone(raw);c.bounds=c.bounds&&typeof c.bounds==='object'&&!Array.isArray(c.bounds)?c.bounds:{};
+ const c=structuredClone(raw);c.calculation=c.calculation&&typeof c.calculation==='object'&&!Array.isArray(c.calculation)?c.calculation:{};c.bounds=c.bounds&&typeof c.bounds==='object'&&!Array.isArray(c.bounds)?c.bounds:{};
  for(const field of ['sources','gender','ages','places']){
-  if(Array.isArray(c[field])&&c[field].length){if(Math.round(percentageSum(c[field])*100)!==TOTAL)c[field]=normalizePercentages(c[field]);c.bounds[field]=c[field].map((_,i)=>c.bounds[field]?.[i]||[0,100]);}
+  if(Array.isArray(c[field])&&c[field].length){if(Math.round(percentageSum(c[field])*100)!==TOTAL)c[field]=normalizePercentages(c[field]);c.bounds[field]=c[field].map((_,i)=>c.bounds[field]?.[i]||[0,100]);c.calculation[field]={auto:c.calculation[field]?.auto!==false,frozen:c[field].map((_,i)=>!!c.calculation[field]?.frozen?.[i])};}
  }
  if(Array.isArray(c.viewerTypes)){c.viewerTypes=c.viewerTypes.map(pair=>{const [left,right]=normalizePercentages([pair.left,pair.right]);return{left,right};});c.bounds.viewerTypes=c.viewerTypes.map((_,i)=>c.bounds.viewerTypes?.[i]||[0,100]);}
  return c;
