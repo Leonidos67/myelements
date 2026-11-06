@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import {createPortal} from 'react-dom';
 import { api } from './api';
 import Login from './Login';
 import WorkspaceShell from './WorkspaceShell';
@@ -6,12 +7,13 @@ import LikesHint from './LikesHint';
 import {likesTarget} from './likesPolicy';
 import CommentPageModal from './CommentPageModal';
 import VideoScriptModal from './VideoScriptModal';
+import EditVideoModal from './EditVideoModal';
 import AIChat from './AIChat';
 import CalendarView from './CalendarView';
 import SavingsView from './SavingsView';
 import { getUsdRate } from './currency';
 import { 
-  Filter, ArrowDownWideNarrow, Search, Plus, LogOut, User, Wallet, Eye,
+  Copy, CopyPlus, ExternalLink, ArrowRightLeft, Filter, ArrowDownWideNarrow, Search, Plus, LogOut, User, Wallet, Eye,
   Gift, Gamepad2, Sparkles, Palette, 
   Settings, Trash2, X, ChevronDown, CreditCard, DollarSign,
   LayoutDashboard, FolderOpen, MoreVertical, Target, Calendar, Bot, Bookmark,
@@ -49,6 +51,20 @@ export default function App() {
   });
 
   const [err, setErr] = useState('');
+  const [videoNotice,setVideoNotice]=useState('');
+  useEffect(()=>{if(!videoNotice)return;const timer=setTimeout(()=>setVideoNotice(''),4500);return()=>clearTimeout(timer);},[videoNotice]);
+  function safeVideoUrl(url){try{const value=new URL(url);return ['http:','https:'].includes(value.protocol)?value.href:null;}catch{return null;}}
+  async function copyVideoLink(video){setOpenMenuId(null);try{await navigator.clipboard.writeText(video.url);setVideoNotice('Ссылка на видео скопирована');}catch{setErr('Не удалось скопировать ссылку. Откройте настройки и скопируйте её из поля.');}}
+  async function duplicateVideo(video){
+    setOpenMenuId(null);if(!window.confirm('Создать копию видео без статистики и расходов? Комментарии, проект и JS не копируются.'))return;
+    setVideoActionIds(ids=>new Set(ids).add(video._id));
+    try{await api.duplicateVideo(video._id);setVideoQuery('');setVideoStatus('');setOnlyFavorites(false);setVideoSort('newest');await reload();setVideoNotice('Копия создана со статусом «На модерации» и нулевыми показателями.');}catch(e){setErr(e.message);}finally{setVideoActionIds(ids=>{const next=new Set(ids);next.delete(video._id);return next;});}
+  }
+  async function removeVideo(video){
+    setOpenMenuId(null);if(!window.confirm('Удалить видео «'+(video.title||video.url)+'»? Его страницы комментариев, проект макета и сохранённый JS также будут удалены. Это действие нельзя отменить.'))return;
+    setVideoActionIds(ids=>new Set(ids).add(video._id));
+    try{await api.deleteVideo(video._id);setVideos(rows=>rows.filter(v=>v._id!==video._id));await reload();await refreshCommentSummary();setVideoNotice('Видео и связанные данные удалены.');}catch(e){setErr(e.message);}finally{setVideoActionIds(ids=>{const next=new Set(ids);next.delete(video._id);return next;});}
+  }
   const [goal, setGoal] = useState(null);
 
   const [currentView, setCurrentView] = useState(() => { const view=new URLSearchParams(window.location.search).get('view'); return ['dashboard','accounts','finance','calendar','savings','ai'].includes(view)?view:'dashboard'; });
@@ -58,7 +74,7 @@ export default function App() {
   const [scriptVideo, setScriptVideo] = useState(null);
   const [openingProject, setOpeningProject] = useState(false);
   async function openProject(video) {
-    setOpeningProject(true); setErr('');
+    setOpeningProject(true); setOpenMenuId(null); setErr('');
     try { const project=await api.openStatProject(video._id); window.location.assign('/projects/'+project._id); }
     catch(e){setErr(e.status===404?'API проектов пока недоступно. Перезапустите обновлённый сервер MyElement.':e.message);}
     finally{setOpeningProject(false);}
@@ -71,6 +87,9 @@ export default function App() {
   const hasVideoFilters=!!(videoQuery.trim()||onlyFavorites||videoCategory||videoStatus||activeAccount);
   function resetVideoFilters(){setVideoQuery('');setOnlyFavorites(false);setVideoCategory('');setVideoStatus('');setVideoSort('newest');setActiveAccount('');}
   const [videoMenuPage, setVideoMenuPage] = useState('main');
+  const [videoMenuAnchor,setVideoMenuAnchor]=useState(null);
+
+  function menuStyle(){if(!videoMenuAnchor)return{};const below=window.innerHeight-videoMenuAnchor.bottom-12,above=videoMenuAnchor.top-12,desired=videoMenuPage==='layout'?235:470;const down=below>=desired||below>=above;return{left:Math.max(8,Math.min(window.innerWidth-248,videoMenuAnchor.right-240)),top:down?videoMenuAnchor.bottom+6:undefined,bottom:down?undefined:window.innerHeight-videoMenuAnchor.top+6,maxHeight:Math.max(100,(down?below:above)-6)};}
   const scriptFileInput = useRef(null);
   const scriptFileVideo = useRef(null);
   const [videoActionIds, setVideoActionIds] = useState(() => new Set());
@@ -100,6 +119,7 @@ export default function App() {
   }, [me]);
 
   const [openMenuId, setOpenMenuId] = useState(null);
+  useEffect(()=>{if(!openMenuId)return;const close=e=>{if(e?.target?.closest?.('.video-actions-menu'))return;setOpenMenuId(null);};const key=e=>{if(e.key==='Escape')close();};window.addEventListener('resize',close);window.addEventListener('scroll',close,true);document.addEventListener('keydown',key);return()=>{window.removeEventListener('resize',close);window.removeEventListener('scroll',close,true);document.removeEventListener('keydown',key);};},[openMenuId]);
   const [openStatusId, setOpenStatusId] = useState(null);
 
   useEffect(() => {
@@ -210,6 +230,7 @@ export default function App() {
       </header>
 
 
+      {videoNotice&&<p role="status" className="mb-4 rounded-xl border border-line bg-elevated px-4 py-3 text-xs text-foreground">{videoNotice}</p>}
       {err && <div className="mb-6 rounded-xl border border-red-400/15 bg-red-400/5 px-4 py-3 text-red-400 text-sm">{err}</div>}
 
       {currentView === 'dashboard' && (
@@ -437,11 +458,11 @@ export default function App() {
                         )}
                       </td>
                       <td className="py-3 text-right relative">
-                        <button onClick={() => { setVideoMenuPage('main'); setOpenMenuId(openMenuId === v._id ? null : v._id); }} className="p-1 text-subtle hover:text-foreground rounded hover:bg-elevated transition-colors"><MoreVertical size={16} /></button>
-                        {openMenuId === v._id && (
+                        <button onClick={e => { const rect=e.currentTarget.getBoundingClientRect();setVideoMenuAnchor({right:rect.right,top:rect.top,bottom:rect.bottom});setVideoMenuPage('main');setOpenMenuId(openMenuId===v._id?null:v._id); }} aria-label="Действия с видео" aria-expanded={openMenuId===v._id} className="p-1 text-subtle hover:text-foreground rounded hover:bg-elevated transition-colors"><MoreVertical size={16} /></button>
+                        {openMenuId === v._id && videoMenuAnchor && createPortal(
                           <>
-                            <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
-                            <div className="video-actions-menu absolute right-8 top-2 z-50 w-52 overflow-hidden bg-surface border border-line rounded-xl shadow-xl p-1.5">
+                            <div className="fixed inset-0 z-[150]" onClick={() => setOpenMenuId(null)} />
+                            <div style={menuStyle()} className="video-actions-menu fixed z-[151] w-60 overflow-y-auto bg-surface border border-line rounded-xl shadow-xl p-1.5">
                               {videoMenuPage === 'layout' ? <>
                                 <button onClick={() => setVideoMenuPage('main')} className="flex w-full items-center gap-2 border-b border-line px-3 py-2.5 text-left text-xs font-medium text-foreground hover:bg-elevated"><ChevronLeft size={14} />Макет</button>
                                 <button disabled={openingProject} onClick={() => openProject(v)} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-foreground hover:bg-elevated disabled:opacity-40"><FolderOpen size={13} />{openingProject?'Открываем…':'Проект и параметры'}</button>
@@ -449,17 +470,22 @@ export default function App() {
                                 <button onClick={() => {scriptFileVideo.current=v;setOpenMenuId(null);scriptFileInput.current.click();}} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-foreground hover:bg-elevated"><Upload size={13} />Загрузить новый JS</button>
                                 <a href={'/tt-stat/' + v._id} target="_blank" rel="noreferrer" onClick={() => setOpenMenuId(null)} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-foreground hover:bg-elevated"><Eye size={13} />Предпросмотр<ChevronRight size={12} className="ml-auto text-subtle" /></a>
                               </> : <>
-                              <button disabled={videoActionIds.has(v._id)} onClick={() => { setOpenMenuId(null); toggleVideoFlag(v, 'isPinned'); }} className="w-full text-left px-3 py-1.5 text-xs text-foreground hover:bg-elevated flex items-center gap-2 transition-colors disabled:opacity-40">{v.isPinned ? <PinOff size={12} /> : <Pin size={12} />}{v.isPinned ? 'Открепить' : 'Закрепить'}</button>
-                              <button onClick={() => setVideoMenuPage('layout')} className="w-full text-left px-3 py-2 text-xs text-foreground hover:bg-elevated flex items-center gap-2"><FileCode2 size={13} />Макет<ChevronRight size={12} className="ml-auto text-subtle" /></button>
-                              <button onClick={() => { setOpenMenuId(null); setEditVideo(v); }} className="w-full text-left px-3 py-1.5 text-xs text-foreground hover:bg-elevated flex items-center gap-2 transition-colors"><Settings size={12} /> Настройки</button>
-                              <button onClick={async () => { 
-                                setOpenMenuId(null);
-                                if (confirm('Удалить?')) { await api.deleteVideo(v._id); reload(); }
-                              }} className="w-full text-left px-3 py-1.5 text-xs text-red-400 hover:bg-elevated flex items-center gap-2 transition-colors"><Trash2 size={12} /> Удалить</button>
+                              {safeVideoUrl(v.url)&&<a href={safeVideoUrl(v.url)} target="_blank" rel="noopener noreferrer" onClick={()=>setOpenMenuId(null)} className="video-menu-item"><ExternalLink size={13}/>Открыть видео</a>}
+                              <button onClick={()=>copyVideoLink(v)} className="video-menu-item"><Copy size={13}/>Копировать ссылку</button>
+                              <div className="video-menu-divider"/>
+                              <button disabled={videoActionIds.has(v._id)} onClick={()=>{setOpenMenuId(null);toggleVideoFlag(v,'isPinned');}} className="video-menu-item">{v.isPinned?<PinOff size={13}/>:<Pin size={13}/>} {v.isPinned?'Открепить':'Закрепить'}</button>
+                              <button disabled={videoActionIds.has(v._id)} onClick={()=>{setOpenMenuId(null);toggleVideoFlag(v,'isFavorite');}} className="video-menu-item"><Star size={13} fill={v.isFavorite?'currentColor':'none'}/>{v.isFavorite?'Убрать из избранного':'В избранное'}</button>
+                              <button onClick={()=>setVideoMenuPage('layout')} className="video-menu-item"><FileCode2 size={13}/>Макет<ChevronRight size={12} className="ml-auto text-subtle"/></button>
+                              <button onClick={()=>{setOpenMenuId(null);setCommentVideo(v);}} className="video-menu-item"><Bot size={13}/>Комментарии</button>
+                              <div className="video-menu-divider"/>
+                              <button onClick={()=>{setOpenMenuId(null);setEditVideo(v);}} className="video-menu-item"><Settings size={13}/>Настройки</button>
+                              <button disabled={accounts.length<2} title={accounts.length<2?'Сначала добавьте ещё один аккаунт':undefined} onClick={()=>{setOpenMenuId(null);setEditVideo({...v,focusAccount:true});}} className="video-menu-item"><ArrowRightLeft size={13}/>Сменить аккаунт</button>
+                              <button disabled={videoActionIds.has(v._id)} onClick={()=>duplicateVideo(v)} className="video-menu-item"><CopyPlus size={13}/>Дублировать</button>
+                              <div className="video-menu-divider"/>
+                              <button disabled={videoActionIds.has(v._id)} onClick={()=>removeVideo(v)} className="video-menu-item text-red-400"><Trash2 size={13}/>Удалить видео</button>
                               </>}
                             </div>
-                          </>
-                        )}
+                          </>, document.body)}
                       </td>
                     </tr>
                   );
@@ -717,7 +743,7 @@ export default function App() {
       <input ref={scriptFileInput} type="file" accept=".js,text/javascript,application/javascript" className="hidden" onChange={e => {const file=e.target.files?.[0];e.target.value='';if(file && scriptFileVideo.current)setScriptVideo({...scriptFileVideo.current, initialFile:file});}} />
       {scriptVideo && <VideoScriptModal video={scriptVideo} onClose={() => setScriptVideo(null)} />}
       {commentVideo && <CommentPageModal video={commentVideo} onClose={() => { setCommentVideo(null); refreshCommentSummary(); }} onChange={refreshCommentSummary} />}
-      {editVideo && <EditVideoModal video={editVideo} onClose={() => setEditVideo(null)} onSave={async (data) => { await api.updateVideo(editVideo._id, data); setEditVideo(null); reload(); }} />}
+      {editVideo && <EditVideoModal video={editVideo} accounts={accounts} categories={stats?.categories} onClose={() => setEditVideo(null)} onSave={async (data) => { await api.updateVideo(editVideo._id, data); setEditVideo(null);setVideoNotice('Настройки видео сохранены.');await reload(); }} />}
       {isAdjustOpen && <AdjustModal onClose={() => setIsAdjustOpen(false)} onAdd={() => { setIsAdjustOpen(false); reload(); }} />}
       {isHistoryOpen && <HistoryModal adjustments={adjustments} onClose={() => setIsHistoryOpen(false)} reload={reload} />}
     </div></WorkspaceShell>
@@ -797,97 +823,6 @@ function AddVideoModal({ accounts, activeAccountId, categories, onClose, onAdd }
 }
 
 // Модалка настроек видео
-function EditVideoModal({ video, onClose, onSave }) {
-  const [status, setStatus] = useState(video.status);
-
-  const [p1, setP1] = useState(0);
-  const [p2, setP2] = useState(0);
-  const [p3, setP3] = useState(0);
-  const [p4, setP4] = useState(0);
-  const [p5, setP5] = useState(0);
-
-  const [rate, setRate] = useState(0);
-  const [totalUsd, setTotalUsd] = useState(0);
-
-  useEffect(() => {
-    let mounted = true;
-    getUsdRate().then(r => {
-      if (!mounted) return;
-      setRate(r);
-      setP1(Math.round((video.expenses?.p1 || 0) * r));
-      setP2(Math.round((video.expenses?.p2 || 0) * r));
-      setP3(Math.round((video.expenses?.p3 || 0) * r));
-      setP4(Math.round((video.expenses?.p4 || 0) * r));
-      setP5(Math.round((video.expenses?.p5 || 0) * r));
-    });
-    return () => { mounted = false; };
-  }, [video]);
-
-  useEffect(() => {
-    if (!rate) return;
-    const sumRub = p1 + p2 + p3 + p4 + p5;
-    setTotalUsd(+(sumRub / rate).toFixed(2));
-  }, [p1, p2, p3, p4, p5, rate]);
-
-  const submit = (e) => {
-    e.preventDefault();
-    if (!rate) return alert('Ждем загрузки курса...');
-
-    onSave({ 
-      status, 
-      expenses: { 
-        p1: +(p1 / rate).toFixed(2), 
-        p2: +(p2 / rate).toFixed(2), 
-        p3: +(p3 / rate).toFixed(2), 
-        p4: +(p4 / rate).toFixed(2), 
-        p5: +(p5 / rate).toFixed(2) 
-      } 
-    });
-  };
-
-  const inputCls = 'bg-surface border border-line rounded-lg h-9 px-3 text-xs outline-none focus:border-foreground w-full';
-
-  return (
-    <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-6">
-      <form onSubmit={submit} className="studio-panel bg-surface border border-line rounded-2xl w-full max-w-md overflow-hidden">
-        <div className="p-6 border-b border-line flex justify-between items-center">
-          <h2 className="text-sm font-semibold">Настройки видео</h2>
-          <button type="button" onClick={onClose} className="text-subtle hover:text-foreground"><X size={16} /></button>
-        </div>
-        <div className="p-6">
-          <label className="text-[10px] text-muted uppercase mb-1 block">Статус</label>
-          <select className={`${inputCls} mb-4`} value={status} onChange={e => setStatus(e.target.value)}>
-            <option value="moderation">На модерации</option>
-            <option value="published">Опубликовано</option>
-            <option value="rejected">Отказано</option>
-            <option value="paid">Выплатили</option>
-          </select>
-
-          <div className="flex items-center justify-between border-t border-line pt-4 mb-2">
-            <label className="text-[10px] text-muted uppercase block">Траты (в рублях ₽)</label>
-            {rate > 0 && <span className="text-[10px] text-subtle font-mono">Курс: {rate.toFixed(2)} ₽/$</span>}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <input type="number" className={inputCls} placeholder="Пункт 1 (₽)" value={p1 || ''} onChange={e => setP1(+e.target.value)} />
-            <input type="number" className={inputCls} placeholder="Пункт 2 (₽)" value={p2 || ''} onChange={e => setP2(+e.target.value)} />
-            <input type="number" className={inputCls} placeholder="Пункт 3 (₽)" value={p3 || ''} onChange={e => setP3(+e.target.value)} />
-            <input type="number" className={inputCls} placeholder="Пункт 4 (₽)" value={p4 || ''} onChange={e => setP4(+e.target.value)} />
-            <input type="number" className={`${inputCls} col-span-2`} placeholder="Пункт 5 (₽)" value={p5 || ''} onChange={e => setP5(+e.target.value)} />
-          </div>
-
-          <div className="bg-elevated border border-line rounded-lg p-3 mb-4 flex justify-between items-center">
-            <span className="text-xs text-muted">Итого спишется ($):</span>
-            <span className="text-sm font-mono font-semibold text-red-400">-${totalUsd.toFixed(2)}</span>
-          </div>
-
-          <button className="w-full h-9 bg-primary text-primary-foreground font-medium rounded-lg hover:opacity-90">Применить</button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
 function AdjustModal({ onClose, onAdd }) {
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('usd');

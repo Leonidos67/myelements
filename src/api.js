@@ -55,6 +55,7 @@ export const api = {
 
   videos: () => req('/videos'),
   addVideo: (d) => req('/videos', { method: 'POST', body: JSON.stringify(d) }),
+  duplicateVideo: id => req('/videos/'+encodeURIComponent(id)+'/duplicate',{method:'POST'}),
   updateVideo: (id, d) => req(`/videos/${id}`, { method: 'PATCH', body: JSON.stringify(d) }),
   deleteVideo: (id) => req(`/videos/${id}`, { method: 'DELETE' }),
 

@@ -235,3 +235,10 @@ input[type='checkbox'], input[type='radio'] { accent-color:var(--ui-primary); }
 .video-actions-menu>button:first-child:has(svg:first-child) { gap:8px; }
 @media(max-width:640px) { .workspace-breadcrumbs { gap:6px; font-size:11px; } .workspace-breadcrumbs>span[aria-current] { max-width:140px; } .workspace-crumb-parent { display:none; } }
 @media(max-width:640px) { .workspace-crumb-parent+span[aria-hidden] { display:none; } }
+
+.video-menu-item { display:flex; width:100%; align-items:center; gap:8px; padding:8px 12px; border-radius:6px; text-align:left; font-size:11px; }
+.video-menu-item:not(.text-red-400) { color:var(--ui-text); }
+.video-menu-item:hover { background:var(--ui-elevated); }
+.video-menu-item:disabled { opacity:.35; cursor:not-allowed; }
+.video-menu-divider { height:1px; background:var(--ui-line); margin:5px 6px; }
+.video-actions-menu { max-height:min(78vh,490px); overflow-y:auto; }
