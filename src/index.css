@@ -215,3 +215,23 @@ input[type='checkbox'], input[type='radio'] { accent-color:var(--ui-primary); }
 :root[data-theme='light'] .workspace-layout .studio-panel.expected-profit-card { background:#eef5ff; border-color:#b5cdf7; }
 :root[data-theme='light'] .workspace-layout .expected-profit-card :is(.text-foreground,.text-subtle,.text-muted) { color:#4c6792; }
 :root[data-theme='light'] .workspace-layout .expected-profit-card>.text-3xl { color:#1d3f75; }
+
+.workspace-switcher { position:relative; padding:0 8px; }
+.workspace-account-root { min-width:0; flex:1; }
+.workspace-account-trigger { display:flex; align-items:center; gap:9px; width:100%; padding:6px 7px; border-radius:6px; }
+.workspace-account-trigger:hover { background:var(--ui-elevated); }
+.workspace-account-all { display:grid; place-items:center; width:23px; height:23px; border:1px solid var(--ui-line); border-radius:6px; color:var(--ui-muted); }
+.workspace-account-menu { position:absolute; left:8px; right:8px; top:51px; z-index:90; padding:8px; border:1px solid var(--ui-line); border-radius:10px; background:var(--ui-surface); box-shadow:var(--ui-modal-shadow); }
+.workspace-account-menu button { display:flex; width:100%; align-items:center; gap:8px; border-radius:6px; padding:8px; text-align:left; font-size:11px; }
+.workspace-account-menu button>span:not(.workspace-avatar) { flex:1; }
+.workspace-account-menu button:hover,.workspace-account-menu button[aria-checked='true'] { background:var(--ui-elevated); }
+.workspace-breadcrumbs { display:flex; align-items:center; gap:10px; min-width:0; font-size:12px; }
+.workspace-breadcrumbs>a { flex-shrink:0; color:var(--ui-muted); }
+.workspace-breadcrumbs>a:hover { color:var(--ui-text); }
+.workspace-breadcrumbs>span[aria-hidden] { color:var(--ui-line-strong); }
+.workspace-breadcrumbs>span[aria-current] { max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.workspace-crumb-parent { color:var(--ui-muted); }
+.video-actions-menu>button,.video-actions-menu>a { width:100%; padding-left:12px; padding-right:12px; border-radius:6px; margin:1px 0; }
+.video-actions-menu>button:first-child:has(svg:first-child) { gap:8px; }
+@media(max-width:640px) { .workspace-breadcrumbs { gap:6px; font-size:11px; } .workspace-breadcrumbs>span[aria-current] { max-width:140px; } .workspace-crumb-parent { display:none; } }
+@media(max-width:640px) { .workspace-crumb-parent+span[aria-hidden] { display:none; } }

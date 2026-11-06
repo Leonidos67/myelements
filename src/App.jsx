@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { api } from './api';
 import Login from './Login';
 import WorkspaceShell from './WorkspaceShell';
+import LikesHint from './LikesHint';
+import {likesTarget} from './likesPolicy';
 import CommentPageModal from './CommentPageModal';
 import VideoScriptModal from './VideoScriptModal';
 import AIChat from './AIChat';
@@ -27,14 +29,6 @@ const CAT_ICONS = {
   rubup: Sparkles,
 };
 
-// Диапазоны лайков на 1000 просмотров из твоей таблицы
-const LIKES_MATRIX = {
-  gifts:    { min: 35, ideal: 60, max: 90 },  // (30-40), (50-70), (80-100)
-  cs2:      { min: 35, ideal: 60, max: 90 },
-  dota:     { min: 35, ideal: 60, max: 90 },
-  creative: { min: 40, ideal: 70, max: 100 }, // (35-45), (60-80), (90-110)
-  rubup:    { min: 30, ideal: 47, max: 70 },  // (25-35), (40-55), (60-80)
-};
 
 export default function App() {
   const [me, setMe] = useState(null);
@@ -168,24 +162,10 @@ export default function App() {
     }
   };
 
-  // Функция расчета статуса лайков
-  const getLikesStatus = (likes, views, category) => {
-    if (!views || views < 1000) return null;
-
-    const matrix = LIKES_MATRIX[category] || LIKES_MATRIX.rubup;
-    const mult = views / 1000;
-    const minThreshold = Math.floor(matrix.min * mult * 0.75);
-    const idealThreshold = Math.floor(matrix.ideal * mult * 0.75);
-    const maxThreshold = Math.floor(matrix.max * mult * 0.75);
-
-    if (!likes) {
-      return { status: 'none', color: 'text-subtle', icon: null, label: '', min: minThreshold, ideal: idealThreshold, max: maxThreshold };
-    }
-    if (likes < minThreshold) return { status: 'low', color: 'text-red-400', icon: ArrowDownCircle, label: 'Мало', min: minThreshold, ideal: idealThreshold, max: maxThreshold };
-    if (likes >= minThreshold && likes <= idealThreshold) return { status: 'ok', color: 'text-yellow-400', icon: ArrowUpCircle, label: 'Норма', min: minThreshold, ideal: idealThreshold, max: maxThreshold };
-    if (likes > idealThreshold && likes <= maxThreshold) return { status: 'ideal', color: 'text-green-400', icon: CheckCircle2, label: 'Идеально', min: minThreshold, ideal: idealThreshold, max: maxThreshold };
-
-    return { status: 'high', color: 'text-blue-400', icon: ArrowDownCircle, label: 'Перебор', min: minThreshold, ideal: idealThreshold, max: maxThreshold };
+  const getLikesStatus=(likes,views)=>{
+    const target=likesTarget(views,likes);if(!target)return null;
+    const appearance={low:{color:'text-red-400',icon:ArrowDownCircle,label:'Мало'},ideal:{color:'text-green-400',icon:CheckCircle2,label:'Норма'},high:{color:'text-blue-400',icon:ArrowDownCircle,label:'Перебор'}};
+    return {...target,...appearance[target.status]};
   };
 
   if (booting) return <div className="p-6 text-muted bg-surface min-h-screen">…</div>;
@@ -205,7 +185,7 @@ export default function App() {
   const daysLeft = goal ? Math.max(0, Math.ceil((new Date(goal.deadlineDate) - new Date()) / (1000 * 60 * 60 * 24))) : 0;
 
   return (
-    <WorkspaceShell view={currentView} onNavigate={setCurrentView} username={me.username} onCreate={() => setIsAddOpen(true)} onAgent={() => setCurrentView('ai')} onLogout={logout}><div className="studio-shell text-foreground font-sans">
+    <WorkspaceShell view={currentView} onNavigate={setCurrentView} username={me.username} accounts={accounts} activeAccount={activeAccount} onAccountChange={setActiveAccount} onAddAccount={addAccount} onCreate={() => setIsAddOpen(true)} onAgent={() => setCurrentView('ai')} onLogout={logout}><div className="studio-shell text-foreground font-sans">
       <header className="studio-header flex flex-wrap justify-between items-center gap-5">
         <div>
 
@@ -227,33 +207,6 @@ export default function App() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-
-
-          <div className="relative group">
-            <button className="flex items-center gap-2 h-8 px-3 bg-surface border border-line rounded-lg text-xs hover:bg-elevated transition-colors">
-              <CreditCard size={14} className="text-muted" />
-              <span className="max-w-[100px] truncate">{accounts.find(a => a._id === activeAccount)?.name || 'Все аккаунты'}</span>
-              <ChevronDown size={14} className="text-subtle" />
-            </button>
-            <div className="absolute right-0 top-full mt-1 w-56 bg-surface border border-line rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-              <div className="p-1 max-h-60 overflow-y-auto">
-                <button onClick={() => setActiveAccount('')} className="w-full text-left px-3 py-2 text-xs text-foreground hover:bg-elevated rounded">Все аккаунты</button>
-                {accounts.map(a => (
-                  <div key={a._id} className="flex items-center justify-between hover:bg-elevated rounded group/item">
-                    <button onClick={() => setActiveAccount(a._id)} className="flex-1 text-left px-3 py-2 text-xs text-foreground truncate">{a.name}</button>
-                    <button onClick={(e) => deleteAccount(a._id, e)} className="px-2 text-subtle hover:text-red-500 opacity-0 group-hover/item:opacity-100 transition-opacity"><Trash2 size={12} /></button>
-                  </div>
-                ))}
-              </div>
-              <div className="border-t border-line p-1">
-                <button onClick={addAccount} className="w-full text-left px-3 py-2 text-xs text-foreground hover:bg-elevated rounded flex items-center gap-2"><Plus size={12} /> Добавить</button>
-              </div>
-            </div>
-          </div>
-
-
-        </div>
       </header>
 
 
@@ -329,7 +282,7 @@ export default function App() {
                     <th className="pb-3 font-medium">Ссылка</th>
                     <th className="pb-3 font-medium">Тематика</th>
                     <th className="pb-3 font-medium text-right">Просмотры</th>
-                    <th className="pb-3 font-medium text-center" title="Введи реальное кол-во лайков для проверки ER">Лайки (ER+факт)</th>
+                    <th className="pb-3 font-medium text-center" title="Общая норма: 30–50 лайков на 1 000 просмотров (ER 3–5%)">Лайки (ER+факт)</th>
                     <th className="pb-3 font-medium text-center px-3">Комментарии</th>
                     <th className="pb-3 font-medium text-right">CPM</th>
                     <th className="pb-3 font-medium text-right">Начислено</th>
@@ -345,7 +298,7 @@ export default function App() {
                   const isMin = v.views >= (cat.minViews || 0);
                   const cpm = v.views > 0 ? ((v.grossRevenue / v.views) * 1000).toFixed(2) : '0.00';
 
-                  const likesStatus = getLikesStatus(v.likes, v.views, v.category);
+                  const likesStatus = getLikesStatus(v.likes, v.views);
                   const comments = commentSummary?.[v._id];
 
                   const statusColors = {
@@ -401,9 +354,7 @@ export default function App() {
                       {/* ЯЧЕЙКА ЛАЙКОВ */}
                       <td className="py-3">
                         <div className="flex flex-col items-center">
-                          <div className="text-[9px] text-subtle mb-0.5">
-                            {likesStatus ? `Идеал: ~${fmtInt(likesStatus.ideal)}` : 'Идеал: —'}
-                          </div>
+                          <LikesHint views={v.views} likes={v.likes||0}/>
 
                           <div className="flex items-center gap-1.5">
                             <input 
@@ -490,7 +441,7 @@ export default function App() {
                         {openMenuId === v._id && (
                           <>
                             <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
-                            <div className="absolute right-8 top-2 z-50 w-52 overflow-hidden bg-surface border border-line rounded-xl shadow-xl py-1">
+                            <div className="video-actions-menu absolute right-8 top-2 z-50 w-52 overflow-hidden bg-surface border border-line rounded-xl shadow-xl p-1.5">
                               {videoMenuPage === 'layout' ? <>
                                 <button onClick={() => setVideoMenuPage('main')} className="flex w-full items-center gap-2 border-b border-line px-3 py-2.5 text-left text-xs font-medium text-foreground hover:bg-elevated"><ChevronLeft size={14} />Макет</button>
                                 <button disabled={openingProject} onClick={() => openProject(v)} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-foreground hover:bg-elevated disabled:opacity-40"><FolderOpen size={13} />{openingProject?'Открываем…':'Проект и параметры'}</button>
