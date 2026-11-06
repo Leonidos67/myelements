@@ -42,7 +42,7 @@ try {
   assert.equal((await put(first.id,'const DATA = { test: 2 };',1)).status,200);
   const parallel=await Promise.all([put(first.id,'const DATA = { test: 3 };',2),put(first.id,'const DATA = { test: 4 };',2)]);
   assert.deepEqual(parallel.map(r=>r.status).sort(),[200,409]);
-  const untouched=await (await get(second.id,'bundled')).json();assert.equal(untouched.revision,0);assert.equal(untouched.source,'bundled');
+  const untouched=await (await get(second.id)).json();assert.equal(untouched.revision,0);assert.equal(untouched.source,'bundled');
   assert.equal(await VideoScript.countDocuments({video:second._id}),0);
   console.log('PASS: auth, save/read, revisions, concurrent saves, per-video isolation');
 } finally {

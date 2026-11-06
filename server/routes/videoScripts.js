@@ -20,7 +20,7 @@ router.get('/:videoId', wrap(async (req, res) => {
   if (!['saved', 'live', 'bundled'].includes(source)) return res.status(400).json({ error: 'Неизвестный источник JS' });
   if (source === 'saved' && saved) return res.json({ code: saved.code, filename: saved.filename, hash: saved.hash, revision: saved.revision, source: 'saved', updatedAt: saved.updatedAt });
   const revision = saved?.revision || 0;
-  if (source === 'bundled') {
+  if (source === 'bundled' || source === 'saved') {
     const code = readFileSync(new URL('../data/tt-stat/app.js', import.meta.url), 'utf8');
     return res.json({ code, filename: 'app.js', hash: validateScript(code), revision, source: 'bundled' });
   }

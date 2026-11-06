@@ -2,11 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { X, FileCode2, Copy, Download, Upload, RefreshCw, Save, Eye, Code2, Check } from 'lucide-react';
 import { api } from './api';
 import { buildStatPreview } from './statPreview';
+import localScript from './assets/tt-stat/app.js?raw';
 const MAX_BYTES = 256 * 1024;
 export default function VideoScriptModal({ video, onClose }) {
-  const [code, setCode] = useState('');
-  const [original, setOriginal] = useState('');
-  const [metadata, setMetadata] = useState(null);
+  const [code, setCode] = useState(localScript);
+  const [original, setOriginal] = useState(localScript);
+  const [metadata, setMetadata] = useState({source: 'bundled', revision: 0});
+  const [serverReady, setServerReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -19,8 +21,8 @@ export default function VideoScriptModal({ video, onClose }) {
   useEffect(() => {
     let active = true;
     api.videoScript(video._id).then(result => {
-      if (active) { setCode(result.code); setOriginal(result.code); setMetadata(result); }
-    }).catch(e => { if (active) setError(e.message); }).finally(() => { if (active) setLoading(false); });
+      if (active) { setCode(result.code); setOriginal(result.code); setMetadata(result); setServerReady(true); }
+    }).catch(e => { if (active) { setServerReady(false); setNotice('Открыта локальная копия app.js: можно редактировать, смотреть результат и скачать файл.'); setError(e.status === 404 ? 'Сервер не нашёл API для JS или выбранное видео. Перезапустите обновлённый сервер MyElement (или обновите сервер в Render), затем нажмите «Подключить сохранение».' : 'Сохранение в базе сейчас недоступно: ' + e.message); } }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [video._id]);
   function close() {
@@ -35,12 +37,15 @@ export default function VideoScriptModal({ video, onClose }) {
   }, [dirty, saving, loading]);
   async function load(source) {
     if (dirty && !window.confirm('Заменить несохранённый JS выбранной версией?')) return;
+    if (source === 'bundled') {
+      setCode(localScript); setOriginal(localScript); setMetadata(m => ({source: 'bundled', revision: m?.revision || 0})); setTab('code'); setCopied(false); setNotice('Открыта локальная копия из tt-stat-cc.'); return;
+    }
     setLoading(true); setError(''); setNotice('');
     try {
       const result = await api.videoScript(video._id, source);
-      setCode(result.code); setOriginal(result.code); setMetadata(result); setCopied(false); setTab('code');
+      setCode(result.code); setOriginal(result.code); setMetadata(result); setServerReady(true); setCopied(false); setTab('code');
       if (source !== 'saved') setNotice('Версия загружена. Нажмите «Сохранить для видео», чтобы закрепить её за этим видео.');
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(e.status === 404 ? 'API JS не найдено. Перезапустите обновлённый сервер или обновите его в Render.' : e.message); }
     finally { setLoading(false); }
   }
   async function upload(e) {
@@ -57,6 +62,7 @@ export default function VideoScriptModal({ video, onClose }) {
     } catch (e) { setError(e.message); }
   }
   async function save() {
+    if (!serverReady) { setError('Сначала подключите обновлённый сервер кнопкой «Подключить сохранение».'); return; }
     setSaving(true); setError(''); setNotice('');
     try {
       const result = await api.saveVideoScript(video._id, { code, revision: metadata?.revision || 0 });
@@ -78,16 +84,16 @@ export default function VideoScriptModal({ video, onClose }) {
   const sourceName = {saved: 'Сохранён в MongoDB', live: 'Получен с tt-stat.vercel.app', bundled: 'Локальная копия из tt-stat-cc'}[metadata?.source];
   return <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/85 p-4" onClick={close}>
     <section role="dialog" aria-modal="true" aria-labelledby="script-title" className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#111] text-white shadow-2xl" onClick={e => e.stopPropagation()}>
-      <header className="border-b border-white/5 p-5"><div className="flex items-center justify-between gap-4"><h2 id="script-title" className="flex items-center gap-2 text-lg font-semibold"><FileCode2 size={19} />Извлечь JS</h2><button aria-label="Закрыть" disabled={disabled} onClick={close} className="text-gray-500 hover:text-white disabled:opacity-30"><X size={20} /></button></div><p className="mt-2 truncate text-xs text-gray-500">{video.title || video.url}</p><p className="mt-1 text-[10px] text-gray-600">Отдельная версия для этого видео · Общий сайт tt-stat.vercel.app не изменяется</p></header>
+      <header className="border-b border-white/5 p-5"><div className="flex items-center justify-between gap-4"><h2 id="script-title" className="flex items-center gap-2 text-lg font-semibold"><FileCode2 size={19} />Извлечь JS</h2><button aria-label="Закрыть" disabled={disabled} onClick={close} className="text-gray-500 hover:text-white disabled:opacity-30"><X size={20} /></button></div><p className="mt-2 truncate text-xs text-gray-500">{video.title || video.url}</p><p className="mt-1 text-[10px] text-gray-600">Отдельная версия для этого видео · Редактирование JS и предпросмотр</p></header>
       <div className="min-h-0 overflow-y-auto p-5">
-        <div className="flex flex-wrap gap-2"><button className={action} disabled={disabled} onClick={() => load('live')}><RefreshCw size={13} />Актуальный JS с сайта</button><button className={action} disabled={disabled} onClick={() => load('saved')}>Сохранённая версия</button><button className={action} disabled={disabled} onClick={() => input.current.click()}><Upload size={13} />Загрузить новый JS</button><input ref={input} type="file" accept=".js,text/javascript,application/javascript" onChange={upload} className="hidden" /></div>
+        <div className="flex flex-wrap gap-2"><button className={action} disabled={disabled} onClick={() => load('bundled')}><FileCode2 size={13} />Локальный шаблон</button><button className={action} disabled={disabled} onClick={() => load('live')}><RefreshCw size={13} />Актуальный JS с сайта</button><button className={action} disabled={disabled} onClick={() => load('saved')}>{serverReady ? 'Сохранённая версия' : 'Подключить сохранение'}</button><button className={action} disabled={disabled} onClick={() => input.current.click()}><Upload size={13} />Загрузить новый JS</button><input ref={input} type="file" accept=".js,text/javascript,application/javascript" onChange={upload} className="hidden" /></div>
         {error && <div role="alert" className="mt-3 rounded-lg border border-red-400/15 bg-red-400/5 p-3 text-xs text-red-300"><p>{error}</p>{!metadata && !loading && <button className="mt-2 underline" onClick={() => load('bundled')}>Открыть локальную копию из tt-stat-cc</button>}</div>}
         {notice && <p role="status" className="mt-3 text-xs text-gray-400">{notice}</p>}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><div className="flex gap-1 rounded-lg bg-black p-1">{[['code','JS',Code2],['preview','Предпросмотр',Eye]].map(([id,label,Icon]) => <button key={id} disabled={loading || !code} onClick={() => setTab(id)} className={'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs disabled:opacity-30 ' + (tab === id ? 'bg-white text-black' : 'text-gray-500')}><Icon size={12} />{label}</button>)}</div><span className="text-[10px] text-gray-500">{sourceName}{metadata?.revision ? ' · v' + metadata.revision : ''}{dirty ? ' · Есть изменения' : ''}</span></div>
         {loading ? <div className="grid h-72 place-items-center text-sm text-gray-500">Получаем JS…</div> : tab === 'preview' ? <div className="mt-3 rounded-xl border border-white/10 bg-[#080808] p-3"><iframe title="Предпросмотр tt-stat для выбранного видео" sandbox="allow-scripts" referrerPolicy="no-referrer" srcDoc={preview} className="mx-auto h-[55vh] w-full max-w-[440px] rounded-lg border-0 bg-white" /><p className="mt-2 text-center text-[10px] text-gray-600">Макет HTML/CSS из tt-stat-cc · JS из редактора</p></div> : <textarea aria-label="Исходный код JS" spellCheck={false} value={code} onChange={e => {setCode(e.target.value);setCopied(false);}} className="mt-3 h-[45vh] min-h-48 w-full resize-y rounded-xl border border-white/10 bg-[#080808] p-4 font-mono text-[11px] leading-relaxed text-gray-300 outline-none focus:border-white/30" />}
         <div className="mt-2 flex flex-wrap justify-between gap-2 text-[10px] text-gray-600"><span>{(new Blob([code]).size / 1024).toFixed(1)} КБ / 256 КБ</span><span>{metadata?.updatedAt ? 'Сохранено: ' + new Date(metadata.updatedAt).toLocaleString('ru-RU') : metadata?.checkedAt ? 'Проверено: ' + new Date(metadata.checkedAt).toLocaleString('ru-RU') : ''}</span></div>
       </div>
-      <footer className="flex flex-wrap justify-between gap-2 border-t border-white/5 p-5"><div className="flex gap-2"><button className={action} disabled={disabled || !code} onClick={copy}>{copied ? <Check size={13} /> : <Copy size={13} />}{copied ? 'Скопировано' : 'Копировать JS'}</button><button className={action} disabled={disabled || !code} onClick={download}><Download size={13} />Скачать .js</button></div><button disabled={disabled || !code.trim()} onClick={save} className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-medium text-black hover:bg-gray-200 disabled:opacity-30"><Save size={13} />{saving ? 'Сохраняем…' : 'Сохранить для видео'}</button></footer>
+      <footer className="flex flex-wrap justify-between gap-2 border-t border-white/5 p-5"><div className="flex gap-2"><button className={action} disabled={disabled || !code} onClick={copy}>{copied ? <Check size={13} /> : <Copy size={13} />}{copied ? 'Скопировано' : 'Копировать JS'}</button><button className={action} disabled={disabled || !code} onClick={download}><Download size={13} />Скачать .js</button></div><button disabled={disabled || !serverReady || !code.trim()} onClick={save} className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs font-medium text-black hover:bg-gray-200 disabled:opacity-30"><Save size={13} />{saving ? 'Сохраняем…' : 'Сохранить для видео'}</button></footer>
     </section>
   </div>;
 }
