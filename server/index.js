@@ -16,6 +16,7 @@ import adjustmentsRouter from './routes/adjustments.js';
 
 import commentPagesRouter from './routes/commentPages.js';
 import videoScriptsRouter from './routes/videoScripts.js';
+import statProjectsRouter from './routes/statProjects.js';
 
 const app = express();
 app.use('/api/video-scripts', express.json({ limit: '2mb' }));
@@ -26,6 +27,7 @@ app.use(cors({
   credentials: true,
 }));
 
+app.use('/api/stat-projects', statProjectsRouter);
 app.use('/api/video-scripts', videoScriptsRouter);
 app.use('/api/comment-pages', commentPagesRouter);
 app.use('/api/auth', authRouter);

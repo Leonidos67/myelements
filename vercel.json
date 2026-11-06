@@ -11,6 +11,14 @@
     {
       "source": "/tt-stat/:id",
       "destination": "/index.html"
+    },
+    {
+      "source": "/projects/:id/preview",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/projects/:id",
+      "destination": "/index.html"
     }
   ]
 }

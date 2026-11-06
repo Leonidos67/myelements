@@ -61,6 +61,13 @@ export default function App() {
   const [editVideo, setEditVideo] = useState(null);
   const [commentVideo, setCommentVideo] = useState(null);
   const [scriptVideo, setScriptVideo] = useState(null);
+  const [openingProject, setOpeningProject] = useState(false);
+  async function openProject(video) {
+    setOpeningProject(true); setErr('');
+    try { const project=await api.openStatProject(video._id); window.location.assign('/projects/'+project._id); }
+    catch(e){setErr(e.status===404?'API проектов пока недоступно. Перезапустите обновлённый сервер MyElement.':e.message);}
+    finally{setOpeningProject(false);}
+  }
   const [videoMenuPage, setVideoMenuPage] = useState('main');
   const scriptFileInput = useRef(null);
   const scriptFileVideo = useRef(null);
@@ -483,6 +490,7 @@ export default function App() {
                             <div className="absolute right-8 top-2 z-50 w-52 overflow-hidden bg-[#141414] border border-[#2a2a2a] rounded-xl shadow-xl py-1">
                               {videoMenuPage === 'layout' ? <>
                                 <button onClick={() => setVideoMenuPage('main')} className="flex w-full items-center gap-2 border-b border-white/5 px-3 py-2.5 text-left text-xs font-medium text-white hover:bg-white/5"><ChevronLeft size={14} />Макет</button>
+                                <button disabled={openingProject} onClick={() => openProject(v)} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-white hover:bg-white/5 disabled:opacity-40"><FolderOpen size={13} />{openingProject?'Открываем…':'Проект и параметры'}</button>
                                 <button onClick={() => {setOpenMenuId(null);setScriptVideo(v);}} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-300 hover:bg-white/5"><FileCode2 size={13} />Извлечь JS</button>
                                 <button onClick={() => {scriptFileVideo.current=v;setOpenMenuId(null);scriptFileInput.current.click();}} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-300 hover:bg-white/5"><Upload size={13} />Загрузить новый JS</button>
                                 <a href={'/tt-stat/' + v._id} target="_blank" rel="noreferrer" onClick={() => setOpenMenuId(null)} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-gray-300 hover:bg-white/5"><Eye size={13} />Предпросмотр<ChevronRight size={12} className="ml-auto text-gray-500" /></a>

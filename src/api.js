@@ -14,6 +14,12 @@ async function req(path, opts = {}) {
 }
 
 export const api = {
+  openStatProject: videoId => req('/stat-projects', {method:'POST',body:JSON.stringify({videoId})}),
+  statProjectForVideo: videoId => req('/stat-projects/by-video/'+encodeURIComponent(videoId)),
+  statProject: id => req('/stat-projects/'+encodeURIComponent(id)),
+  statProjectScript: id => req('/stat-projects/'+encodeURIComponent(id)+'/script'),
+  saveStatProject: (id,data) => req('/stat-projects/'+encodeURIComponent(id),{method:'PUT',body:JSON.stringify(data)}),
+  deleteStatProject: id => req('/stat-projects/'+encodeURIComponent(id),{method:'DELETE'}),
   videoScript: (id, source = 'saved') => req('/video-scripts/' + encodeURIComponent(id) + '?source=' + encodeURIComponent(source)),
   saveVideoScript: (id, data) => req('/video-scripts/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify(data) }),
   resetCommentTimer: (id) => req('/comment-pages/' + encodeURIComponent(id) + '/reset-timer', { method: 'POST' }),
