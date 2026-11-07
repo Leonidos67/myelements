@@ -151,6 +151,35 @@ router.delete('/:id/comments', auth, wrap(async (req, res) => {
   }
   res.json({ ok: true });
 }));
+router.post('/:id/reviews', auth, wrap(async (req, res) => {
+  const { indexes } = req.body || {};
+  if (!Array.isArray(indexes) || !indexes.length ||
+      indexes.some(index => !Number.isInteger(index) || index < 0 || index > 2147483647)) {
+    return res.status(400).json({ error: 'Выберите комментарии для подтверждения' });
+  }
+
+  const now = new Date();
+  const result = await CommentPage.updateOne({ _id: req.params.id }, [{ $set: {
+    claims: { $map: {
+      input: { $range: [0, { $size: '$claims' }] },
+      as: 'index',
+      in: { $let: {
+        vars: { claim: { $arrayElemAt: ['$claims', '$$index'] } },
+        in: { $cond: [
+          { $and: [
+            { $in: ['$$index', [...new Set(indexes)]] },
+            { $eq: [{ $ifNull: ['$$claim.confirmedAt', null] }, null] },
+            { $eq: [{ $ifNull: ['$$claim.revertedAt', null] }, null] },
+          ] },
+          { $mergeObjects: ['$$claim', { confirmedAt: now }] },
+          '$$claim',
+        ] },
+      } },
+    } },
+  } }]);
+  if (!result.matchedCount) return res.status(404).json({ error: 'Набор комментариев не найден' });
+  res.json({ ok: true });
+}));
 router.post('/:id/reviews/:index', auth, wrap(async (req, res) => {
   const index = Number(req.params.index);
   const { action } = req.body || {};

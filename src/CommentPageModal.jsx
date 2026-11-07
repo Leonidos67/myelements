@@ -53,8 +53,10 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
   const [replacing, setReplacing] = useState('');
   const [removing, setRemoving] = useState('');
   const [reviewing, setReviewing] = useState(false);
+  const [selectedReviews, setSelectedReviews] = useState(() => new Set());
   const [selectedPageId, setSelectedPageId] = useState('');
   const activePage = pages.find(p => p._id === selectedPageId) || pages[0];
+  useEffect(() => { setSelectedReviews(new Set()); }, [activePage?._id]);
   useEffect(() => {
     let active = true;
     Promise.all([api.commentThemes(), api.commentPages(video._id)]).then(([t, p]) => {
@@ -143,6 +145,33 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
       setReviewing(false);
     }
   }
+  const reviewIndexes = tab === 'review' ? reviewedRows.map(claim => claim.index) : [];
+  const selectedIndexes = reviewIndexes.filter(index => selectedReviews.has(index));
+  const allSelected = reviewIndexes.length > 0 && selectedIndexes.length === reviewIndexes.length;
+
+  function toggleReview(index) {
+    setSelectedReviews(previous => {
+      const next = new Set(previous);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }
+
+  async function confirmReviews(indexes) {
+    setReviewing(true);
+    setError('');
+    try {
+      await api.confirmComments(activePage._id, indexes);
+      setSelectedReviews(new Set());
+      await refresh();
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setReviewing(false);
+    }
+  }
+
   async function copy(id) {
     try { await navigator.clipboard.writeText(url(id)); setCopied(id); }
     catch { setError('Не удалось скопировать ссылку автоматически. Скопируйте её из поля.'); }
@@ -225,6 +254,22 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
       </>}
         </div> : <div role="tabpanel" id={'comment-panel-' + tab} aria-labelledby={'comment-tab-' + tab}>
           <div className="flex justify-between items-center gap-3"><div><h3 className="text-sm font-semibold">{tab === 'pending' ? 'В ожидании выдачи' : tab === 'review' ? 'На проверке' : 'Выполненные'}</h3><p className="mt-1 text-[11px] text-subtle">{tab === 'pending' ? 'Замените или удалите неподходящие варианты до выдачи.' : tab === 'review' ? 'Подтвердите опубликованный комментарий или верните его в очередь.' : 'Комментарии, которые вы подтвердили.'}</p></div><button onClick={refresh} disabled={refreshing || deleting} title="Обновить список" aria-label="Обновить список" className="shrink-0 rounded-lg border border-line p-2 text-muted hover:text-foreground disabled:opacity-40"><RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} /></button></div>
+          {reviewIndexes.length > 0 && <div className="mt-4 flex flex-wrap items-center gap-2">
+            <label className="mr-auto inline-flex cursor-pointer items-center gap-2 text-xs text-muted">
+              <input type="checkbox" checked={allSelected} disabled={reviewing || deleting}
+                ref={input => { if (input) input.indeterminate = !allSelected && selectedIndexes.length > 0; }}
+                onChange={() => setSelectedReviews(new Set(allSelected ? [] : reviewIndexes))} />
+              Выбрать все ({reviewIndexes.length})
+            </label>
+            <button type="button" className={action} disabled={!selectedIndexes.length || reviewing || deleting}
+              onClick={() => confirmReviews(selectedIndexes)}>
+              Подтвердить выбранные{selectedIndexes.length > 0 ? ' (' + selectedIndexes.length + ')' : ''}
+            </button>
+            <button type="button" className={action} disabled={reviewing || deleting}
+              onClick={() => confirmReviews(reviewIndexes)}>
+              <CheckCheck size={14} />Подтвердить все
+            </button>
+          </div>}
           <div className="comments-list mt-4 pr-1">
           {loading ? <p className="text-xs text-subtle py-8 text-center">Загрузка…</p> : !activePage ? <p className="text-xs text-subtle py-8 text-center">Добавьте свой комментарий или создайте набор во вкладке «Прогресс».</p> : tab === 'pending' ? <>
             {!activePage.pending?.length ? <p className="text-xs text-subtle py-8 text-center">В этом наборе нет комментариев в ожидании выдачи.</p> : <ol className="space-y-2.5">{activePage.pending.map((comment, index) => {
@@ -237,6 +282,9 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
             </p> : <ol className="space-y-2.5">
               {reviewedRows.map(claim => <li key={claim.index} className="rounded-xl border border-line bg-elevated p-3.5">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  {!claim.confirmedAt && <input type="checkbox" checked={selectedReviews.has(claim.index)}
+                    disabled={reviewing || deleting} onChange={() => toggleReview(claim.index)}
+                    aria-label={'Выбрать комментарий ' + (claim.index + 1)} />}
                   <span className={'text-xs ' + (claim.confirmedAt ? 'text-green-400' : 'text-muted')}>
                     {claim.confirmedAt ? 'Подтверждён' : 'Ожидает проверки'}
                   </span>
