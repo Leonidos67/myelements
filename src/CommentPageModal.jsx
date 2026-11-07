@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { X, Copy, ExternalLink, RefreshCw, Plus, MessageSquare, ShieldCheck, Trash2, ChartNoAxesCombined, CheckCheck, ClipboardCheck, RotateCcw } from 'lucide-react';
+import { X, Copy, ExternalLink, RefreshCw, Plus, MessageSquare, ShieldCheck, Trash2, ChartNoAxesCombined, CheckCheck, ClipboardCheck, RotateCcw, Search } from 'lucide-react';
 import { api } from './api';
 import CommentQueueTimer from './CommentQueueTimer';
 import CommentFlow from './CommentFlow';
 
 export default function CommentPageModal({ video, videos, onClose, onChange }) {
   const [tab, setTab] = useState('progress');
+  const [searchByTab, setSearchByTab] = useState({});
   const [showCustom, setShowCustom] = useState(false);
   const [customText, setCustomText] = useState('');
   const [customTags, setCustomTags] = useState('');
@@ -163,7 +164,18 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
       setReviewing(false);
     }
   }
-  const reviewRows = tab === 'review' ? reviewedRows : [];
+  const search = searchByTab[tab] || '';
+  const query = search.trim().toLowerCase();
+  const matchesSearch = ({ page, comment }) => {
+    if (!query) return true;
+    const item = videoById.get(page.video);
+    return [comment.text, ...(comment.tags || []), labelFor(page), item?.url]
+      .some(value => value?.toLowerCase().includes(query));
+  };
+  const visiblePending = tab === 'pending' ? pendingRows.filter(matchesSearch) : [];
+  const visibleReviewed = reviewedRows.filter(matchesSearch);
+  const reviewRows = tab === 'review' ? visibleReviewed : [];
+  const resultCount = tab === 'pending' ? visiblePending.length : visibleReviewed.length;
   const selectedRows = reviewRows.filter(claim => selectedReviews.has(claim.key));
   const allSelected = reviewRows.length > 0 && selectedRows.length === reviewRows.length;
 
@@ -286,6 +298,21 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
       </>}
         </div> : <div role="tabpanel" id={'comment-panel-' + tab} aria-labelledby={'comment-tab-' + tab}>
           <div className="flex justify-between items-center gap-3"><div><h3 className="text-sm font-semibold">{tab === 'pending' ? 'В ожидании выдачи' : tab === 'review' ? 'На проверке' : 'Выполненные'}</h3><p className="mt-1 text-[11px] text-subtle">{tab === 'pending' ? 'Замените или удалите неподходящие варианты до выдачи.' : tab === 'review' ? 'Подтвердите опубликованный комментарий или верните его в очередь.' : 'Комментарии, которые вы подтвердили.'}</p></div><button onClick={refresh} disabled={refreshing || deleting} title="Обновить список" aria-label="Обновить список" className="shrink-0 rounded-lg border border-line p-2 text-muted hover:text-foreground disabled:opacity-40"><RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} /></button></div>
+          {!loading && activePage && <div className="mt-4 flex flex-wrap items-center gap-2">
+            <label className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-line bg-inset px-3 focus-within:border-foreground/40">
+              <Search size={15} aria-hidden="true" className="shrink-0 text-muted" />
+              <input type="search" aria-label="Поиск комментариев" value={search}
+                onChange={event => {
+                  const value = event.target.value;
+                  setSearchByTab(previous => ({ ...previous, [tab]: value }));
+                }}
+                placeholder="Текст, дополнения или видео"
+                className="min-w-0 flex-1 bg-transparent py-2 text-sm outline-none" />
+            </label>
+            {query && <span role="status" className="shrink-0 text-xs text-muted">
+              Найдено {resultCount} из {tab === 'pending' ? pendingRows.length : reviewedRows.length}
+            </span>}
+          </div>}
           {reviewRows.length > 0 && <div className="mt-4 flex flex-wrap items-center gap-2">
             <span className="mr-auto text-xs text-muted">Выбрано {selectedRows.length} из {reviewRows.length}</span>
             <button type="button" className={action} disabled={!selectedRows.length || reviewing || deleting}
@@ -294,17 +321,17 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
             </button>
             <button type="button" className={action} disabled={reviewing || deleting}
               onClick={() => confirmReviews(reviewRows)}>
-              <CheckCheck size={14} />Подтвердить все
+              <CheckCheck size={14} />{query ? 'Подтвердить все найденные' : 'Подтвердить все'}
             </button>
           </div>}
           <div className="comments-list mt-4 pr-1">
-          {loading ? <p className="text-xs text-subtle py-8 text-center">Загрузка…</p> : !activePage ? <p className="text-xs text-subtle py-8 text-center">Добавьте свой комментарий или создайте набор во вкладке «Прогресс».</p> : tab === 'pending' ? <>
-            {!pendingRows.length ? <p className="text-xs text-subtle py-8 text-center">В этом наборе нет комментариев в ожидании выдачи.</p> : <ol className="space-y-2.5">{pendingRows.map(({ page, comment, index }) => {
+          {loading ? <p className="text-xs text-subtle py-8 text-center">Загрузка…</p> : !activePage ? <p className="text-xs text-subtle py-8 text-center">Добавьте свой комментарий или создайте набор во вкладке «Прогресс».</p> : query && resultCount === 0 ? <p className="py-8 text-center text-xs text-subtle">По этому запросу ничего не найдено.</p> : tab === 'pending' ? <>
+            {!visiblePending.length ? <p className="text-xs text-subtle py-8 text-center">В этом наборе нет комментариев в ожидании выдачи.</p> : <ol className="space-y-2.5">{visiblePending.map(({ page, comment, index }) => {
               const key = page._id + ':' + JSON.stringify(comment);
               return <li key={key} className="rounded-xl bg-elevated border border-line p-3.5 hover:border-foreground/25 transition-colors"><div className="flex justify-between items-start gap-3"><p className="text-sm leading-relaxed whitespace-pre-wrap break-words min-w-0"><span className="text-subtle text-[10px] font-mono mr-2">{index + 1}.</span>{comment.text}{group.length > 1 && <span className="mt-1 block break-all text-xs text-muted">{labelFor(page)}</span>}</p><div className="shrink-0 flex flex-wrap justify-end gap-1.5">{page.theme !== 'custom' && <button disabled={!!replacing || !!removing || deleting} onClick={() => replace(page._id, comment)} className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-foreground/15 bg-primary/5 px-2 py-1.5 text-[10px] text-foreground hover:bg-primary/15 disabled:opacity-50"><RefreshCw size={12} className={replacing === key ? 'animate-spin' : ''} />{replacing === key ? 'Меняем…' : 'Заменить'}</button>}<button disabled={!!replacing || !!removing || deleting} onClick={() => removePending(page._id, comment)} title="Удалить комментарий" aria-label="Удалить комментарий из очереди" className="inline-flex items-center gap-1 rounded-lg border border-red-400/20 px-2 py-1.5 text-[10px] text-red-400 hover:bg-red-400/10 disabled:opacity-50"><Trash2 size={12}/>{removing === key ? 'Удаляем…' : 'Удалить'}</button></div></div>{comment.tags?.length > 0 && <p className="mt-2 text-[11px] text-muted break-words">{comment.tags.join(' · ')}</p>}</li>;
             })}</ol>}
           </> : <>
-            {!reviewedRows.length ? <p className="px-2 py-8 text-center text-xs text-subtle">
+            {!visibleReviewed.length ? <p className="px-2 py-8 text-center text-xs text-subtle">
               {tab === 'review' ? 'Нет комментариев на проверке.' : 'Пока нет подтверждённых комментариев.'}
             </p> : tab === 'review' ? (
               <div className="overflow-x-auto rounded-xl border border-line">
@@ -312,7 +339,7 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
                   <thead className="border-b border-line bg-elevated text-xs text-muted">
                     <tr>
                       <th scope="col" className="w-12 px-4 py-3">
-                        <input type="checkbox" aria-label="Выбрать все комментарии" checked={allSelected}
+                        <input type="checkbox" aria-label={query ? 'Выбрать все найденные комментарии' : 'Выбрать все комментарии'} checked={allSelected}
                           disabled={reviewing || deleting}
                           ref={input => { if (input) input.indeterminate = !allSelected && selectedRows.length > 0; }}
                           onChange={() => setSelectedReviews(new Set(allSelected ? [] : reviewRows.map(claim => claim.key)))} />
@@ -323,7 +350,7 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line">
-                    {reviewedRows.map(claim => {
+                    {visibleReviewed.map(claim => {
                       const checked = selectedReviews.has(claim.key);
                       return <tr key={claim.key} className={checked ? 'bg-inset' : 'hover:bg-elevated'}>
                         <td className="px-4 py-3 align-top">
@@ -354,7 +381,7 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
                 </table>
               </div>
             ) : <ol className="space-y-2.5">
-              {reviewedRows.map(claim => <li key={claim.key} className="rounded-xl border border-line bg-elevated p-3.5">
+              {visibleReviewed.map(claim => <li key={claim.key} className="rounded-xl border border-line bg-elevated p-3.5">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <span className="text-xs text-green-400">Подтверждён</span>
                   <time dateTime={claim.confirmedAt} className="text-xs text-subtle">{new Date(claim.confirmedAt).toLocaleString('ru-RU')}</time>
