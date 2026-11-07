@@ -65,7 +65,8 @@ try{
  assert.deepEqual(manual.pending, [{ text: 'Свой текст', tags: ['@test'] }]);
  assert.equal((await commentRequest('/' + manual._id + '/comments', 'POST', manualInput.comment)).status, 409);
  assert.equal((await commentRequest('/' + manual._id + '/comments', 'POST', { text: 'Ещё текст', tags: [] })).status, 201);
- const manualClaim = await commentRequest('/' + manual._id + '/claim', 'POST', { visitor: randomUUID() }, false);
+ const manualVisitor = randomUUID();
+ const manualClaim = await commentRequest('/' + manual._id + '/claim', 'POST', { visitor: manualVisitor }, false);
  assert.equal(manualClaim.status, 200);
  assert.deepEqual((await manualClaim.json()).comment, manual.pending[0]);
  console.log('PASS: first custom comment creates a usable link and accepts further comments');
@@ -133,6 +134,17 @@ try{
  manualPage = await CommentPage.findById(manual._id).lean();
  assert.ok(manualPage.claims.every(claim => claim.confirmedAt));
  console.log('PASS: selected and bulk confirmation skip reverted and unselected comments');
+ assert.equal((await review(manual._id, 'delete', false)).status, 401);
+ const deletes = await Promise.all([review(manual._id, 'delete'), review(manual._id, 'delete')]);
+ assert.deepEqual(deletes.map(response => response.status).sort(), [200, 409]);
+ const deletedReview = (await (await commentRequest('?video=' + legacy.id)).json()).find(page => page._id === manual._id);
+ assert.equal(deletedReview.total, 1);
+ assert.equal(deletedReview.issued, 1);
+ assert.equal(deletedReview.confirmed, 1);
+ assert.deepEqual(deletedReview.pending, []);
+ assert.deepEqual(deletedReview.reviews.map(entry => entry.index), [1]);
+ assert.equal((await claim(manual._id, manualVisitor)).status, 410);
+ console.log('PASS: completed deletion adjusts totals once and does not requeue or replay the comment');
  assert.equal((await commentRequest('/' + root._id + '/reset-timer', 'POST')).status, 200);
  await commentRequest('/' + root._id + '/comments', 'POST', { text: 'После проверки', tags: [] });
  console.log('PASS: manual confirmation, atomic rollback, restored queue, and linked comment preserved');

@@ -184,28 +184,30 @@ router.post('/:id/reviews/:index', auth, wrap(async (req, res) => {
   const index = Number(req.params.index);
   const { action } = req.body || {};
   if (!/^\d+$/.test(req.params.index) || !Number.isSafeInteger(index) || index > 2147483647 ||
-      !['confirm', 'rollback'].includes(action)) {
+      !['confirm', 'rollback', 'delete'].includes(action)) {
     return res.status(400).json({ error: 'Некорректное действие проверки' });
   }
-  // Claim positions remain stable because reverted claims stay in the history.
+  // Keep withdrawn claims in history to preserve indexes and prevent replay.
   const key = 'claims.' + index;
   const filter = { _id: req.params.id, $expr: { $let: {
     vars: { claim: { $arrayElemAt: ['$claims', index] } },
     in: { $and: [
       { $lt: [index, { $size: '$claims' }] },
-      { $eq: [{ $ifNull: ['$$claim.confirmedAt', null] }, null] },
+      { [action === 'delete' ? '$ne' : '$eq']: [{ $ifNull: ['$$claim.confirmedAt', null] }, null] },
       { $eq: [{ $ifNull: ['$$claim.revertedAt', null] }, null] },
     ] },
   } } };
   const now = new Date();
   let update = { $set: { [key + '.confirmedAt']: now } };
-  if (action === 'rollback') {
+  if (action === 'delete') {
+    update = { $set: { [key + '.revertedAt']: now }, $inc: { total: -1 } };
+  } else if (action === 'rollback') {
     const page = await CommentPage.findOne(filter, { claims: { $slice: [index, 1] } }).lean();
-    if (!page) return res.status(409).json({ error: 'Комментарий уже проверен или недоступен' });
+    if (!page) return res.status(409).json({ error: 'Действие уже выполнено или комментарий недоступен' });
     update = { $set: { [key + '.revertedAt']: now }, $push: { remaining: page.claims[0].comment } };
   }
   const result = await CommentPage.updateOne(filter, update);
-  if (!result.modifiedCount) return res.status(409).json({ error: 'Комментарий уже проверен или недоступен' });
+  if (!result.modifiedCount) return res.status(409).json({ error: 'Действие уже выполнено или комментарий недоступен' });
   res.json({ ok: true });
 }));
 router.post('/:id/replace', auth, wrap(async (req, res) => {

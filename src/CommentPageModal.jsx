@@ -133,6 +133,7 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
     finally { setRemoving(''); }
   }
   async function review(index, decision) {
+    if (decision === 'delete' && !window.confirm('Удалить комментарий из выполненных и из набора?')) return;
     setReviewing(true);
     setError('');
     try {
@@ -255,12 +256,7 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
         </div> : <div role="tabpanel" id={'comment-panel-' + tab} aria-labelledby={'comment-tab-' + tab}>
           <div className="flex justify-between items-center gap-3"><div><h3 className="text-sm font-semibold">{tab === 'pending' ? 'В ожидании выдачи' : tab === 'review' ? 'На проверке' : 'Выполненные'}</h3><p className="mt-1 text-[11px] text-subtle">{tab === 'pending' ? 'Замените или удалите неподходящие варианты до выдачи.' : tab === 'review' ? 'Подтвердите опубликованный комментарий или верните его в очередь.' : 'Комментарии, которые вы подтвердили.'}</p></div><button onClick={refresh} disabled={refreshing || deleting} title="Обновить список" aria-label="Обновить список" className="shrink-0 rounded-lg border border-line p-2 text-muted hover:text-foreground disabled:opacity-40"><RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} /></button></div>
           {reviewIndexes.length > 0 && <div className="mt-4 flex flex-wrap items-center gap-2">
-            <label className="mr-auto inline-flex cursor-pointer items-center gap-2 text-xs text-muted">
-              <input type="checkbox" checked={allSelected} disabled={reviewing || deleting}
-                ref={input => { if (input) input.indeterminate = !allSelected && selectedIndexes.length > 0; }}
-                onChange={() => setSelectedReviews(new Set(allSelected ? [] : reviewIndexes))} />
-              Выбрать все ({reviewIndexes.length})
-            </label>
+            <span className="mr-auto text-xs text-muted">Выбрано {selectedIndexes.length} из {reviewIndexes.length}</span>
             <button type="button" className={action} disabled={!selectedIndexes.length || reviewing || deleting}
               onClick={() => confirmReviews(selectedIndexes)}>
               Подтвердить выбранные{selectedIndexes.length > 0 ? ' (' + selectedIndexes.length + ')' : ''}
@@ -279,27 +275,64 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
           </> : <>
             {!reviewedRows.length ? <p className="px-2 py-8 text-center text-xs text-subtle">
               {tab === 'review' ? 'Нет комментариев на проверке.' : 'Пока нет подтверждённых комментариев.'}
-            </p> : <ol className="space-y-2.5">
+            </p> : tab === 'review' ? (
+              <div className="overflow-x-auto rounded-xl border border-line">
+                <table className="w-full min-w-[520px] table-fixed text-left text-sm" aria-label="Комментарии на проверке">
+                  <thead className="border-b border-line bg-elevated text-xs text-muted">
+                    <tr>
+                      <th scope="col" className="w-12 px-4 py-3">
+                        <input type="checkbox" aria-label="Выбрать все комментарии" checked={allSelected}
+                          disabled={reviewing || deleting}
+                          ref={input => { if (input) input.indeterminate = !allSelected && selectedIndexes.length > 0; }}
+                          onChange={() => setSelectedReviews(new Set(allSelected ? [] : reviewIndexes))} />
+                      </th>
+                      <th scope="col" className="px-3 py-3 font-medium">Комментарий</th>
+                      <th scope="col" className="w-32 px-3 py-3 font-medium">Получен</th>
+                      <th scope="col" className="w-44 px-3 py-3 font-medium">Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                    {reviewedRows.map(claim => {
+                      const checked = selectedReviews.has(claim.index);
+                      return <tr key={claim.index} className={checked ? 'bg-inset' : 'hover:bg-elevated'}>
+                        <td className="px-4 py-3 align-top">
+                          <input type="checkbox" checked={checked} disabled={reviewing || deleting}
+                            onChange={() => toggleReview(claim.index)} aria-label={'Выбрать комментарий ' + (claim.index + 1)} />
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <p className="whitespace-pre-wrap [overflow-wrap:anywhere] leading-relaxed">{claim.comment.text}</p>
+                          {claim.comment.tags?.length > 0 && <p className="mt-1 text-xs text-muted [overflow-wrap:anywhere]">{claim.comment.tags.join(' · ')}</p>}
+                        </td>
+                        <td className="px-3 py-3 align-top text-xs text-subtle">
+                          <time dateTime={claim.issuedAt}>{new Date(claim.issuedAt).toLocaleString('ru-RU')}</time>
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <div className="flex flex-wrap gap-1.5">
+                            <button type="button" disabled={reviewing || deleting} onClick={() => review(claim.index, 'confirm')} className={action}>
+                              <CheckCheck size={14} />Подтвердить
+                            </button>
+                            <button type="button" disabled={reviewing || deleting} onClick={() => review(claim.index, 'rollback')} className={action}>
+                              <RotateCcw size={14} />Откатить
+                            </button>
+                          </div>
+                        </td>
+                      </tr>;
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : <ol className="space-y-2.5">
               {reviewedRows.map(claim => <li key={claim.index} className="rounded-xl border border-line bg-elevated p-3.5">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  {!claim.confirmedAt && <input type="checkbox" checked={selectedReviews.has(claim.index)}
-                    disabled={reviewing || deleting} onChange={() => toggleReview(claim.index)}
-                    aria-label={'Выбрать комментарий ' + (claim.index + 1)} />}
-                  <span className={'text-xs ' + (claim.confirmedAt ? 'text-green-400' : 'text-muted')}>
-                    {claim.confirmedAt ? 'Подтверждён' : 'Ожидает проверки'}
-                  </span>
-                  <time dateTime={claim.issuedAt} className="text-xs text-subtle">{new Date(claim.issuedAt).toLocaleString('ru-RU')}</time>
+                  <span className="text-xs text-green-400">Подтверждён</span>
+                  <time dateTime={claim.confirmedAt} className="text-xs text-subtle">{new Date(claim.confirmedAt).toLocaleString('ru-RU')}</time>
                 </div>
                 <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{claim.comment.text}</p>
                 {claim.comment.tags?.length > 0 && <p className="mt-2 break-words text-xs text-muted">{claim.comment.tags.join(' · ')}</p>}
-                {!claim.confirmedAt && <div className="mt-3 flex flex-wrap gap-2">
-                  <button type="button" disabled={reviewing || deleting} onClick={() => review(claim.index, 'confirm')} className={action}>
-                    <CheckCheck size={14} />Подтвердить
-                  </button>
-                  <button type="button" disabled={reviewing || deleting} onClick={() => review(claim.index, 'rollback')} className={action}>
-                    <RotateCcw size={14} />Откатить
-                  </button>
-                </div>}
+                <button type="button" disabled={reviewing || deleting} onClick={() => review(claim.index, 'delete')}
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-red-400/20 px-3 py-2 text-xs text-red-400 hover:bg-red-400/10 disabled:opacity-50">
+                  <Trash2 size={14} />Удалить
+                </button>
               </li>)}
             </ol>}
           </>}
