@@ -2,7 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import Video,{CATEGORIES} from '../models/Video.js';
 import Account from '../models/Account.js';
-import CommentPage from '../models/CommentPage.js';
+import { deleteVideoCommentPages } from '../services/commentFlows.js';
 import StatProject from '../models/StatProject.js';
 import VideoScript from '../models/VideoScript.js';
 import auth from '../middleware/auth.js';
@@ -47,7 +47,7 @@ router.delete('/:id',wrap(async(req,res)=>{
  try{await session.withTransaction(async()=>{
   const v=await Video.findByIdAndDelete(req.params.id,{session});if(!v)return;
   // One transaction: either the video and all linked resources disappear, or none do.
-  await CommentPage.deleteMany({video:v._id},{session});
+  await deleteVideoCommentPages(v._id, session);
   await StatProject.deleteMany({video:v._id},{session});
   await VideoScript.deleteMany({video:v._id},{session});
   removed=true;

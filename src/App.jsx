@@ -13,7 +13,7 @@ import CalendarView from './CalendarView';
 import SavingsView from './SavingsView';
 import { getUsdRate } from './currency';
 import { 
-  Copy, CopyPlus, ExternalLink, ArrowRightLeft, Filter, ArrowDownWideNarrow, Search, Plus, LogOut, User, Wallet, Eye,
+  Copy, CopyPlus, ExternalLink, ArrowRightLeft, Filter, ArrowDownWideNarrow, Search, Plus, LogOut, User, Wallet, Eye, EyeOff,
   Gift, Gamepad2, Sparkles, Palette, 
   Settings, Trash2, X, ChevronDown, CreditCard, DollarSign,
   LayoutDashboard, FolderOpen, MoreVertical, Target, Calendar, Bot, Bookmark,
@@ -36,6 +36,8 @@ export default function App() {
   const [me, setMe] = useState(null);
   const [booting, setBooting] = useState(true);
   const [stats, setStats] = useState(null);
+  const [showDashboardSummary, setShowDashboardSummary] = useState(true);
+  const summaryToggleLabel = showDashboardSummary ? 'Скрыть сводку' : 'Показать сводку';
   const [accounts, setAccounts] = useState([]);
   const [videos, setVideos] = useState([]);
   const [ideas, setIdeas] = useState([]);
@@ -231,6 +233,19 @@ export default function App() {
           </p>
         </div>
 
+        {currentView === 'dashboard' && stats && (
+          <button
+            type="button"
+            aria-label={summaryToggleLabel}
+            aria-expanded={showDashboardSummary}
+            aria-controls="dashboard-summary"
+            title={summaryToggleLabel}
+            onClick={() => setShowDashboardSummary(visible => !visible)}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-surface text-muted transition-colors hover:bg-elevated hover:text-foreground"
+          >
+            {showDashboardSummary ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
+          </button>
+        )}
       </header>
 
 
@@ -240,7 +255,7 @@ export default function App() {
       {currentView === 'dashboard' && (
         <>
           {stats && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div id="dashboard-summary" hidden={!showDashboardSummary} className={showDashboardSummary ? "grid grid-cols-1 md:grid-cols-4 gap-4 mb-8" : undefined}>
               <div className="studio-panel bg-surface border border-line rounded-2xl p-6 relative group">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2 text-[11px] text-muted uppercase tracking-wider">
@@ -298,10 +313,11 @@ export default function App() {
               <label className="workspace-filter-chip workspace-filter-select workspace-sort" title="Закреплённые видео всегда сверху"><ArrowDownWideNarrow size={13}/><select aria-label="Сортировка видео" value={videoSort} onChange={e=>setVideoSort(e.target.value)}><option value="newest">Новые сначала</option><option value="oldest">Старые сначала</option><option value="views">Больше просмотров</option><option value="likes">Больше лайков</option><option value="revenue">Больше дохода</option></select></label>
             </div>
             <div className="studio-table-wrap overflow-x-auto">
-              <table className="studio-table w-full text-xs text-left border-collapse min-w-[1220px]">
+              <table className="studio-table w-full text-xs text-left border-collapse min-w-[1290px]">
                 <thead>
                   <tr className="border-b border-line text-muted">
                     <th className="pb-3 w-10 text-center" aria-label="Избранное"><Star size={12} className="mx-auto text-subtle" aria-hidden="true" /></th>
+                    <th scope="col" className="pb-3 font-medium video-id-column">ID</th>
                     <th className="pb-3 font-medium">Админ</th>
                     <th className="pb-3 font-medium">Дата</th>
                     <th className="pb-3 font-medium">Ссылка</th>
@@ -345,11 +361,13 @@ export default function App() {
                   return (
                     <tr key={v._id} className="border-b border-line/50 hover:bg-elevated transition-colors">
                       <td className="py-3 pr-2 text-center"><button disabled={videoActionIds.has(v._id)} onClick={() => toggleVideoFlag(v, 'isFavorite')} title={v.isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'} aria-label={v.isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'} aria-pressed={!!v.isFavorite} className={'p-1.5 rounded-lg transition-colors hover:bg-elevated disabled:opacity-40 ' + (v.isFavorite ? 'text-amber-400' : 'text-subtle hover:text-amber-300')}><Star size={15} fill={v.isFavorite ? 'currentColor' : 'none'} /></button></td>
+                      <td className="py-3 video-id-column">
+                        {v.shortId ? <button type="button" onClick={() => copyVideoCode(v.shortId)} title="Скопировать ID видео" aria-label={'Скопировать ID видео #' + v.shortId} className="inline-flex items-center gap-1 rounded border border-line px-1.5 py-0.5 font-mono text-[10px] text-muted hover:bg-inset hover:text-foreground">#{v.shortId}<Copy size={10} aria-hidden="true" /></button> : <span title="Короткий ID ещё не получен" className="text-subtle">—</span>}
+                      </td>
                       <td className="py-3 text-foreground font-mono text-[11px]">{adminName}</td>
                       <td className="py-3 text-muted font-mono text-[11px]">{dateStr}</td>
                       <td className="py-3">
                         <a href={v.url} target="_blank" rel="noreferrer" className="text-foreground hover:underline break-all block max-w-[150px] truncate" title={v.title || v.url}>{v.title || v.url}</a>
-                        {v.shortId && <button type="button" onClick={() => copyVideoCode(v.shortId)} title="Скопировать ID видео" aria-label={'Скопировать ID видео #' + v.shortId} className="mr-2 mt-1 inline-flex items-center gap-1 rounded border border-line px-1.5 py-0.5 font-mono text-[10px] text-muted hover:bg-inset hover:text-foreground">#{v.shortId}<Copy size={10} aria-hidden="true" /></button>}
                         {v.isPinned && <span className="mt-1 inline-flex items-center gap-1 text-[9px] text-subtle"><Pin size={10} />Закреплено</span>}
                       </td>
                       <td className="py-3 text-foreground">
@@ -497,7 +515,7 @@ export default function App() {
                   );
                 })}
                   {displayedVideos.length === 0 && (
-                    <tr><td colSpan={14}><div className="workspace-empty"><span className="workspace-empty-icon"><FolderOpen size={24}/></span><h3>{hasVideoFilters?'Ничего не найдено':'Пока нет видео'}</h3><p>{hasVideoFilters?'Попробуйте изменить запрос или сбросить фильтры.':'Добавьте первое видео, чтобы отслеживать статистику и создавать макеты.'}</p><button onClick={()=>{if(hasVideoFilters){resetVideoFilters();}else setIsAddOpen(true);}} className="rounded-md bg-primary px-4 py-2 text-xs font-medium text-primary-foreground">{hasVideoFilters?'Сбросить фильтры':'Добавить видео'}</button></div></td></tr>
+                    <tr><td colSpan={15}><div className="workspace-empty"><span className="workspace-empty-icon"><FolderOpen size={24}/></span><h3>{hasVideoFilters?'Ничего не найдено':'Пока нет видео'}</h3><p>{hasVideoFilters?'Попробуйте изменить запрос или сбросить фильтры.':'Добавьте первое видео, чтобы отслеживать статистику и создавать макеты.'}</p><button onClick={()=>{if(hasVideoFilters){resetVideoFilters();}else setIsAddOpen(true);}} className="rounded-md bg-primary px-4 py-2 text-xs font-medium text-primary-foreground">{hasVideoFilters?'Сбросить фильтры':'Добавить видео'}</button></div></td></tr>
                   )}
                 </tbody>
               </table>
@@ -748,7 +766,7 @@ export default function App() {
       )}
       <input ref={scriptFileInput} type="file" accept=".js,text/javascript,application/javascript" className="hidden" onChange={e => {const file=e.target.files?.[0];e.target.value='';if(file && scriptFileVideo.current)setScriptVideo({...scriptFileVideo.current, initialFile:file});}} />
       {scriptVideo && <VideoScriptModal video={scriptVideo} onClose={() => setScriptVideo(null)} />}
-      {commentVideo && <CommentPageModal video={commentVideo} onClose={() => { setCommentVideo(null); refreshCommentSummary(); }} onChange={refreshCommentSummary} />}
+      {commentVideo && <CommentPageModal video={commentVideo} videos={videos} onClose={() => { setCommentVideo(null); refreshCommentSummary(); }} onChange={refreshCommentSummary} />}
       {editVideo && <EditVideoModal video={editVideo} accounts={accounts} categories={stats?.categories} onClose={() => setEditVideo(null)} onSave={async (data) => { await api.updateVideo(editVideo._id, data); setEditVideo(null);setVideoNotice('Настройки видео сохранены.');await reload(); }} />}
       {isAdjustOpen && <AdjustModal onClose={() => setIsAdjustOpen(false)} onAdd={() => { setIsAdjustOpen(false); reload(); }} />}
       {isHistoryOpen && <HistoryModal adjustments={adjustments} onClose={() => setIsHistoryOpen(false)} reload={reload} />}

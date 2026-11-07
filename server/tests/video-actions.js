@@ -50,6 +50,44 @@ try{
  const migrated=await Video.findById(legacy.id);assert.match(migrated.shortId,/^[A-Z0-9]{5}$/);
  await backfillVideoCodes();assert.equal((await Video.findById(legacy.id)).shortId,migrated.shortId);
  await assert.rejects(Video.collection.updateOne({_id:legacy._id},{$set:{shortId:copy.shortId}}),{code:11000});
+ const commentRequest = (path = '', method = 'GET', body, auth = true) =>
+   fetch('http://127.0.0.1:' + server.address().port + '/comments' + path, {
+     method, headers: { 'Content-Type': 'application/json', ...(auth ? { Cookie: cookie } : {}) },
+     ...(body ? { body: JSON.stringify(body) } : {}),
+   });
+ const [theme] = await (await commentRequest('/themes')).json();
+ const created = await commentRequest('', 'POST', { videoId: legacy.id, theme: theme.id, count: 2 });
+ assert.equal(created.status, 201);
+ const root = await created.json();
+ const branchPath = '/' + root._id + '/branch';
+ const branchInput = { videoId: copy._id, theme: theme.id, count: 1 };
+ assert.equal((await commentRequest(branchPath, 'POST', branchInput, false)).status, 401);
+ const branches = await Promise.all([commentRequest(branchPath, 'POST', branchInput), commentRequest(branchPath, 'POST', branchInput)]);
+ assert.deepEqual(branches.map(r => r.status).sort(), [201, 409]);
+ const branch = await branches.find(r => r.status === 201).json();
+ const publicPage = await (await commentRequest('/' + branch.branchId, 'GET', undefined, false)).json();
+ assert.equal(publicPage.publicId, root._id);
+ assert.equal(publicPage.remaining, 1);
+ assert.deepEqual(publicPage.targets.map(item => item.videoUrl), [legacy.url, copy.url]);
+ const visitor = randomUUID();
+ const claim = (id, visitor) => commentRequest('/' + id + '/claim', 'POST', { visitor }, false);
+ const firstClaim = await claim(root._id, visitor);
+ assert.equal(firstClaim.status, 200);
+ const pair = await firstClaim.json();
+ assert.equal(pair.items.length, 2);
+ assert.deepEqual(await (await claim(branch.branchId, visitor)).json(), pair);
+ assert.equal((await commentRequest('/' + root._id + '/reset-timer', 'POST')).status, 200);
+ assert.equal((await claim(root._id, randomUUID())).status, 410);
+ const unspent = await CommentPage.findById(root._id);
+ assert.equal(unspent.remaining.length, 1);
+ assert.equal(unspent.claims.length, 1);
+ assert.equal((await request('/' + copy._id, 'DELETE')).status, 200);
+ assert.equal(await CommentPage.exists({ _id: branch.branchId }), null);
+ assert.equal((await CommentPage.findById(root._id)).branchId, undefined);
+ const single = await claim(root._id, randomUUID());
+ assert.equal(single.status, 200);
+ assert.equal((await single.json()).items, undefined);
+ console.log('PASS: branch authentication, concurrency, shared link, repeat delivery, rollback and detachment');
  console.log('PASS: code format, unique index, stable codes, existing video backfill');
  console.log('PASS: auth, validation, settings/account/flags, clean duplicate, transactional delete and rollback, unrelated data preserved');
 }finally{server.close();if(connected)await Promise.allSettled(models.map(model=>model.collection.drop()));await mongoose.disconnect();}

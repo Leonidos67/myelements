@@ -5,6 +5,8 @@ const schema = new mongoose.Schema({
   _id: { type: String },
   video: { type: mongoose.Schema.Types.ObjectId, ref: 'Video', required: true },
   videoTitle: String,
+  branchId: String,
+  parentId: String,
   theme: String,
   themeLabel: String,
   total: Number,

@@ -31,6 +31,7 @@ export const api = {
   commentSummary: () => req('/comment-pages/summary'),
   commentThemes: () => req('/comment-pages/themes'),
   commentPages: (video) => req('/comment-pages?video=' + encodeURIComponent(video)),
+  createCommentBranch: (id, data) => req('/comment-pages/' + encodeURIComponent(id) + '/branch', { method: 'POST', body: JSON.stringify(data) }),
   createCommentPage: (data) => req('/comment-pages', { method: 'POST', body: JSON.stringify(data) }),
   commentPage: (id) => req('/comment-pages/' + encodeURIComponent(id)),
   claimComment: (id, visitor) => req('/comment-pages/' + encodeURIComponent(id) + '/claim', { method: 'POST', body: JSON.stringify({ visitor }) }),

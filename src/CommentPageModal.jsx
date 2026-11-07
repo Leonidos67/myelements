@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { X, Copy, ExternalLink, RefreshCw, Plus, MessageSquare, ShieldCheck, Trash2, ChartNoAxesCombined, CheckCheck } from 'lucide-react';
 import { api } from './api';
 import CommentQueueTimer from './CommentQueueTimer';
+import CommentFlow from './CommentFlow';
 
-export default function CommentPageModal({ video, onClose, onChange }) {
+export default function CommentPageModal({ video, videos, onClose, onChange }) {
   const [tab, setTab] = useState('progress');
   const [showCustom, setShowCustom] = useState(false);
   const [customText, setCustomText] = useState('');
@@ -64,7 +65,7 @@ export default function CommentPageModal({ video, onClose, onChange }) {
     finally { setRefreshing(false); }
   }
   async function deleteTask() {
-    if (!window.confirm('Удалить задачу по комментариям для этого видео? Все наборы, ссылки и история выдачи будут удалены.')) return;
+    if (!window.confirm('Удалить задачу по комментариям для этого видео? Наборы этого видео и их ветки будут удалены. Если это второе видео в ветке, общая ссылка продолжит выдавать комментарии для первого.')) return;
     setDeleting(true); setError('');
     try {
       await api.deleteCommentTask(video._id);
@@ -80,6 +81,11 @@ export default function CommentPageModal({ video, onClose, onChange }) {
       setPages(p => [page, ...p]); setSelectedPageId(page._id); setShowForm(false); onChange?.();
     } catch (e) { setError(e.message); }
     finally { setBusy(false); }
+  }
+  async function createBranch(id, data) {
+    const branch = await api.createCommentBranch(id, data);
+    setPages(rows => rows.map(page => page._id === id ? { ...page, branchId: branch.branchId } : page));
+    await refresh();
   }
   async function replace(pageId, comment) {
     const key = pageId + ':' + JSON.stringify(comment);
@@ -126,6 +132,7 @@ export default function CommentPageModal({ video, onClose, onChange }) {
         {tab === 'pending' && activePage && <div className="mb-5"><button onClick={() => setShowCustom(v => !v)} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground"><Plus size={13} />{showCustom ? 'Скрыть форму' : 'Свой комментарий'}</button>{showCustom && <form onSubmit={addCustom} className="mt-3 space-y-3 rounded-xl border border-line p-4"><label className="block text-xs text-muted">Комментарий<textarea required maxLength={5000} value={customText} onChange={e => setCustomText(e.target.value)} rows={3} className="mt-2 block w-full rounded-lg border border-line bg-inset p-3 text-sm text-foreground outline-none focus:border-foreground/30" /></label><label className="block text-xs text-muted">Упоминания или стикеры — каждое с новой строки<textarea maxLength={10000} value={customTags} onChange={e => setCustomTags(e.target.value)} rows={2} placeholder="@gamers_ru" className="mt-2 block w-full rounded-lg border border-line bg-inset p-3 text-sm text-foreground outline-none focus:border-foreground/30" /></label><button disabled={adding || !customText.trim() || deleting} className="rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground disabled:opacity-40">{adding ? 'Добавляем…' : 'Добавить в набор'}</button></form>}</div>}
         {tab === 'progress' ? <div role="tabpanel" id="comment-panel-progress" aria-labelledby="comment-tab-progress">
       {loading ? <p className="mt-6 text-subtle">Загрузка…</p> : <>
+        <CommentFlow key={activePage?._id || 'empty'} page={activePage} video={video} videos={videos} themes={themes} onCreateBranch={createBranch} />
         {pages.length > 0 && <div className="mt-5 rounded-xl border border-line p-4">
           <div className="flex justify-between items-center"><span className="text-sm text-muted">Общий прогресс</span><span className="font-mono text-foreground">{percent}%</span></div>
           <p className="mt-2 text-xl font-semibold">{issued} <span className="text-sm text-subtle font-normal">из {total} выдано</span></p>
@@ -140,11 +147,11 @@ export default function CommentPageModal({ video, onClose, onChange }) {
         {pages.length > 0 && <div className="mt-5 space-y-4">{pages.map(p => {
           const progress = p.total ? Math.round(p.issued / p.total * 100) : 0;
           return <div key={p._id} className="p-4 border border-line rounded-xl">
-            <div className="flex justify-between items-start gap-3"><p className="text-sm">{p.themeLabel}</p><span className={`text-[10px] px-2 py-1 rounded whitespace-nowrap ${p.issued === p.total ? 'bg-green-500/10 text-green-400' : 'bg-primary/10 text-foreground'}`}>{p.issued === p.total ? 'Завершено' : 'В процессе'}</span></div>
+            <div className="flex justify-between items-start gap-3"><p className="text-sm">{p.themeLabel}{(p.branchId || p.parentId) && <span className="ml-2 text-xs text-muted">· Общая ссылка</span>}</p><span className={`text-[10px] px-2 py-1 rounded whitespace-nowrap ${p.issued === p.total ? 'bg-green-500/10 text-green-400' : 'bg-primary/10 text-foreground'}`}>{p.issued === p.total ? 'Завершено' : 'В процессе'}</span></div>
             <p className="text-xs text-muted mt-2">Выдано {p.issued} из {p.total} · Осталось {p.remaining}</p>
             <div className="h-1.5 mt-2 mb-4 rounded-full bg-elevated overflow-hidden"><div className="h-full bg-primary rounded-full" style={{ width: `${progress}%` }} /></div>
-            <input aria-label="Ссылка на страницу комментариев" readOnly value={url(p._id)} onFocus={e => e.target.select()} className="w-full bg-inset p-2.5 rounded-lg text-xs border border-line" />
-            <div className="flex flex-wrap gap-2 mt-3"><button onClick={() => copy(p._id)} className={action}><Copy size={13} />{copied === p._id ? 'Скопировано' : 'Копировать ссылку'}</button><a href={url(p._id)} target="_blank" rel="noreferrer" className={action}><ExternalLink size={13} />Открыть страницу</a></div>
+            <input aria-label="Ссылка на страницу комментариев" readOnly value={url(p.parentId || p._id)} onFocus={e => e.target.select()} className="w-full bg-inset p-2.5 rounded-lg text-xs border border-line" />
+            <div className="flex flex-wrap gap-2 mt-3"><button onClick={() => copy(p.parentId || p._id)} className={action}><Copy size={13} />{copied === (p.parentId || p._id) ? 'Скопировано' : 'Копировать ссылку'}</button><a href={url(p._id)} target="_blank" rel="noreferrer" className={action}><ExternalLink size={13} />Открыть страницу</a></div>
           </div>;
         })}</div>}
         {showForm && <form onSubmit={create} className="mt-5 space-y-4 border-t border-line pt-5">

@@ -5,11 +5,18 @@ import { readFileSync } from 'node:fs';
 import auth from '../middleware/auth.js';
 import Video from '../models/Video.js';
 import CommentPage from '../models/CommentPage.js';
-import { claimComment } from '../services/claimComment.js';
+import { claimCommentFlow, deleteVideoCommentPages, getCommentFlow, getFlowTargets } from '../services/commentFlows.js';
 import { replaceComment } from '../services/replaceComment.js';
 const themes = JSON.parse(readFileSync(new URL('../data/comment-themes.json', import.meta.url), 'utf8'));
 const router = express.Router();
 const wrap = fn => (req, res, next) => Promise.resolve(fn(req, res)).catch(next);
+function sampleComments(theme, count) {
+  const pool = [...theme.comments];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = randomInt(i + 1); [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, count);
+}
 router.get('/themes', auth, (req, res) => res.json(themes.map(({ comments, ...t }) => ({ ...t, available: comments.length }))));
 router.get('/summary', auth, wrap(async (req, res) => {
   res.json(await CommentPage.aggregate([
@@ -21,12 +28,12 @@ router.get('/', auth, wrap(async (req, res) => {
   res.json(await CommentPage.aggregate([
     { $match: { video: new mongoose.Types.ObjectId(req.query.video) } },
     { $sort: { createdAt: -1 } },
-    { $project: { themeLabel: 1, total: 1, createdAt: 1, nextAvailableAt: 1, serverTime: '$$NOW', pending: '$remaining', completed: { $map: { input: '$claims', as: 'claim', in: { comment: '$$claim.comment', issuedAt: '$$claim.issuedAt' } } }, issued: { $size: '$claims' }, remaining: { $size: '$remaining' } } },
+    { $project: { themeLabel: 1, branchId: 1, parentId: 1, total: 1, createdAt: 1, nextAvailableAt: 1, serverTime: '$$NOW', pending: '$remaining', completed: { $map: { input: '$claims', as: 'claim', in: { comment: '$$claim.comment', issuedAt: '$$claim.issuedAt' } } }, issued: { $size: '$claims' }, remaining: { $size: '$remaining' } } },
   ]));
 }));
 router.delete('/', auth, wrap(async (req, res) => {
   if (!mongoose.isValidObjectId(req.query.video)) return res.status(400).json({ error: 'Некорректное видео' });
-  const result = await CommentPage.deleteMany({ video: new mongoose.Types.ObjectId(req.query.video) });
+  const result = await CommentPage.db.transaction(session => deleteVideoCommentPages(new mongoose.Types.ObjectId(req.query.video), session));
   res.json({ ok: true, deleted: result.deletedCount });
 }));
 router.post('/', auth, wrap(async (req, res) => {
@@ -37,16 +44,43 @@ router.post('/', auth, wrap(async (req, res) => {
   }
   const video = await Video.findById(videoId);
   if (!video) return res.status(404).json({ error: 'Видео не найдено' });
-  const pool = [...theme.comments];
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = randomInt(i + 1); [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-  const page = await CommentPage.create({ _id: randomBytes(18).toString('hex'), video: video._id, videoTitle: video.title || 'Комментарий к видео', theme: theme.id, themeLabel: theme.label, total: count, remaining: pool.slice(0, count), claims: [], createdBy: req.admin.id });
+  const page = await CommentPage.create({ _id: randomBytes(18).toString('hex'), video: video._id, videoTitle: video.title || 'Комментарий к видео', theme: theme.id, themeLabel: theme.label, total: count, remaining: sampleComments(theme, count), claims: [], createdBy: req.admin.id });
   res.status(201).json({ _id: page._id, total: page.total, themeLabel: page.themeLabel, issued: 0, remaining: page.total, createdAt: page.createdAt, pending: page.remaining });
 }));
+router.post('/:id/branch', auth, wrap(async (req, res) => {
+  const { videoId, theme: themeId, count } = req.body || {};
+  const theme = themes.find(t => t.id === themeId);
+  if (!theme || !Number.isInteger(count) || count < 1 || count > theme.comments.length || !mongoose.isValidObjectId(videoId)) {
+    return res.status(400).json({ error: 'Выберите второе видео, тематику и количество' });
+  }
+  const branchId = randomBytes(18).toString('hex');
+  const remaining = sampleComments(theme, count);
+  const result = await CommentPage.db.transaction(async session => {
+    const root = await CommentPage.findById(req.params.id).session(session).lean();
+    if (!root) return { status: 404, error: 'Набор не найден' };
+    if (root.branchId || root.parentId) return { status: 409, error: 'У набора уже есть ветка' };
+    if (String(root.video) === String(videoId).toLowerCase()) return { status: 400, error: 'Выберите другое видео' };
+    const video = await Video.findById(videoId).session(session).lean();
+    if (!video) return { status: 404, error: 'Второе видео не найдено' };
+    await CommentPage.updateOne({ _id: root._id }, { $set: { branchId } }, { session });
+    await CommentPage.create([{
+      _id: branchId, parentId: root._id, video: video._id,
+      videoTitle: video.title || 'Второе видео', theme: theme.id, themeLabel: theme.label,
+      total: count, remaining, claims: [], createdBy: req.admin.id,
+    }], { session });
+    return { status: 201, branchId, publicId: root._id };
+  });
+  const { status, ...body } = result;
+  res.status(status).json(body);
+}));
 router.post('/:id/reset-timer', auth, wrap(async (req, res) => {
-  const page = await CommentPage.findByIdAndUpdate(req.params.id, { $set: { nextAvailableAt: new Date(0) } }, { new: true }).select('_id').lean();
-  if (!page) return res.status(404).json({ error: 'Страница не найдена' });
+  const found = await CommentPage.db.transaction(async session => {
+    const pages = await getCommentFlow(req.params.id, session);
+    if (!pages.length) return false;
+    await CommentPage.updateMany({ _id: { $in: pages.map(page => page._id) } }, { $set: { nextAvailableAt: new Date(0) } }, { session });
+    return true;
+  });
+  if (!found) return res.status(404).json({ error: 'Страница не найдена' });
   res.json({ ok: true });
 }));
 router.post('/:id/comments', auth, wrap(async (req, res) => {
@@ -86,15 +120,22 @@ router.post('/:id/replace', auth, wrap(async (req, res) => {
   res.status(status).json(body);
 }));
 router.get('/:id', wrap(async (req, res) => {
-  const page = await CommentPage.findById(req.params.id).select('video videoTitle themeLabel total remaining nextAvailableAt').lean();
-  if (!page) return res.status(404).json({ error: 'Страница не найдена' });
-  const video = await Video.findById(page.video).select('url').lean();
-  res.json({ title: page.videoTitle, videoUrl: video?.url || '', nextAvailableAt: page.nextAvailableAt, serverTime: new Date(), themeLabel: page.themeLabel, total: page.total, remaining: page.remaining.length });
+  const pages = await getCommentFlow(req.params.id);
+  if (!pages.length) return res.status(404).json({ error: 'Страница не найдена' });
+  const page = pages[0];
+  const targets = await getFlowTargets(pages);
+  res.json({
+    ...targets[0], publicId: page._id, targets, themeLabel: page.themeLabel,
+    nextAvailableAt: new Date(Math.max(...pages.map(item => Number(item.nextAvailableAt || 0)))),
+    serverTime: new Date(),
+    total: Math.min(...pages.map(item => item.total)),
+    remaining: Math.min(...pages.map(item => item.remaining.length)),
+  });
 }));
 router.post('/:id/claim', wrap(async (req, res) => {
   const visitor = req.body?.visitor;
   if (typeof visitor !== 'string' || !/^[a-zA-Z0-9-]{20,80}$/.test(visitor)) return res.status(400).json({ error: 'Некорректный идентификатор посетителя' });
-  const { status, ...body } = await claimComment(CommentPage, req.params.id, visitor);
+  const { status, ...body } = await claimCommentFlow(req.params.id, visitor);
   if (status === 429) res.set('Retry-After', String(Math.max(1, Math.ceil((new Date(body.retryAt) - new Date(body.serverTime)) / 1000))));
   res.status(status).json(body);
 }));

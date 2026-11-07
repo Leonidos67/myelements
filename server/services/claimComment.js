@@ -5,16 +5,16 @@ const cooldownSeconds = { $cond: [
   10,
   { $switch: { branches: [{ case: { $gte: [recentCount, 4] }, then: 1200 }, { case: { $gte: [recentCount, 2] }, then: 600 }], default: 120 } },
 ] };
-export async function claimComment(Model, id, visitor) {
+export async function claimComment(Model, id, visitor, session = null) {
   const page = await Model.findOneAndUpdate(
     { _id: id, 'remaining.0': { $exists: true }, 'claims.visitor': { $ne: visitor }, $expr: { $lte: [{ $ifNull: ['$nextAvailableAt', new Date(0)] }, '$$NOW'] } },
     [{ $set: {
       nextAvailableAt: { $add: ['$$NOW', { $multiply: [cooldownSeconds, 1000] }] },
       claims: { $concatArrays: ['$claims', [{ visitor: { $literal: visitor }, comment: { $arrayElemAt: ['$remaining', 0] }, issuedAt: '$$NOW' }]] },
       remaining: { $slice: ['$remaining', 1, { $size: '$remaining' }] },
-    } }], { new: true },
+    } }], { new: true, session },
   ).lean();
-  const current = page || await Model.findById(id).lean();
+  const current = page || await Model.findById(id).session(session).lean();
   if (!current) return { status: 404, error: 'Страница не найдена' };
   const claim = current.claims.find(c => c.visitor === visitor);
   if (claim) return { status: 200, comment: claim.comment, remaining: current.remaining.length };
