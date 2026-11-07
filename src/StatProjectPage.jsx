@@ -6,7 +6,7 @@ import ProjectAssistant from './ProjectAssistant';
 import WorkspaceShell from './WorkspaceShell';
 import Rows,{ViewerTypeRanges} from './PercentRows';
 import {repairProjectPercentages} from '../server/services/statPercentages';
-import {validateProjectConfig,projectDataSource} from '../server/services/statProjectData';
+import {validateProjectConfig,projectDataSource,publicationCalendarDate,viewsDateLabels} from '../server/services/statProjectData';
 import engine from '../server/data/tt-stat/engine.js?raw';
 const input='mt-2 w-full rounded-xl border border-line bg-inset px-3 py-2.5 text-sm text-foreground outline-none focus:border-foreground/40';
 const button='inline-flex items-center justify-center gap-2 rounded-lg border border-line px-3 py-2 text-xs text-foreground hover:bg-elevated disabled:opacity-40';
@@ -31,6 +31,8 @@ export default function StatProjectPage({id}){
  if(login)return <Login onLogin={load}/>;
  if(loading)return <main className="grid min-h-screen place-items-center bg-background text-subtle">Загрузка проекта…</main>;
  if(!project)return <main className="grid min-h-screen place-items-center bg-background p-6 text-foreground"><div><p role="alert">{error}</p><a href="/" className={button+' mt-4'}>В кабинет</a><button onClick={load} className={button+' ml-2'}>Повторить</button></div></main>;
+ const inferredViewsDate = publicationCalendarDate(config.video.published);
+ const dateLabels = config.viewsTimeUnit === 'day' ? viewsDateLabels(config) : null;
  const tabs=[['overview','Обзор'],['viewers','Зрители'],['engagement','Вовлеченность']];
  const field=(label,path,options={})=>{let value=config;for(const key of path.split('.'))value=value[key];return <Field label={label} value={value} onChange={v=>change(path,v)} {...options}/>;};
  const series=(label,path,max,help)=>{let values=config;for(const key of path.split('.'))values=values[key];return <Series key={path} label={label} values={values} onChange={v=>change(path,v)} max={max} help={help}/>;};
@@ -58,8 +60,17 @@ export default function StatProjectPage({id}){
           <option value="day">По дням</option>
         </select>
       </label>
+      {config.viewsTimeUnit === 'day' && <div className="grid items-end gap-3 sm:grid-cols-2">
+        {field('Дата первой точки','viewsStartDate',{
+          type:'date',
+          help: inferredViewsDate ? 'По умолчанию берётся дата публикации (' + inferredViewsDate + '). Здесь можно выбрать другую.' : 'Укажите дату публикации или другую дату начала графика.',
+        })}
+        {dateLabels && <div className="rounded-lg border border-line bg-inset px-3 py-2.5 text-xs text-muted">
+          Подписи на графике <strong className="ml-1 text-foreground">{dateLabels.join(' — ')}</strong>
+        </div>}
+      </div>}
       {series('Точки графика просмотров','viewsByHour',1e12,config.viewsTimeUnit === 'day'
-        ? 'Введите от двух чисел через запятую. Первое — день 0, следующее — день 1 и так далее.'
+        ? 'Введите от двух чисел через запятую. Первое соответствует начальной дате. Каждое следующее добавляет один день.'
         : 'Введите от двух чисел через запятую. Первое — час 0, следующее — час 1 и так далее.')}
       {series('Метки оси Y просмотров','viewsTicks',1e12)}
       {series('Удержание, %','retention',100,'От двух точек от начала до конца ролика. Временная шкала использует длительность из раздела «Обзор».')}

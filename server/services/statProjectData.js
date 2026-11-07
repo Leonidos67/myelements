@@ -1,6 +1,36 @@
 import defaults from '../data/stat-project-defaults.js';
 import {percentageSum,repairProjectPercentages} from './statPercentages.js';
 export const defaultProjectConfig = () => repairProjectPercentages(JSON.parse(JSON.stringify(defaults)));
+const monthLabels = ['янв.', 'февр.', 'мар.', 'апр.', 'мая', 'июня', 'июля', 'авг.', 'сент.', 'окт.', 'нояб.', 'дек.'];
+const monthPrefixes = ['янв', 'фев', 'мар', 'апр', 'ма', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+
+function calendarDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(value + 'T00:00:00Z');
+  return Number.isFinite(+date) && date.toISOString().slice(0, 10) === value ? date : null;
+}
+
+export function publicationCalendarDate(text) {
+  const iso = text?.match(/\b\d{4}-\d{2}-\d{2}\b/)?.[0];
+  if (calendarDate(iso)) return iso;
+  const match = text?.toLowerCase().match(/(\d{1,2})\s+([а-яё]+)\.?\s+(\d{4})/u);
+  if (!match) return '';
+  const [, day, month, year] = match;
+  const monthIndex = monthPrefixes.findIndex(prefix => month.startsWith(prefix));
+  if (monthIndex === -1) return '';
+  const date = [year, String(monthIndex + 1).padStart(2, '0'), day.padStart(2, '0')].join('-');
+  return calendarDate(date) ? date : '';
+}
+
+export function viewsDateLabels(config) {
+  const start = calendarDate(config.viewsStartDate || publicationCalendarDate(config.video.published));
+  if (!start || !config.viewsByHour.length) return null;
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + config.viewsByHour.length - 1);
+  const label = date => date.getUTCDate() + ' ' + monthLabels[date.getUTCMonth()];
+  return [label(start), label(end)];
+}
+
 export function validateProjectConfig(raw) {
   const fail = message => { throw Error(message); };
   const obj = (v,label) => v && typeof v === 'object' && !Array.isArray(v) ? v : fail('Проверьте раздел «'+label+'»');
@@ -16,10 +46,12 @@ export function validateProjectConfig(raw) {
   const stats=list(v.stats,'Основные показатели',5,5).map(n=>number(n,'Основные показатели',0,1e12,true));
   const viewsTimeUnit = raw.viewsTimeUnit === undefined ? 'hour' : raw.viewsTimeUnit;
   if (viewsTimeUnit !== 'hour' && viewsTimeUnit !== 'day') fail('Выберите часы или дни для графика просмотров');
+  const viewsStartDate = raw.viewsStartDate ?? '';
+  if (viewsStartDate !== '' && !calendarDate(viewsStartDate)) fail('Проверьте начальную дату графика');
   const result={
     video:{durationSeconds:duration,cover:url(v.cover,'Обложка'),published:text(v.published,'Дата публикации'),stats},
     watch:{totalSeconds:number(w.totalSeconds,'Общее время',0,1e12,true),averageSeconds:number(w.averageSeconds,'Среднее время',0,duration),completionPercent:number(w.completionPercent,'Полные просмотры',0,100),subscribers:number(w.subscribers,'Подписчики',0,1e12,true)},
-    viewsTimeUnit,
+    viewsTimeUnit, viewsStartDate,
     viewsByHour:series(raw.viewsByHour,'Точки графика просмотров'),viewsTicks:series(raw.viewsTicks,'Метки просмотров',1e12,1),retention:series(raw.retention,'Удержание',100),
     sources:percentRows(raw.sources,'Источники'),totalViewers:number(raw.totalViewers,'Всего зрителей',0,1e12,true),
     viewerTypes:list(raw.viewerTypes,'Типы зрителей',1,8).map(t=>{obj(t,'Типы зрителей');const pair={left:rows([t.left],'Типы зрителей')[0],right:rows([t.right],'Типы зрителей')[0]};if(Math.round((pair.left[1]+pair.right[1])*100)!==10000)fail('Типы зрителей: сумма каждой пары должна быть 100%');return pair;}),
@@ -43,6 +75,7 @@ export function projectData(raw) {
   return {
     ...c,video:{...c.video,duration:duration+' с.'},
     metrics:{views:{label:'Просмотры видео',value:c.video.stats[0]},total:{label:'Общее время просмотра',value:Math.floor(total/3600)+' ч.:'+Math.floor(total%3600/60)+' мин.:'+total%60+' с.'},avg:{label:'Среднее время просмотра',value:w.averageSeconds+' с.'},full:{label:'Просмотрели видео полностью',value:w.completionPercent+'%'},subs:{label:'Новые подписчики',value:w.subscribers}},
+    viewsDateLabels: c.viewsTimeUnit === 'day' ? viewsDateLabels(c) : null,
     avgWatchedPercent:Math.round(w.averageSeconds/duration*1000)/10,
   };
 }
