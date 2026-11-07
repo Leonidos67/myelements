@@ -13,14 +13,16 @@ import StatProject from '../models/StatProject.js';
 import {defaultProjectConfig,validateProjectConfig,projectData,projectDataSource} from '../services/statProjectData.js';
 const config=defaultProjectConfig();config.video.stats=[57539,547,0,39,24];config.video.durationSeconds=75.5;config.watch.averageSeconds=20;
 assert.equal(projectData(config).viewsTimeUnit, 'hour');
+assert.equal(projectData(config).viewsShowDots, false);
 assert.throws(() => validateProjectConfig({ ...config, viewsTimeUnit: 'week' }), /часы или дни/);
 config.viewsTimeUnit = 'day';
+config.viewsShowDots = true;
 config.viewsByHour = [0, 120, 270];
 const data=projectData(config);
 const engineSource = readFileSync(new URL('../data/tt-stat/engine.js', import.meta.url), 'utf8');
 const graphCode = engineSource.slice(engineSource.indexOf('const viewsTimeSuffix'), engineSource.indexOf('$("ret-lead")'));
 const axisLabels = runInNewContext(projectDataSource(config) + graphCode, {
-  areaChart(id, values, options) { return options.xLabels.join(', '); },
+  areaChart(id, values, options) { assert.equal(options.dot, true); return options.xLabels.join(', '); },
 });
 assert.equal(axisLabels, '31 окт., 2 нояб.');
 const explicitDates = { ...config, viewsStartDate: '2026-11-07', viewsByHour: [0, 120, 270, 300] };
@@ -50,7 +52,7 @@ try{
  const other=await(await request('','POST',{videoId:second.id})).json();
  const saved=await request('/'+id,'PUT',{title:'Edited project',config,revision:1});assert.equal(saved.status,200);assert.equal((await saved.json()).revision,2);
  const script=await(await request('/'+id+'/script')).json();assert.ok(script.code.includes('const DATA = '));new Script(script.code);
- const loaded=await(await request('/'+id)).json();assert.deepEqual(loaded.config.video.stats,[57539,547,0,39,24]);assert.equal(loaded.config.viewsTimeUnit,'day');assert.equal(loaded.config.viewsStartDate,'2026-11-07');assert.deepEqual(loaded.config.viewsByHour,[0,120,270]);
+ const loaded=await(await request('/'+id)).json();assert.deepEqual(loaded.config.video.stats,[57539,547,0,39,24]);assert.equal(loaded.config.viewsTimeUnit,'day');assert.equal(loaded.config.viewsShowDots,true);assert.equal(loaded.config.viewsStartDate,'2026-11-07');assert.deepEqual(loaded.config.viewsByHour,[0,120,270]);
  assert.equal((await request('/'+id,'PUT',{title:'stale',config,revision:1})).status,409);
  const concurrent=await Promise.all([request('/'+id,'PUT',{title:'A',config,revision:2}),request('/'+id,'PUT',{title:'B',config,revision:2})]);assert.deepEqual(concurrent.map(r=>r.status).sort(),[200,409]);
  assert.equal((await request('/'+id,'DELETE')).status,200);

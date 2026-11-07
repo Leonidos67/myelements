@@ -168,7 +168,7 @@ areaChart("views-chart", DATA.viewsByHour, {
   ticks: DATA.viewsTicks, 
   xLabels: DATA.viewsDateLabels ?? ["0" + viewsTimeSuffix, String(DATA.viewsByHour.length - 1) + viewsTimeSuffix],
   x0: 15,  
-  dot: false, // Без точек
+  dot: DATA.viewsShowDots === true,
   slider: false 
 });
 

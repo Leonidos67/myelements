@@ -72,6 +72,14 @@ export default function StatProjectPage({id}){
       {series('Точки графика просмотров','viewsByHour',1e12,config.viewsTimeUnit === 'day'
         ? 'Введите от двух чисел через запятую. Первое соответствует начальной дате. Каждое следующее добавляет один день.'
         : 'Введите от двух чисел через запятую. Первое — час 0, следующее — час 1 и так далее.')}
+      <button type="button" role="switch" aria-checked={config.viewsShowDots === true}
+        onClick={() => change('viewsShowDots', !config.viewsShowDots)}
+        className="flex w-full items-center justify-between gap-4 rounded-xl border border-line bg-inset px-3 py-2.5 text-left text-sm text-foreground hover:bg-elevated">
+        Показывать точки на графике
+        <span aria-hidden="true" className={'relative h-5 w-9 shrink-0 rounded-full border border-line transition-colors ' + (config.viewsShowDots ? 'bg-primary' : 'bg-elevated')}>
+          <span className={'absolute left-0.5 top-0.5 h-3.5 w-3.5 rounded-full transition-transform ' + (config.viewsShowDots ? 'translate-x-4 bg-primary-foreground' : 'bg-muted')} />
+        </span>
+      </button>
       {series('Метки оси Y просмотров','viewsTicks',1e12)}
       {series('Удержание, %','retention',100,'От двух точек от начала до конца ролика. Временная шкала использует длительность из раздела «Обзор».')}
 </div></div>
