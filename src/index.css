@@ -362,3 +362,33 @@ input[type='checkbox'], input[type='radio'] { accent-color:var(--ui-primary); }
 @keyframes comment-flow-beam { from { transform:translateX(-100%); } to { transform:translateX(190%); } }
 @media(max-width:520px) { .comment-flow-node { width:52px; font-size:10px; } .comment-flow-beam { margin-inline:-3px; } }
 @media(prefers-reduced-motion:reduce) { .comment-flow-beam::after { animation:none; } }
+
+.comment-branch-rail {
+  position: absolute;
+  inset-block: 0;
+  right: 6px;
+  pointer-events: none;
+}
+.comment-branch-segment {
+  position: absolute;
+  inset-block: -1px;
+  left: 0;
+  border-right: 2px solid var(--branch-color);
+}
+.comment-branch-segment.is-start {
+  top: calc(50% - 1px);
+  border-top: 2px solid var(--branch-color);
+  border-top-right-radius: 9px;
+}
+.comment-branch-segment.is-end {
+  bottom: calc(50% - 1px);
+  border-bottom: 2px solid var(--branch-color);
+  border-bottom-right-radius: 9px;
+}
+.comment-branch-segment.is-connected:not(.is-start):not(.is-end)::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: calc(50% - 1px);
+  border-top: 2px solid var(--branch-color);
+}

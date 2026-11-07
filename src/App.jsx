@@ -6,6 +6,7 @@ import WorkspaceShell from './WorkspaceShell';
 import LikesHint from './LikesHint';
 import {likesTarget} from './likesPolicy';
 import CommentPageModal from './CommentPageModal';
+import CommentBranchLines, { layoutCommentBranches } from './CommentBranchLines';
 import VideoScriptModal from './VideoScriptModal';
 import EditVideoModal from './EditVideoModal';
 import AIChat from './AIChat';
@@ -17,7 +18,7 @@ import {
   Gift, Gamepad2, Sparkles, Palette, 
   Settings, Trash2, X, ChevronDown, CreditCard, DollarSign,
   LayoutDashboard, FolderOpen, MoreVertical, Target, Calendar, Bot, Bookmark,
-  ChevronLeft, ChevronRight, Upload, FileCode2, Star, Pin, PinOff, Info, GitBranch, Heart, AlertCircle, CheckCircle2, ArrowUpCircle, ArrowDownCircle
+  ChevronLeft, ChevronRight, Upload, FileCode2, Star, Pin, PinOff, Info, Heart, AlertCircle, CheckCircle2, ArrowUpCircle, ArrowDownCircle
 } from 'lucide-react';
 
 const fmtMoney = (n) => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -209,6 +210,8 @@ export default function App() {
   });
 
   const daysLeft = goal ? Math.max(0, Math.ceil((new Date(goal.deadlineDate) - new Date()) / (1000 * 60 * 60 * 24))) : 0;
+
+  const commentBranches = layoutCommentBranches(displayedVideos, commentSummary);
 
   return (
     <WorkspaceShell view={currentView} onNavigate={setCurrentView} username={me.username} accounts={accounts} activeAccount={activeAccount} onAccountChange={setActiveAccount} onAddAccount={addAccount} onCreate={() => setIsAddOpen(true)} onAgent={() => setCurrentView('ai')} onLogout={logout}><div className="studio-shell text-foreground font-sans">
@@ -449,15 +452,12 @@ export default function App() {
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 px-3 text-center">
-                        {commentSummaryError ? <button onClick={refreshCommentSummary} className="text-muted text-[10px] hover:text-foreground" title="Не удалось загрузить прогресс. Повторить">Обновить</button> : !commentSummary ? <span className="text-subtle">…</span> : comments ? <div className="flex items-center justify-center gap-2 whitespace-nowrap">
+                      <td className="relative py-3 px-3 text-center"
+                        style={commentBranches.laneCount ? { paddingRight: 16 + commentBranches.laneCount * 8 } : undefined}>
+                        {!commentSummaryError && <CommentBranchLines segments={commentBranches.rows.get(v._id)} laneCount={commentBranches.laneCount} />}
+                        {commentSummaryError ? <button onClick={refreshCommentSummary} className="text-muted text-[10px] hover:text-foreground" title="Не удалось загрузить прогресс. Повторить">Обновить</button> : !commentSummary ? <span className="text-subtle">…</span> : comments ? <div className={"flex items-center gap-2 whitespace-nowrap " + (commentBranches.laneCount ? "justify-end" : "justify-center")}>
                           <span className={comments.confirmed === comments.total ? 'font-mono text-green-400' : 'font-mono text-foreground'} title={'Подтверждено комментариев. На проверке: ' + (comments.issued - (comments.confirmed || 0))}>{comments.confirmed || 0} из {comments.total}</span>
-                          {comments.flowIds?.map(flowId => <span key={flowId}
-                            title={'Общая ветка комментариев #' + flowId.slice(-6).toUpperCase()}
-                            className="inline-flex items-center gap-1 rounded-md border border-blue-400/30 bg-blue-400/10 px-1.5 py-0.5 font-mono text-[10px] text-blue-600 dark:text-blue-300">
-                            <GitBranch size={12} aria-hidden="true" />#{flowId.slice(-6).toUpperCase()}
-                          </span>)}
-                          <button onClick={() => setCommentVideo(v)} title="Подробнее о комментариях" aria-label="Подробнее о комментариях" className="p-1 rounded text-muted hover:text-foreground hover:bg-elevated"><Info size={15} /></button>
+                          <button onClick={() => setCommentVideo(v)} title="Подробнее о комментариях" aria-label={comments.flowIds?.length ? "Подробнее о комментариях, видео связано с другими" : "Подробнее о комментариях"} className="p-1 rounded text-muted hover:text-foreground hover:bg-elevated"><Info size={15} /></button>
                         </div> : <button onClick={() => setCommentVideo(v)} className="px-2 py-1 rounded text-foreground hover:bg-elevated inline-flex items-center gap-1"><Plus size={12} /> Добавить</button>}
                       </td>
                       <td className="py-3 text-right font-mono text-muted text-[11px]" title="Стоимость 1000 просмотров">${cpm}</td>
