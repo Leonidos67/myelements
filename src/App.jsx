@@ -55,6 +55,10 @@ export default function App() {
   useEffect(()=>{if(!videoNotice)return;const timer=setTimeout(()=>setVideoNotice(''),4500);return()=>clearTimeout(timer);},[videoNotice]);
   function safeVideoUrl(url){try{const value=new URL(url);return ['http:','https:'].includes(value.protocol)?value.href:null;}catch{return null;}}
   async function copyVideoLink(video){setOpenMenuId(null);try{await navigator.clipboard.writeText(video.url);setVideoNotice('Ссылка на видео скопирована');}catch{setErr('Не удалось скопировать ссылку. Откройте настройки и скопируйте её из поля.');}}
+  async function copyVideoCode(code) {
+    try { await navigator.clipboard.writeText('#' + code); setVideoNotice('ID #' + code + ' скопирован'); }
+    catch { setErr('Не удалось скопировать ID #' + code); }
+  }
   async function duplicateVideo(video){
     setOpenMenuId(null);if(!window.confirm('Создать копию видео без статистики и расходов? Комментарии, проект и JS не копируются.'))return;
     setVideoActionIds(ids=>new Set(ids).add(video._id));
@@ -192,7 +196,7 @@ export default function App() {
   if (!me) return <Login onLogin={(user) => { setMe(user); reload(); }} />;
 
   const accountVideos=activeAccount?videos.filter(v=>(typeof v.account==='string'?v.account:v.account?._id)===activeAccount):videos;
-  const displayedVideos=accountVideos.filter(v=>(!onlyFavorites||v.isFavorite)&&(!videoCategory||v.category===videoCategory)&&(!videoStatus||v.status===videoStatus)&&[v.title,v.url,v.createdBy?.username].filter(Boolean).join(' ').toLowerCase().includes(videoQuery.trim().toLowerCase())).sort((a,b)=>{
+  const displayedVideos=accountVideos.filter(v=>(!onlyFavorites||v.isFavorite)&&(!videoCategory||v.category===videoCategory)&&(!videoStatus||v.status===videoStatus)&&[v.title,v.url,v.createdBy?.username,v.shortId && '#' + v.shortId].filter(Boolean).join(' ').toLowerCase().includes(videoQuery.trim().toLowerCase())).sort((a,b)=>{
     const pinned=Number(!!b.isPinned)-Number(!!a.isPinned);if(pinned)return pinned;
     const date=(new Date(b.createdAt).getTime()||0)-(new Date(a.createdAt).getTime()||0);
     if(videoSort==='oldest')return -date;
@@ -285,7 +289,7 @@ export default function App() {
             </div>
 
             <div className="workspace-filters">
-              <label className="workspace-video-search"><Search size={14}/><input aria-label="Найти видео" value={videoQuery} onChange={e=>setVideoQuery(e.target.value)} placeholder="Найти видео…"/></label>
+              <label className="workspace-video-search"><Search size={14}/><input aria-label="Найти видео" value={videoQuery} onChange={e=>setVideoQuery(e.target.value)} placeholder="Видео или #ID…"/></label>
               <button aria-pressed={onlyFavorites} onClick={()=>setOnlyFavorites(v=>!v)} className={'workspace-filter-chip '+(onlyFavorites?'selected':'')}><Star size={13} fill={onlyFavorites?'currentColor':'none'}/>Избранные</button>
               <label className={'workspace-filter-chip workspace-filter-select '+(videoCategory?'selected':'')}><Filter size={13}/><select aria-label="Тематика видео" value={videoCategory} onChange={e=>setVideoCategory(e.target.value)}><option value="">Тематика: все</option>{Object.entries(stats?.categories||{}).map(([key,cat])=><option key={key} value={key}>{cat.label}</option>)}</select></label>
               <label className={'workspace-filter-chip workspace-filter-select '+(videoStatus?'selected':'')}><select aria-label="Статус видео" value={videoStatus} onChange={e=>setVideoStatus(e.target.value)}><option value="">Статус: все</option><option value="moderation">На модерации</option><option value="published">Опубликовано</option><option value="rejected">Отказано</option><option value="paid">Выплатили</option></select></label>
@@ -345,6 +349,7 @@ export default function App() {
                       <td className="py-3 text-muted font-mono text-[11px]">{dateStr}</td>
                       <td className="py-3">
                         <a href={v.url} target="_blank" rel="noreferrer" className="text-foreground hover:underline break-all block max-w-[150px] truncate" title={v.title || v.url}>{v.title || v.url}</a>
+                        {v.shortId && <button type="button" onClick={() => copyVideoCode(v.shortId)} title="Скопировать ID видео" aria-label={'Скопировать ID видео #' + v.shortId} className="mr-2 mt-1 inline-flex items-center gap-1 rounded border border-line px-1.5 py-0.5 font-mono text-[10px] text-muted hover:bg-inset hover:text-foreground">#{v.shortId}<Copy size={10} aria-hidden="true" /></button>}
                         {v.isPinned && <span className="mt-1 inline-flex items-center gap-1 text-[9px] text-subtle"><Pin size={10} />Закреплено</span>}
                       </td>
                       <td className="py-3 text-foreground">

@@ -7,6 +7,7 @@ import cors from 'cors';
 import authRouter from './routes/auth.js';
 import accountsRouter from './routes/accounts.js';
 import videosRouter from './routes/videos.js';
+import { backfillVideoCodes } from './services/videoCodes.js';
 import statsRouter from './routes/stats.js';
 import goalsRouter from './routes/goals.js';
 import aiRouter from './routes/ai.js';

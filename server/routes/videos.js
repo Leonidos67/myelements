@@ -6,6 +6,7 @@ import CommentPage from '../models/CommentPage.js';
 import StatProject from '../models/StatProject.js';
 import VideoScript from '../models/VideoScript.js';
 import auth from '../middleware/auth.js';
+import { createVideoWithCode } from '../services/videoCodes.js';
 const router=express.Router();router.use(auth);
 const wrap=fn=>(req,res,next)=>Promise.resolve(fn(req,res)).catch(next);
 router.param('id',(req,res,next,id)=>mongoose.isValidObjectId(id)?next():res.status(400).json({error:'Некорректный ID видео'}));
@@ -29,7 +30,7 @@ router.get('/',wrap(async(req,res)=>{
  res.json(await Video.find(q).sort({isPinned:-1,createdAt:-1}).populate('account','name').populate('createdBy','username'));
 }));
 router.post('/',withValidation(async(req,res)=>{
- const patch=await validatePatch(req.body||{},{creating:true});const v=await Video.create({...patch,createdBy:req.admin.id});res.status(201).json(await populate(v));
+ const patch=await validatePatch(req.body||{},{creating:true});const v=await createVideoWithCode({...patch,createdBy:req.admin.id});res.status(201).json(await populate(v));
 }));
 router.patch('/:id',withValidation(async(req,res)=>{
  const patch=await validatePatch(req.body||{});const v=await Video.findByIdAndUpdate(req.params.id,{$set:{...patch,updatedAt:new Date()}},{new:true,runValidators:true});
@@ -38,7 +39,7 @@ router.patch('/:id',withValidation(async(req,res)=>{
 router.post('/:id/duplicate',wrap(async(req,res)=>{
  const source=await Video.findById(req.params.id).lean();if(!source)return res.status(404).json({error:'Видео не найдено'});
  if(!await Account.exists({_id:source.account}))return res.status(400).json({error:'Сначала назначьте видео существующему аккаунту'});
- const v=await Video.create({account:source.account,url:source.url,title:(source.title||'Видео').slice(0,490)+' (копия)',category:source.category,views:0,likes:0,status:'moderation',expenses:{p1:0,p2:0,p3:0,p4:0,p5:0},isPinned:false,isFavorite:false,createdBy:req.admin.id});
+ const v=await createVideoWithCode({account:source.account,url:source.url,title:(source.title||'Видео').slice(0,490)+' (копия)',category:source.category,views:0,likes:0,status:'moderation',expenses:{p1:0,p2:0,p3:0,p4:0,p5:0},isPinned:false,isFavorite:false,createdBy:req.admin.id});
  res.status(201).json(await populate(v));
 }));
 router.delete('/:id',wrap(async(req,res)=>{

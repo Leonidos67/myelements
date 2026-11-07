@@ -9,6 +9,7 @@ export const CATEGORIES = {
 };
 
 const videoSchema = new mongoose.Schema({
+  shortId: { type: String, match: /^[A-Z0-9]{5}$/, immutable: true, unique: true, sparse: true },
   account: { type: mongoose.Schema.Types.ObjectId, ref: 'Account', required: true },
   url: { type: String, required: true, trim: true },
   title: { type: String, default: '' },
