@@ -10,13 +10,34 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
   const [customText, setCustomText] = useState('');
   const [customTags, setCustomTags] = useState('');
   const [adding, setAdding] = useState(false);
-  async function addCustom(e) {
-    e.preventDefault(); if (!activePage) return;
-    setAdding(true); setError('');
+  const [customError, setCustomError] = useState('');
+  async function addCustom(event) {
+    event.preventDefault();
+    if (adding) return;
+    const tags = customTags.split(/\r?\n/).map(tag => tag.trim()).filter(Boolean);
+    setCustomError('');
+    setAdding(true);
     try {
-      await api.addCustomComment(activePage._id, { text: customText, tags: customTags.split(/\n/).map(t => t.trim()).filter(Boolean) });
-      setCustomText(''); setCustomTags(''); setShowCustom(false); await refresh();
-    } catch (e) { setError(e.message); } finally { setAdding(false); }
+      const comment = { text: customText.trim(), tags };
+      if (activePage) {
+        await api.addCustomComment(activePage._id, comment);
+        await refresh();
+      } else {
+        const page = await api.createCommentPage({ videoId: video._id, comment });
+        setPages(rows => [page, ...rows.filter(row => row._id !== page._id)]);
+        setSelectedPageId(page._id);
+        setShowForm(false);
+        setTab('progress');
+        onChange?.();
+      }
+      setCustomText('');
+      setCustomTags('');
+      setShowCustom(false);
+    } catch (error) {
+      setCustomError(error.message);
+    } finally {
+      setAdding(false);
+    }
   }
   const [themes, setThemes] = useState([]);
   const [theme, setTheme] = useState('');
@@ -129,7 +150,28 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
       </header>
       <div className="comments-body comment-pending-scroll min-h-0 overflow-y-auto p-6 sm:p-6">
         {activePage && <>{pages.length > 1 && <select aria-label="Выбранный набор" value={activePage._id} onChange={e => setSelectedPageId(e.target.value)} className="mb-3 w-full rounded-lg border border-line bg-elevated p-2.5 text-xs">{pages.map((p, i) => <option key={p._id} value={p._id}>Набор {pages.length - i} · {p.themeLabel}</option>)}</select>}{tab === 'progress' && <CommentQueueTimer page={activePage} onReset={refresh} />}</>}
-        {tab === 'pending' && activePage && <div className="mb-5"><button onClick={() => setShowCustom(v => !v)} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground"><Plus size={13} />{showCustom ? 'Скрыть форму' : 'Свой комментарий'}</button>{showCustom && <form onSubmit={addCustom} className="mt-3 space-y-3 rounded-xl border border-line p-4"><label className="block text-xs text-muted">Комментарий<textarea required maxLength={5000} value={customText} onChange={e => setCustomText(e.target.value)} rows={3} className="mt-2 block w-full rounded-lg border border-line bg-inset p-3 text-sm text-foreground outline-none focus:border-foreground/30" /></label><label className="block text-xs text-muted">Упоминания или стикеры — каждое с новой строки<textarea maxLength={10000} value={customTags} onChange={e => setCustomTags(e.target.value)} rows={2} placeholder="@gamers_ru" className="mt-2 block w-full rounded-lg border border-line bg-inset p-3 text-sm text-foreground outline-none focus:border-foreground/30" /></label><button disabled={adding || !customText.trim() || deleting} className="rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground disabled:opacity-40">{adding ? 'Добавляем…' : 'Добавить в набор'}</button></form>}</div>}
+        {!loading && (tab === 'pending' || tab === 'progress') && <div className="mb-5">
+          <button type="button" disabled={adding} aria-expanded={showCustom}
+            onClick={() => { setShowCustom(open => !open); setCustomError(''); }}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground disabled:opacity-40">
+            <Plus size={13} />{showCustom ? 'Скрыть форму' : 'Добавить свой комментарий'}
+          </button>
+          {showCustom && <form onSubmit={addCustom} className="mt-3 space-y-3 rounded-xl border border-line p-4">
+            <label className="block text-xs text-muted">Комментарий
+              <textarea required maxLength={5000} value={customText} onChange={event => setCustomText(event.target.value)}
+                rows={3} className="mt-2 block w-full rounded-lg border border-line bg-inset p-3 text-sm text-foreground" />
+            </label>
+            <label className="block text-xs text-muted">Упоминания или стикеры, по одному на строку
+              <textarea maxLength={10000} value={customTags} onChange={event => setCustomTags(event.target.value)}
+                rows={2} placeholder="@gamers_ru" className="mt-2 block w-full rounded-lg border border-line bg-inset p-3 text-sm text-foreground" />
+            </label>
+            {customError && <p role="alert" className="text-sm text-red-400">{customError}</p>}
+            <button disabled={adding || !customText.trim() || deleting || busy}
+              className="rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground disabled:opacity-40">
+              {adding ? 'Добавляем…' : activePage ? 'Добавить в набор' : 'Создать ссылку'}
+            </button>
+          </form>}
+        </div>}
         {tab === 'progress' ? <div role="tabpanel" id="comment-panel-progress" aria-labelledby="comment-tab-progress">
       {loading ? <p className="mt-6 text-subtle">Загрузка…</p> : <>
         <CommentFlow key={activePage?._id || 'empty'} page={activePage} video={video} videos={videos} themes={themes} onCreateBranch={createBranch} />
@@ -165,10 +207,10 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
         </div> : <div role="tabpanel" id={'comment-panel-' + tab} aria-labelledby={'comment-tab-' + tab}>
           <div className="flex justify-between items-center gap-3"><div><h3 className="text-sm font-semibold">{tab === 'pending' ? 'В ожидании выдачи' : 'Выданные комментарии'}</h3><p className="mt-1 text-[11px] text-subtle">{tab === 'pending' ? 'Замените или удалите неподходящие варианты до выдачи.' : 'Комментарии, которые уже забрали.'}</p></div><button onClick={refresh} disabled={refreshing || deleting} title="Обновить список" aria-label="Обновить список" className="shrink-0 rounded-lg border border-line p-2 text-muted hover:text-foreground disabled:opacity-40"><RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} /></button></div>
           <div className="comments-list mt-4 pr-1">
-          {loading ? <p className="text-xs text-subtle py-8 text-center">Загрузка…</p> : !activePage ? <p className="text-xs text-subtle py-8 text-center">Сначала создайте набор во вкладке «Прогресс».</p> : tab === 'pending' ? <>
+          {loading ? <p className="text-xs text-subtle py-8 text-center">Загрузка…</p> : !activePage ? <p className="text-xs text-subtle py-8 text-center">Добавьте свой комментарий или создайте набор во вкладке «Прогресс».</p> : tab === 'pending' ? <>
             {!activePage.pending?.length ? <p className="text-xs text-subtle py-8 text-center">В этом наборе нет комментариев в ожидании выдачи.</p> : <ol className="space-y-2.5">{activePage.pending.map((comment, index) => {
               const key = activePage._id + ':' + JSON.stringify(comment);
-              return <li key={key} className="rounded-xl bg-elevated border border-line p-3.5 hover:border-foreground/25 transition-colors"><div className="flex justify-between items-start gap-3"><p className="text-sm leading-relaxed whitespace-pre-wrap break-words min-w-0"><span className="text-subtle text-[10px] font-mono mr-2">{index + 1}.</span>{comment.text}</p><div className="shrink-0 flex flex-wrap justify-end gap-1.5"><button disabled={!!replacing || !!removing || deleting} onClick={() => replace(activePage._id, comment)} className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-foreground/15 bg-primary/5 px-2 py-1.5 text-[10px] text-foreground hover:bg-primary/15 disabled:opacity-50"><RefreshCw size={12} className={replacing === key ? 'animate-spin' : ''} />{replacing === key ? 'Меняем…' : 'Заменить'}</button><button disabled={!!replacing || !!removing || deleting} onClick={() => removePending(activePage._id, comment)} title="Удалить комментарий" aria-label="Удалить комментарий из очереди" className="inline-flex items-center gap-1 rounded-lg border border-red-400/20 px-2 py-1.5 text-[10px] text-red-400 hover:bg-red-400/10 disabled:opacity-50"><Trash2 size={12}/>{removing === key ? 'Удаляем…' : 'Удалить'}</button></div></div>{comment.tags?.length > 0 && <p className="mt-2 text-[11px] text-muted break-words">{comment.tags.join(' · ')}</p>}</li>;
+              return <li key={key} className="rounded-xl bg-elevated border border-line p-3.5 hover:border-foreground/25 transition-colors"><div className="flex justify-between items-start gap-3"><p className="text-sm leading-relaxed whitespace-pre-wrap break-words min-w-0"><span className="text-subtle text-[10px] font-mono mr-2">{index + 1}.</span>{comment.text}</p><div className="shrink-0 flex flex-wrap justify-end gap-1.5">{activePage.theme !== 'custom' && <button disabled={!!replacing || !!removing || deleting} onClick={() => replace(activePage._id, comment)} className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-foreground/15 bg-primary/5 px-2 py-1.5 text-[10px] text-foreground hover:bg-primary/15 disabled:opacity-50"><RefreshCw size={12} className={replacing === key ? 'animate-spin' : ''} />{replacing === key ? 'Меняем…' : 'Заменить'}</button>}<button disabled={!!replacing || !!removing || deleting} onClick={() => removePending(activePage._id, comment)} title="Удалить комментарий" aria-label="Удалить комментарий из очереди" className="inline-flex items-center gap-1 rounded-lg border border-red-400/20 px-2 py-1.5 text-[10px] text-red-400 hover:bg-red-400/10 disabled:opacity-50"><Trash2 size={12}/>{removing === key ? 'Удаляем…' : 'Удалить'}</button></div></div>{comment.tags?.length > 0 && <p className="mt-2 text-[11px] text-muted break-words">{comment.tags.join(' · ')}</p>}</li>;
             })}</ol>}
           </> : <>
             {!activePage.completed?.length ? <p className="text-xs text-subtle py-8 text-center">Пока никто не получил комментарий.</p> : <ol className="space-y-2.5">{[...activePage.completed].reverse().map((claim, index) => <li key={index} className="rounded-xl border border-line bg-elevated p-3.5"><div className="flex items-center justify-between gap-2 mb-2"><span className="inline-flex items-center gap-1.5 text-[10px] text-green-400"><CheckCheck size={12} />Получен</span><time dateTime={claim.issuedAt} className="text-[10px] text-subtle">{new Date(claim.issuedAt).toLocaleString('ru-RU')}</time></div><p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{claim.comment.text}</p>{claim.comment.tags?.length > 0 && <p className="mt-2 text-[11px] text-muted break-words">{claim.comment.tags.join(' · ')}</p>}</li>)}</ol>}

@@ -28,7 +28,7 @@ router.get('/', auth, wrap(async (req, res) => {
   res.json(await CommentPage.aggregate([
     { $match: { video: new mongoose.Types.ObjectId(req.query.video) } },
     { $sort: { createdAt: -1 } },
-    { $project: { themeLabel: 1, branchId: 1, parentId: 1, total: 1, createdAt: 1, nextAvailableAt: 1, serverTime: '$$NOW', pending: '$remaining', completed: { $map: { input: '$claims', as: 'claim', in: { comment: '$$claim.comment', issuedAt: '$$claim.issuedAt' } } }, issued: { $size: '$claims' }, remaining: { $size: '$remaining' } } },
+    { $project: { theme: 1, themeLabel: 1, branchId: 1, parentId: 1, total: 1, createdAt: 1, nextAvailableAt: 1, serverTime: '$$NOW', pending: '$remaining', completed: { $map: { input: '$claims', as: 'claim', in: { comment: '$$claim.comment', issuedAt: '$$claim.issuedAt' } } }, issued: { $size: '$claims' }, remaining: { $size: '$remaining' } } },
   ]));
 }));
 router.delete('/', auth, wrap(async (req, res) => {
@@ -36,16 +36,39 @@ router.delete('/', auth, wrap(async (req, res) => {
   const result = await CommentPage.db.transaction(session => deleteVideoCommentPages(new mongoose.Types.ObjectId(req.query.video), session));
   res.json({ ok: true, deleted: result.deletedCount });
 }));
+const invalidCustomComment = 'Введите комментарий до 5000 символов и не более 20 дополнений (до 500 символов каждое)';
+function parseCustomComment(raw) {
+  if (typeof raw?.text !== 'string' || !raw.text.trim() || raw.text.length > 5000) return null;
+  if (!Array.isArray(raw.tags) || raw.tags.length > 20 || raw.tags.some(tag => typeof tag !== 'string' || tag.length > 500)) return null;
+  return { text: raw.text.trim(), tags: raw.tags.map(tag => tag.trim()).filter(Boolean) };
+}
+
 router.post('/', auth, wrap(async (req, res) => {
-  const { videoId, theme: themeId, count } = req.body || {};
+  const { videoId, theme: themeId, count, comment: rawComment } = req.body || {};
+  if (!mongoose.isValidObjectId(videoId)) return res.status(400).json({ error: 'Некорректное видео' });
+
+  const isCustom = rawComment !== undefined;
+  const comment = isCustom ? parseCustomComment(rawComment) : null;
   const theme = themes.find(t => t.id === themeId);
-  if (!theme || !Number.isInteger(count) || count < 1 || count > theme.comments.length || !mongoose.isValidObjectId(videoId)) {
-    return res.status(400).json({ error: 'Проверьте тематику, видео и количество комментариев' });
+  if (isCustom && !comment) return res.status(400).json({ error: invalidCustomComment });
+  if (!isCustom && (!theme || !Number.isInteger(count) || count < 1 || count > theme.comments.length)) {
+    return res.status(400).json({ error: 'Проверьте тематику и количество комментариев' });
   }
+
   const video = await Video.findById(videoId);
   if (!video) return res.status(404).json({ error: 'Видео не найдено' });
-  const page = await CommentPage.create({ _id: randomBytes(18).toString('hex'), video: video._id, videoTitle: video.title || 'Комментарий к видео', theme: theme.id, themeLabel: theme.label, total: count, remaining: sampleComments(theme, count), claims: [], createdBy: req.admin.id });
-  res.status(201).json({ _id: page._id, total: page.total, themeLabel: page.themeLabel, issued: 0, remaining: page.total, createdAt: page.createdAt, pending: page.remaining });
+  const remaining = isCustom ? [comment] : sampleComments(theme, count);
+  const page = await CommentPage.create({
+    _id: randomBytes(18).toString('hex'), video: video._id,
+    videoTitle: video.title || 'Комментарий к видео',
+    theme: isCustom ? 'custom' : theme.id,
+    themeLabel: isCustom ? 'Свои комментарии' : theme.label,
+    total: remaining.length, remaining, claims: [], createdBy: req.admin.id,
+  });
+  res.status(201).json({
+    _id: page._id, theme: page.theme, themeLabel: page.themeLabel, total: page.total,
+    issued: 0, remaining: page.total, createdAt: page.createdAt, pending: page.remaining,
+  });
 }));
 router.post('/:id/branch', auth, wrap(async (req, res) => {
   const { videoId, theme: themeId, count } = req.body || {};
@@ -84,9 +107,8 @@ router.post('/:id/reset-timer', auth, wrap(async (req, res) => {
   res.json({ ok: true });
 }));
 router.post('/:id/comments', auth, wrap(async (req, res) => {
-  const raw = req.body || {};
-  if (typeof raw.text !== 'string' || !raw.text.trim() || raw.text.length > 5000 || !Array.isArray(raw.tags) || raw.tags.length > 20 || raw.tags.some(t => typeof t !== 'string' || t.length > 500)) return res.status(400).json({ error: 'Введите комментарий до 5000 символов и не более 20 дополнений' });
-  const comment = { text: raw.text.trim(), tags: raw.tags.map(t => t.trim()).filter(Boolean) };
+  const comment = parseCustomComment(req.body);
+  if (!comment) return res.status(400).json({ error: invalidCustomComment });
   const duplicate = { text: comment.text, tags: comment.tags };
   const page = await CommentPage.findOneAndUpdate({ _id: req.params.id, remaining: { $not: { $elemMatch: duplicate } }, discarded: { $not: { $elemMatch: duplicate } }, claims: { $not: { $elemMatch: { 'comment.text': comment.text, 'comment.tags': comment.tags } } } }, { $push: { remaining: comment }, $inc: { total: 1 } }, { new: true }).select('_id').lean();
   if (!page) {

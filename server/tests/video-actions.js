@@ -55,6 +55,20 @@ try{
      method, headers: { 'Content-Type': 'application/json', ...(auth ? { Cookie: cookie } : {}) },
      ...(body ? { body: JSON.stringify(body) } : {}),
    });
+ const manualInput = { videoId: legacy.id, comment: { text: '  Свой текст  ', tags: [' @test ', ''] } };
+ assert.equal((await commentRequest('', 'POST', manualInput, false)).status, 401);
+ assert.equal((await commentRequest('', 'POST', { ...manualInput, comment: { text: ' ', tags: [] } })).status, 400);
+ const manualResponse = await commentRequest('', 'POST', manualInput);
+ assert.equal(manualResponse.status, 201);
+ const manual = await manualResponse.json();
+ assert.equal(manual.total, 1);
+ assert.deepEqual(manual.pending, [{ text: 'Свой текст', tags: ['@test'] }]);
+ assert.equal((await commentRequest('/' + manual._id + '/comments', 'POST', manualInput.comment)).status, 409);
+ assert.equal((await commentRequest('/' + manual._id + '/comments', 'POST', { text: 'Ещё текст', tags: [] })).status, 201);
+ const manualClaim = await commentRequest('/' + manual._id + '/claim', 'POST', { visitor: randomUUID() }, false);
+ assert.equal(manualClaim.status, 200);
+ assert.deepEqual((await manualClaim.json()).comment, manual.pending[0]);
+ console.log('PASS: first custom comment creates a usable link and accepts further comments');
  const [theme] = await (await commentRequest('/themes')).json();
  const created = await commentRequest('', 'POST', { videoId: legacy.id, theme: theme.id, count: 2 });
  assert.equal(created.status, 201);
