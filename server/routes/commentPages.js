@@ -18,9 +18,26 @@ function sampleComments(theme, count) {
   return pool.slice(0, count);
 }
 router.get('/themes', auth, (req, res) => res.json(themes.map(({ comments, ...t }) => ({ ...t, available: comments.length }))));
+const activeClaims = { $filter: {
+  input: '$claims', as: 'claim', cond: { $not: [{ $ifNull: ['$$claim.revertedAt', false] }] },
+} };
+const confirmedCount = { $size: { $filter: {
+  input: activeClaims, as: 'claim', cond: { $ne: [{ $ifNull: ['$$claim.confirmedAt', null] }, null] },
+} } };
+const reviewEntries = { $filter: {
+  input: { $map: {
+    input: { $range: [0, { $size: '$claims' }] }, as: 'index',
+    in: { $let: {
+      vars: { claim: { $arrayElemAt: ['$claims', '$$index'] } },
+      in: { index: '$$index', comment: '$$claim.comment', issuedAt: '$$claim.issuedAt',
+        confirmedAt: '$$claim.confirmedAt', revertedAt: '$$claim.revertedAt' },
+    } },
+  } },
+  as: 'entry', cond: { $not: [{ $ifNull: ['$$entry.revertedAt', false] }] },
+} };
 router.get('/summary', auth, wrap(async (req, res) => {
   res.json(await CommentPage.aggregate([
-    { $group: { _id: '$video', total: { $sum: '$total' }, issued: { $sum: { $size: '$claims' } }, pages: { $sum: 1 } } },
+    { $group: { _id: '$video', total: { $sum: '$total' }, issued: { $sum: { $size: activeClaims } }, confirmed: { $sum: confirmedCount }, pages: { $sum: 1 } } },
   ]));
 }));
 router.get('/', auth, wrap(async (req, res) => {
@@ -28,7 +45,11 @@ router.get('/', auth, wrap(async (req, res) => {
   res.json(await CommentPage.aggregate([
     { $match: { video: new mongoose.Types.ObjectId(req.query.video) } },
     { $sort: { createdAt: -1 } },
-    { $project: { theme: 1, themeLabel: 1, branchId: 1, parentId: 1, total: 1, createdAt: 1, nextAvailableAt: 1, serverTime: '$$NOW', pending: '$remaining', completed: { $map: { input: '$claims', as: 'claim', in: { comment: '$$claim.comment', issuedAt: '$$claim.issuedAt' } } }, issued: { $size: '$claims' }, remaining: { $size: '$remaining' } } },
+    { $project: {
+      theme: 1, themeLabel: 1, branchId: 1, parentId: 1, total: 1, createdAt: 1, nextAvailableAt: 1,
+      serverTime: '$$NOW', pending: '$remaining', reviews: reviewEntries, issueHistory: '$claims.issuedAt',
+      issued: { $size: activeClaims }, confirmed: confirmedCount, remaining: { $size: '$remaining' },
+    } },
   ]));
 }));
 router.delete('/', auth, wrap(async (req, res) => {
@@ -128,6 +149,34 @@ router.delete('/:id/comments', auth, wrap(async (req, res) => {
     if (!await CommentPage.exists({ _id: req.params.id })) return res.status(404).json({ error: 'Страница не найдена' });
     return res.status(409).json({ error: 'Комментарий уже получили, заменили или удалили. Обновите список.' });
   }
+  res.json({ ok: true });
+}));
+router.post('/:id/reviews/:index', auth, wrap(async (req, res) => {
+  const index = Number(req.params.index);
+  const { action } = req.body || {};
+  if (!/^\d+$/.test(req.params.index) || !Number.isSafeInteger(index) || index > 2147483647 ||
+      !['confirm', 'rollback'].includes(action)) {
+    return res.status(400).json({ error: 'Некорректное действие проверки' });
+  }
+  // Claim positions remain stable because reverted claims stay in the history.
+  const key = 'claims.' + index;
+  const filter = { _id: req.params.id, $expr: { $let: {
+    vars: { claim: { $arrayElemAt: ['$claims', index] } },
+    in: { $and: [
+      { $lt: [index, { $size: '$claims' }] },
+      { $eq: [{ $ifNull: ['$$claim.confirmedAt', null] }, null] },
+      { $eq: [{ $ifNull: ['$$claim.revertedAt', null] }, null] },
+    ] },
+  } } };
+  const now = new Date();
+  let update = { $set: { [key + '.confirmedAt']: now } };
+  if (action === 'rollback') {
+    const page = await CommentPage.findOne(filter, { claims: { $slice: [index, 1] } }).lean();
+    if (!page) return res.status(409).json({ error: 'Комментарий уже проверен или недоступен' });
+    update = { $set: { [key + '.revertedAt']: now }, $push: { remaining: page.claims[0].comment } };
+  }
+  const result = await CommentPage.updateOne(filter, update);
+  if (!result.modifiedCount) return res.status(409).json({ error: 'Комментарий уже проверен или недоступен' });
   res.json({ ok: true });
 }));
 router.post('/:id/replace', auth, wrap(async (req, res) => {

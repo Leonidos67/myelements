@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 const comment = new mongoose.Schema({ text: String, tags: [String] }, { _id: false });
-const claim = new mongoose.Schema({ visitor: String, comment, issuedAt: Date, revision: { type: Number, default: 0 }, replacedAt: Date }, { _id: false });
+const claim = new mongoose.Schema({ visitor: String, comment, issuedAt: Date, confirmedAt: Date, revertedAt: Date, revision: { type: Number, default: 0 }, replacedAt: Date }, { _id: false });
 const schema = new mongoose.Schema({
   _id: { type: String },
   video: { type: mongoose.Schema.Types.ObjectId, ref: 'Video', required: true },

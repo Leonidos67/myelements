@@ -12,7 +12,7 @@ export default function CommentQueueTimer({page,onReset}) {
   useEffect(()=>{const t=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(t);},[]);
   const current=now+offset;
   const left=Math.max(0,Math.ceil((new Date(page.nextAvailableAt||0)-current)/1000));
-  const forecast=forecastQueue((page.completed||[]).map(c=>c.issuedAt),page.nextAvailableAt,current);
+  const forecast=forecastQueue(page.issueHistory || (page.completed || []).map(c => c.issuedAt),page.nextAvailableAt,current);
   async function reset(){setBusy(true);setError('');try{await api.resetCommentTimer(page._id);await onReset();}catch(e){setError(e.message);}finally{setBusy(false);}}
   return <section className="comment-timer mb-5 rounded-2xl border border-line bg-gradient-to-br from-elevated to-transparent p-4">
     <div className="flex items-center justify-between gap-3"><span className="flex items-center gap-2 text-xs text-muted"><Clock3 size={14}/>Таймер выдачи</span><span className={'rounded-full px-2 py-1 text-[10px] '+(!page.remaining?'text-subtle bg-elevated':left?'text-amber-300 bg-amber-300/10':'text-green-400 bg-green-400/10')}>{!page.remaining?'Набор завершён':left?'Пауза':'Выдача открыта'}</span></div>

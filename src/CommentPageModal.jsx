@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, Copy, ExternalLink, RefreshCw, Plus, MessageSquare, ShieldCheck, Trash2, ChartNoAxesCombined, CheckCheck } from 'lucide-react';
+import { X, Copy, ExternalLink, RefreshCw, Plus, MessageSquare, ShieldCheck, Trash2, ChartNoAxesCombined, CheckCheck, ClipboardCheck, RotateCcw } from 'lucide-react';
 import { api } from './api';
 import CommentQueueTimer from './CommentQueueTimer';
 import CommentFlow from './CommentFlow';
@@ -52,6 +52,7 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
   const [copied, setCopied] = useState('');
   const [replacing, setReplacing] = useState('');
   const [removing, setRemoving] = useState('');
+  const [reviewing, setReviewing] = useState(false);
   const [selectedPageId, setSelectedPageId] = useState('');
   const activePage = pages.find(p => p._id === selectedPageId) || pages[0];
   useEffect(() => {
@@ -74,7 +75,10 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
   const url = id => `${window.location.origin}/get-comment/${id}`;
   const total = pages.reduce((sum, p) => sum + p.total, 0);
   const issued = pages.reduce((sum, p) => sum + p.issued, 0);
-  const percent = total ? Math.round(issued / total * 100) : 0;
+  const confirmed = pages.reduce((sum, page) => sum + (page.confirmed || 0), 0);
+  const waiting = total - issued;
+  const percent = total ? Math.round(confirmed / total * 100) : 0;
+  const reviewedRows = (activePage?.reviews || []).filter(claim => Boolean(claim.confirmedAt) === (tab === 'completed')).reverse();
   async function refresh() {
     setRefreshing(true); setError('');
     try {
@@ -126,6 +130,19 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
     catch (e) { setError(e.message); try { setPages(await api.commentPages(video._id)); onChange?.(); } catch {} }
     finally { setRemoving(''); }
   }
+  async function review(index, decision) {
+    setReviewing(true);
+    setError('');
+    try {
+      await api.reviewComment(activePage._id, index, decision);
+      await refresh();
+    } catch (error) {
+      try { setPages(await api.commentPages(video._id)); onChange?.(); } catch {}
+      setError(error.message);
+    } finally {
+      setReviewing(false);
+    }
+  }
   async function copy(id) {
     try { await navigator.clipboard.writeText(url(id)); setCopied(id); }
     catch { setError('Не удалось скопировать ссылку автоматически. Скопируйте её из поля.'); }
@@ -133,8 +150,9 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
   const action = 'inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-xs text-foreground hover:bg-elevated disabled:opacity-50';
   const tabs = [
     { id: 'progress', label: 'Прогресс', icon: ChartNoAxesCombined },
-    { id: 'pending', label: 'Ещё не получили', icon: MessageSquare, count: total - issued },
-    { id: 'completed', label: 'Выполненные', icon: CheckCheck, count: issued },
+    { id: 'pending', label: 'Ещё не получили', icon: MessageSquare, count: waiting },
+    { id: 'review', label: 'На проверке', icon: ClipboardCheck, count: issued - confirmed },
+    { id: 'completed', label: 'Выполненные', icon: CheckCheck, count: confirmed },
   ];
   return <div className="comments-backdrop modal-backdrop fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4" onClick={onClose}>
     <section role="dialog" aria-modal="true" aria-labelledby="comment-modal-title" className="comments-dialog w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden rounded-2xl border border-line bg-surface text-foreground shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -177,9 +195,9 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
         <CommentFlow key={activePage?._id || 'empty'} page={activePage} video={video} videos={videos} themes={themes} onCreateBranch={createBranch} />
         {pages.length > 0 && <div className="mt-5 rounded-xl border border-line p-4">
           <div className="flex justify-between items-center"><span className="text-sm text-muted">Общий прогресс</span><span className="font-mono text-foreground">{percent}%</span></div>
-          <p className="mt-2 text-xl font-semibold">{issued} <span className="text-sm text-subtle font-normal">из {total} выдано</span></p>
-          <div role="progressbar" aria-label="Выдано комментариев" aria-valuemin={0} aria-valuemax={total} aria-valuenow={issued} className="mt-3 h-2 rounded-full bg-elevated overflow-hidden"><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${percent}%` }} /></div>
-          <p className="mt-3 text-xs text-subtle">Осталось {total - issued}. Учитывается получение, а не публикация.</p>
+          <p className="mt-2 text-xl font-semibold">{confirmed} <span className="text-sm text-subtle font-normal">из {total} подтверждено</span></p>
+          <div role="progressbar" aria-label="Подтверждено комментариев" aria-valuemin={0} aria-valuemax={total} aria-valuenow={confirmed} className="mt-3 h-2 rounded-full bg-elevated overflow-hidden"><div className="h-full rounded-full bg-primary transition-all" style={{ width: `${percent}%` }} /></div>
+          <p className="mt-3 text-xs text-subtle">Ещё не получили: {waiting} · На проверке: {issued - confirmed}</p>
         </div>}
         <div className="flex flex-wrap gap-2 mt-4">
           <button className={action} onClick={refresh} disabled={refreshing || deleting}><RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />{refreshing ? 'Обновляем…' : 'Обновить'}</button>
@@ -187,10 +205,11 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
         </div>
         {pages.length > 0 && <button onClick={deleteTask} disabled={deleting || busy || !!replacing || refreshing} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-red-400/15 px-3 py-2 text-xs text-red-400 transition-colors hover:bg-red-400/10 disabled:opacity-50"><Trash2 size={13} />{deleting ? 'Удаляем…' : 'Удалить задачу'}</button>}
         {pages.length > 0 && <div className="mt-5 space-y-4">{pages.map(p => {
-          const progress = p.total ? Math.round(p.issued / p.total * 100) : 0;
+          const done = p.confirmed || 0;
+          const progress = p.total ? Math.round(done / p.total * 100) : 0;
           return <div key={p._id} className="p-4 border border-line rounded-xl">
-            <div className="flex justify-between items-start gap-3"><p className="text-sm">{p.themeLabel}{(p.branchId || p.parentId) && <span className="ml-2 text-xs text-muted">· Общая ссылка</span>}</p><span className={`text-[10px] px-2 py-1 rounded whitespace-nowrap ${p.issued === p.total ? 'bg-green-500/10 text-green-400' : 'bg-primary/10 text-foreground'}`}>{p.issued === p.total ? 'Завершено' : 'В процессе'}</span></div>
-            <p className="text-xs text-muted mt-2">Выдано {p.issued} из {p.total} · Осталось {p.remaining}</p>
+            <div className="flex justify-between items-start gap-3"><p className="text-sm">{p.themeLabel}{(p.branchId || p.parentId) && <span className="ml-2 text-xs text-muted">· Общая ссылка</span>}</p><span className={`text-[10px] px-2 py-1 rounded whitespace-nowrap ${done === p.total ? 'bg-green-500/10 text-green-400' : 'bg-primary/10 text-foreground'}`}>{done === p.total ? 'Завершено' : 'В процессе'}</span></div>
+            <p className="text-xs text-muted mt-2">Подтверждено {done} из {p.total} · На проверке {p.issued - done} · В очереди {p.remaining}</p>
             <div className="h-1.5 mt-2 mb-4 rounded-full bg-elevated overflow-hidden"><div className="h-full bg-primary rounded-full" style={{ width: `${progress}%` }} /></div>
             <input aria-label="Ссылка на страницу комментариев" readOnly value={url(p.parentId || p._id)} onFocus={e => e.target.select()} className="w-full bg-inset p-2.5 rounded-lg text-xs border border-line" />
             <div className="flex flex-wrap gap-2 mt-3"><button onClick={() => copy(p.parentId || p._id)} className={action}><Copy size={13} />{copied === (p.parentId || p._id) ? 'Скопировано' : 'Копировать ссылку'}</button><a href={url(p._id)} target="_blank" rel="noreferrer" className={action}><ExternalLink size={13} />Открыть страницу</a></div>
@@ -205,7 +224,7 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
         </form>}
       </>}
         </div> : <div role="tabpanel" id={'comment-panel-' + tab} aria-labelledby={'comment-tab-' + tab}>
-          <div className="flex justify-between items-center gap-3"><div><h3 className="text-sm font-semibold">{tab === 'pending' ? 'В ожидании выдачи' : 'Выданные комментарии'}</h3><p className="mt-1 text-[11px] text-subtle">{tab === 'pending' ? 'Замените или удалите неподходящие варианты до выдачи.' : 'Комментарии, которые уже забрали.'}</p></div><button onClick={refresh} disabled={refreshing || deleting} title="Обновить список" aria-label="Обновить список" className="shrink-0 rounded-lg border border-line p-2 text-muted hover:text-foreground disabled:opacity-40"><RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} /></button></div>
+          <div className="flex justify-between items-center gap-3"><div><h3 className="text-sm font-semibold">{tab === 'pending' ? 'В ожидании выдачи' : tab === 'review' ? 'На проверке' : 'Выполненные'}</h3><p className="mt-1 text-[11px] text-subtle">{tab === 'pending' ? 'Замените или удалите неподходящие варианты до выдачи.' : tab === 'review' ? 'Подтвердите опубликованный комментарий или верните его в очередь.' : 'Комментарии, которые вы подтвердили.'}</p></div><button onClick={refresh} disabled={refreshing || deleting} title="Обновить список" aria-label="Обновить список" className="shrink-0 rounded-lg border border-line p-2 text-muted hover:text-foreground disabled:opacity-40"><RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} /></button></div>
           <div className="comments-list mt-4 pr-1">
           {loading ? <p className="text-xs text-subtle py-8 text-center">Загрузка…</p> : !activePage ? <p className="text-xs text-subtle py-8 text-center">Добавьте свой комментарий или создайте набор во вкладке «Прогресс».</p> : tab === 'pending' ? <>
             {!activePage.pending?.length ? <p className="text-xs text-subtle py-8 text-center">В этом наборе нет комментариев в ожидании выдачи.</p> : <ol className="space-y-2.5">{activePage.pending.map((comment, index) => {
@@ -213,7 +232,28 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
               return <li key={key} className="rounded-xl bg-elevated border border-line p-3.5 hover:border-foreground/25 transition-colors"><div className="flex justify-between items-start gap-3"><p className="text-sm leading-relaxed whitespace-pre-wrap break-words min-w-0"><span className="text-subtle text-[10px] font-mono mr-2">{index + 1}.</span>{comment.text}</p><div className="shrink-0 flex flex-wrap justify-end gap-1.5">{activePage.theme !== 'custom' && <button disabled={!!replacing || !!removing || deleting} onClick={() => replace(activePage._id, comment)} className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-foreground/15 bg-primary/5 px-2 py-1.5 text-[10px] text-foreground hover:bg-primary/15 disabled:opacity-50"><RefreshCw size={12} className={replacing === key ? 'animate-spin' : ''} />{replacing === key ? 'Меняем…' : 'Заменить'}</button>}<button disabled={!!replacing || !!removing || deleting} onClick={() => removePending(activePage._id, comment)} title="Удалить комментарий" aria-label="Удалить комментарий из очереди" className="inline-flex items-center gap-1 rounded-lg border border-red-400/20 px-2 py-1.5 text-[10px] text-red-400 hover:bg-red-400/10 disabled:opacity-50"><Trash2 size={12}/>{removing === key ? 'Удаляем…' : 'Удалить'}</button></div></div>{comment.tags?.length > 0 && <p className="mt-2 text-[11px] text-muted break-words">{comment.tags.join(' · ')}</p>}</li>;
             })}</ol>}
           </> : <>
-            {!activePage.completed?.length ? <p className="text-xs text-subtle py-8 text-center">Пока никто не получил комментарий.</p> : <ol className="space-y-2.5">{[...activePage.completed].reverse().map((claim, index) => <li key={index} className="rounded-xl border border-line bg-elevated p-3.5"><div className="flex items-center justify-between gap-2 mb-2"><span className="inline-flex items-center gap-1.5 text-[10px] text-green-400"><CheckCheck size={12} />Получен</span><time dateTime={claim.issuedAt} className="text-[10px] text-subtle">{new Date(claim.issuedAt).toLocaleString('ru-RU')}</time></div><p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{claim.comment.text}</p>{claim.comment.tags?.length > 0 && <p className="mt-2 text-[11px] text-muted break-words">{claim.comment.tags.join(' · ')}</p>}</li>)}</ol>}
+            {!reviewedRows.length ? <p className="px-2 py-8 text-center text-xs text-subtle">
+              {tab === 'review' ? 'Нет комментариев на проверке.' : 'Пока нет подтверждённых комментариев.'}
+            </p> : <ol className="space-y-2.5">
+              {reviewedRows.map(claim => <li key={claim.index} className="rounded-xl border border-line bg-elevated p-3.5">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <span className={'text-xs ' + (claim.confirmedAt ? 'text-green-400' : 'text-muted')}>
+                    {claim.confirmedAt ? 'Подтверждён' : 'Ожидает проверки'}
+                  </span>
+                  <time dateTime={claim.issuedAt} className="text-xs text-subtle">{new Date(claim.issuedAt).toLocaleString('ru-RU')}</time>
+                </div>
+                <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{claim.comment.text}</p>
+                {claim.comment.tags?.length > 0 && <p className="mt-2 break-words text-xs text-muted">{claim.comment.tags.join(' · ')}</p>}
+                {!claim.confirmedAt && <div className="mt-3 flex flex-wrap gap-2">
+                  <button type="button" disabled={reviewing || deleting} onClick={() => review(claim.index, 'confirm')} className={action}>
+                    <CheckCheck size={14} />Подтвердить
+                  </button>
+                  <button type="button" disabled={reviewing || deleting} onClick={() => review(claim.index, 'rollback')} className={action}>
+                    <RotateCcw size={14} />Откатить
+                  </button>
+                </div>}
+              </li>)}
+            </ol>}
           </>}
           </div>
         </div>}

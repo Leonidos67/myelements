@@ -451,7 +451,7 @@ export default function App() {
                       </td>
                       <td className="py-3 px-3 text-center">
                         {commentSummaryError ? <button onClick={refreshCommentSummary} className="text-muted text-[10px] hover:text-foreground" title="Не удалось загрузить прогресс. Повторить">Обновить</button> : !commentSummary ? <span className="text-subtle">…</span> : comments ? <div className="flex items-center justify-center gap-2 whitespace-nowrap">
-                          <span className={comments.issued === comments.total ? 'font-mono text-green-400' : 'font-mono text-foreground'} title="Выдано комментариев">{comments.issued} из {comments.total}</span>
+                          <span className={comments.confirmed === comments.total ? 'font-mono text-green-400' : 'font-mono text-foreground'} title={'Подтверждено комментариев. На проверке: ' + (comments.issued - (comments.confirmed || 0))}>{comments.confirmed || 0} из {comments.total}</span>
                           <button onClick={() => setCommentVideo(v)} title="Подробнее о комментариях" aria-label="Подробнее о комментариях" className="p-1 rounded text-muted hover:text-foreground hover:bg-elevated"><Info size={15} /></button>
                         </div> : <button onClick={() => setCommentVideo(v)} className="px-2 py-1 rounded text-foreground hover:bg-elevated inline-flex items-center gap-1"><Plus size={12} /> Добавить</button>}
                       </td>

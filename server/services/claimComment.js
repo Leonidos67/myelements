@@ -17,6 +17,7 @@ export async function claimComment(Model, id, visitor, session = null) {
   const current = page || await Model.findById(id).session(session).lean();
   if (!current) return { status: 404, error: 'Страница не найдена' };
   const claim = current.claims.find(c => c.visitor === visitor);
+  if (claim?.revertedAt) return { status: 410, error: 'Выдача этого комментария отменена' };
   if (claim) return { status: 200, comment: claim.comment, remaining: current.remaining.length };
   if (!current.remaining.length) return { status: 410, error: 'Все комментарии уже выданы' };
   return { status: 429, error: 'До следующей выдачи нужно немного подождать', retryAt: current.nextAvailableAt, serverTime: new Date() };

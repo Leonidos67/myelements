@@ -38,6 +38,17 @@ export async function claimCommentFlow(id, visitor) {
     await CommentPage.db.transaction(async session => {
       const pages = await getCommentFlow(id, session);
       if (!pages.length) throw new ClaimRejected({ status: 404, error: 'Страница не найдена' });
+      const previous = pages.map(page => page.claims.find(claim => claim.visitor === visitor));
+      if (previous.some(claim => claim?.revertedAt)) {
+        const activePages = pages.filter((_, index) => previous[index] && !previous[index].revertedAt);
+        const comments = previous.filter(claim => claim && !claim.revertedAt).map(claim => claim.comment);
+        if (!comments.length) throw new ClaimRejected({ status: 410, error: 'Выдача этого комментария отменена' });
+        result = {
+          status: 200, comment: comments[0], comments, pages: activePages, partial: true,
+          remaining: Math.min(...pages.map(page => page.remaining.length)),
+        };
+        return;
+      }
       const claims = [];
       for (const page of pages) {
         const claim = await claimComment(CommentPage, page._id, visitor, session);
@@ -56,8 +67,8 @@ export async function claimCommentFlow(id, visitor) {
     if (error instanceof ClaimRejected) return error.result;
     throw error;
   }
-  const { pages, comments, ...body } = result;
-  if (pages.length === 1) return body;
+  const { pages, comments, partial, ...body } = result;
+  if (pages.length === 1 && !partial) return body;
   const targets = await getFlowTargets(pages);
   return { ...body, items: targets.map((target, index) => ({ ...target, comment: comments[index] })) };
 }
