@@ -55,6 +55,15 @@ function visitorKey(id) {
   return 'comment-visitor:' + id;
 }
 
+function storedVisitor(page, id) {
+  const ids = [id, page.publicId, ...(page.targets || []).map(target => target.pageId)];
+  for (const candidate of new Set(ids.filter(Boolean))) {
+    const visitor = localStorage.getItem(visitorKey(candidate));
+    if (visitor) return visitor;
+  }
+  return null;
+}
+
 export default function GetComment({ id }) {
   const [page, setPage] = useState(null);
   const [items, setItems] = useState([]);
@@ -85,12 +94,12 @@ export default function GetComment({ id }) {
     api.commentPage(id).then(p => {
       setPage(p);
       updateWait(p.nextAvailableAt, p.serverTime);
-      try { setHasVisitor(Boolean(localStorage.getItem(visitorKey(p.publicId || id)))); } catch {}
+      try { setHasVisitor(Boolean(storedVisitor(p, id))); } catch {}
     }).catch(e => setError(e.message));
   }, [id]);
 
   const targets = page?.targets || (page ? [page] : []);
-  const paired = received ? items.length === 2 : targets.length === 2;
+  const paired = received ? items.length > 1 : targets.length > 1;
   const countdown = Math.floor(secondsLeft / 60) + ':' + String(secondsLeft % 60).padStart(2, '0');
 
   async function receive() {
@@ -99,7 +108,7 @@ export default function GetComment({ id }) {
     try {
       const publicId = page.publicId || id;
       const key = visitorKey(publicId);
-      let visitor = localStorage.getItem(key);
+      let visitor = storedVisitor(page, id);
       if (!visitor) {
         visitor = crypto.randomUUID();
         localStorage.setItem(key, visitor);
@@ -123,7 +132,7 @@ export default function GetComment({ id }) {
       <div className="mb-7 text-center text-sm font-semibold">RubUP <span className="mx-2 font-normal text-subtle">/</span><span className="font-normal text-subtle">Комментарии</span></div>
       <section className="rounded-3xl border border-line bg-surface p-6 shadow-modal sm:p-8">
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          {received ? (paired ? 'Ваши комментарии' : 'Ваш комментарий') : (paired ? 'Получить два комментария' : 'Получить комментарий')}
+          {received ? (paired ? 'Ваши комментарии' : 'Ваш комментарий') : (paired ? 'Получить комментарии' : 'Получить комментарий')}
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-subtle">
           {received ? (paired ? 'Скопируйте каждый текст и оставьте его под указанным видео.' : 'Скопируйте текст и оставьте его под видео.') : 'Нажмите кнопку, чтобы получить текст.'}

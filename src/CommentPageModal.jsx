@@ -61,7 +61,7 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
   const activePage = ownPages.find(page => page._id === selectedPageId) || ownPages[0];
   const groupId = activePage?.parentId || activePage?._id;
   const group = groupId ? pages.filter(page => (page.parentId || page._id) === groupId)
-    .sort((a, b) => Number(Boolean(a.parentId)) - Number(Boolean(b.parentId))) : [];
+    .sort((a, b) => Number(Boolean(a.parentId)) - Number(Boolean(b.parentId)) || a._id.localeCompare(b._id)) : [];
   const customTarget = group.find(page => page._id === customPageId) || activePage;
   const videoById = new Map(videos.map(item => [item._id, item]));
   const labelFor = page => {
@@ -127,8 +127,8 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
   }
   async function createBranch(id, data) {
     const branch = await api.createCommentBranch(id, data);
-    setPages(rows => rows.map(page => page._id === id ? { ...page, branchId: branch.branchId } : page));
     await refresh();
+    return branch;
   }
   async function replace(pageId, comment) {
     const key = pageId + ':' + JSON.stringify(comment);
@@ -264,7 +264,7 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
         </div>}
         {tab === 'progress' ? <div role="tabpanel" id="comment-panel-progress" aria-labelledby="comment-tab-progress">
       {loading ? <p className="mt-6 text-subtle">Загрузка…</p> : <>
-        <CommentFlow key={activePage?._id || 'empty'} page={activePage} video={video} videos={videos} themes={themes} onCreateBranch={createBranch} />
+        <CommentFlow key={activePage?._id || 'empty'} page={activePage} group={group} videos={videos} themes={themes} onCreateBranch={createBranch} />
         {pages.length > 0 && <div className="mt-5 rounded-xl border border-line p-4">
           <div className="flex justify-between items-center"><span className="text-sm text-muted">Общий прогресс</span><span className="font-mono text-foreground">{percent}%</span></div>
           <p className="mt-2 text-xl font-semibold">{confirmed} <span className="text-sm text-subtle font-normal">из {total} подтверждено</span></p>
@@ -280,8 +280,8 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
           const done = p.confirmed || 0;
           const progress = p.total ? Math.round(done / p.total * 100) : 0;
           return <div key={p._id} className="p-4 border border-line rounded-xl">
-            {(p.branchId || p.parentId) && <p className="mb-2 truncate text-xs text-muted" title={labelFor(p)}>{labelFor(p)}</p>}
-            <div className="flex justify-between items-start gap-3"><p className="text-sm">{p.themeLabel}{(p.branchId || p.parentId) && <span className="ml-2 text-xs text-muted">· Общая ссылка</span>}</p><span className={`text-[10px] px-2 py-1 rounded whitespace-nowrap ${done === p.total ? 'bg-green-500/10 text-green-400' : 'bg-primary/10 text-foreground'}`}>{done === p.total ? 'Завершено' : 'В процессе'}</span></div>
+            {pages.some(item => item._id !== p._id && (item.parentId || item._id) === (p.parentId || p._id)) && <p className="mb-2 truncate text-xs text-muted" title={labelFor(p)}>{labelFor(p)}</p>}
+            <div className="flex justify-between items-start gap-3"><p className="text-sm">{p.themeLabel}{pages.some(item => item._id !== p._id && (item.parentId || item._id) === (p.parentId || p._id)) && <span className="ml-2 text-xs text-muted">· Общая ссылка</span>}</p><span className={`text-[10px] px-2 py-1 rounded whitespace-nowrap ${done === p.total ? 'bg-green-500/10 text-green-400' : 'bg-primary/10 text-foreground'}`}>{done === p.total ? 'Завершено' : 'В процессе'}</span></div>
             <p className="text-xs text-muted mt-2">Подтверждено {done} из {p.total} · На проверке {p.issued - done} · В очереди {p.remaining}</p>
             <div className="h-1.5 mt-2 mb-4 rounded-full bg-elevated overflow-hidden"><div className="h-full bg-primary rounded-full" style={{ width: `${progress}%` }} /></div>
             <input aria-label="Ссылка на страницу комментариев" readOnly value={url(p.parentId || p._id)} onFocus={e => e.target.select()} className="w-full bg-inset p-2.5 rounded-lg text-xs border border-line" />

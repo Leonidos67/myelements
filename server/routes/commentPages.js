@@ -36,9 +36,18 @@ const reviewEntries = { $filter: {
   as: 'entry', cond: { $not: [{ $ifNull: ['$$entry.revertedAt', false] }] },
 } };
 router.get('/summary', auth, wrap(async (req, res) => {
-  res.json(await CommentPage.aggregate([
-    { $group: { _id: '$video', total: { $sum: '$total' }, issued: { $sum: { $size: activeClaims } }, confirmed: { $sum: confirmedCount }, pages: { $sum: 1 } } },
-  ]));
+  const rows = await CommentPage.aggregate([
+    { $group: {
+      _id: '$video', total: { $sum: '$total' }, issued: { $sum: { $size: activeClaims } },
+      confirmed: { $sum: confirmedCount }, pages: { $sum: 1 },
+      rootIds: { $addToSet: { $ifNull: ['$parentId', '$_id'] } },
+      parentIds: { $addToSet: '$parentId' },
+    } },
+  ]);
+  const sharedIds = new Set(rows.flatMap(row => row.parentIds).filter(Boolean));
+  res.json(rows.map(({ rootIds, parentIds, ...row }) => ({
+    ...row, flowIds: rootIds.filter(id => sharedIds.has(id)).sort(),
+  })));
 }));
 const adminPageFields = {
   video: 1, videoTitle: 1, theme: 1, themeLabel: 1, branchId: 1, parentId: 1,
@@ -56,10 +65,11 @@ router.get('/', auth, wrap(async (req, res) => {
   ]);
   if (req.query.includeLinked !== '1') return res.json(pages);
 
-  const ownIds = new Set(pages.map(page => page._id));
-  const linkedIds = [...new Set(pages.flatMap(page => [page.parentId, page.branchId]).filter(id => id && !ownIds.has(id)))];
-  const linked = linkedIds.length ? await CommentPage.aggregate([
-    { $match: { _id: { $in: linkedIds } } },
+  const ownIds = pages.map(page => page._id);
+  const roots = [...new Set(pages.map(page => page.parentId || page._id))];
+  const linked = roots.length ? await CommentPage.aggregate([
+    { $match: { _id: { $nin: ownIds }, $or: [{ _id: { $in: roots } }, { parentId: { $in: roots } }] } },
+    { $sort: { _id: 1 } },
     { $project: adminPageFields },
   ]) : [];
   res.json([...pages, ...linked]);
@@ -104,26 +114,40 @@ router.post('/', auth, wrap(async (req, res) => {
   });
 }));
 router.post('/:id/branch', auth, wrap(async (req, res) => {
-  const { videoId, theme: themeId, count } = req.body || {};
+  const { videoId, existingPageId, theme: themeId, count } = req.body || {};
+  const attaching = existingPageId !== undefined;
   const theme = themes.find(t => t.id === themeId);
-  if (!theme || !Number.isInteger(count) || count < 1 || count > theme.comments.length || !mongoose.isValidObjectId(videoId)) {
-    return res.status(400).json({ error: 'Выберите второе видео, тематику и количество' });
+  if (!mongoose.isValidObjectId(videoId) ||
+      (attaching ? typeof existingPageId !== 'string' || !existingPageId :
+        !theme || !Number.isInteger(count) || count < 1 || count > theme.comments.length)) {
+    return res.status(400).json({ error: 'Выберите видео и набор комментариев' });
   }
-  const branchId = randomBytes(18).toString('hex');
-  const remaining = sampleComments(theme, count);
+  const branchId = attaching ? existingPageId : randomBytes(18).toString('hex');
   const result = await CommentPage.db.transaction(async session => {
-    const root = await CommentPage.findById(req.params.id).session(session).lean();
+    const pages = await getCommentFlow(req.params.id, session);
+    const root = pages[0];
     if (!root) return { status: 404, error: 'Набор не найден' };
-    if (root.branchId || root.parentId) return { status: 409, error: 'У набора уже есть ветка' };
-    if (String(root.video) === String(videoId).toLowerCase()) return { status: 400, error: 'Выберите другое видео' };
+    if (pages.some(page => String(page.video) === String(videoId).toLowerCase())) {
+      return { status: 409, error: 'Это видео уже добавлено в схему' };
+    }
     const video = await Video.findById(videoId).session(session).lean();
-    if (!video) return { status: 404, error: 'Второе видео не найдено' };
-    await CommentPage.updateOne({ _id: root._id }, { $set: { branchId } }, { session });
-    await CommentPage.create([{
-      _id: branchId, parentId: root._id, video: video._id,
-      videoTitle: video.title || 'Второе видео', theme: theme.id, themeLabel: theme.label,
-      total: count, remaining, claims: [], createdBy: req.admin.id,
-    }], { session });
+    if (!video) return { status: 404, error: 'Видео не найдено' };
+    if (attaching) {
+      const existing = await CommentPage.findOne({ _id: existingPageId, video: video._id }).session(session).lean();
+      if (!existing) return { status: 404, error: 'Набор выбранного видео не найден' };
+      if (existing.parentId || await CommentPage.exists({ parentId: existing._id }).session(session)) {
+        return { status: 409, error: 'Набор уже входит в другую схему выдачи' };
+      }
+      await CommentPage.updateOne({ _id: existing._id }, { $set: { parentId: root._id, linkedExisting: true } }, { session });
+    } else {
+      await CommentPage.create([{
+        _id: branchId, parentId: root._id, video: video._id,
+        videoTitle: video.title || 'Видео', theme: theme.id, themeLabel: theme.label,
+        total: count, remaining: sampleComments(theme, count), claims: [], createdBy: req.admin.id,
+      }], { session });
+    }
+    // Serialize membership changes even when two requests add different child documents.
+    await CommentPage.updateOne({ _id: root._id }, { $inc: { flowRevision: 1 } }, { session });
     return { status: 201, branchId, publicId: root._id };
   });
   const { status, ...body } = result;

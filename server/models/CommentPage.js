@@ -7,6 +7,8 @@ const schema = new mongoose.Schema({
   videoTitle: String,
   branchId: String,
   parentId: String,
+  linkedExisting: Boolean,
+  flowRevision: Number,
   theme: String,
   themeLabel: String,
   total: Number,
@@ -18,4 +20,5 @@ const schema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 }, { collection: 'comment_pages' });
 schema.index({ video: 1, createdAt: -1 });
+schema.index({ parentId: 1 }, { sparse: true });
 export default mongoose.model('CommentPage', schema);
