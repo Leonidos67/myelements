@@ -11,6 +11,13 @@ initTheme();
 
 const path=window.location.pathname;
 const comment=path.match(/^\/get-comment\/([a-f0-9]{36})\/?$/);
+if(comment){
+  document.documentElement.translate=false;
+  const optOut=document.createElement('meta');
+  optOut.name='google';
+  optOut.content='notranslate';
+  document.head.append(optOut);
+}
 const stat=path.match(/^\/tt-stat\/([a-f0-9]{24})\/?$/i);
 const project=path.match(/^\/projects\/([a-f0-9]{24})(\/preview)?\/?$/i);
 function page(){

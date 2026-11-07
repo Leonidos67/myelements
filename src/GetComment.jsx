@@ -50,7 +50,7 @@ export default function GetComment({ id }) {
     catch { setError('Не удалось скопировать. Выделите текст и скопируйте вручную.'); }
   }
   const button = 'flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-panel transition-all hover:bg-primary/90 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground disabled:opacity-40 disabled:cursor-not-allowed';
-  return <main className="relative isolate min-h-screen overflow-hidden bg-background text-foreground flex items-center justify-center px-4 py-12 sm:px-6">
+  return <main lang="ru" translate="no" className="notranslate relative isolate min-h-screen overflow-hidden bg-background text-foreground flex items-center justify-center px-4 py-12 sm:px-6">
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.055),transparent_65%)]" />
     <div className="relative w-full max-w-lg">
       <div className="mb-7 flex items-center justify-center gap-2.5"><span className="text-sm font-semibold tracking-tight">RubUP <span className="mx-2 font-normal text-subtle">/</span><span className="font-normal text-subtle">Комментарии</span></span></div>
