@@ -12,7 +12,17 @@ import Video from '../models/Video.js';
 import StatProject from '../models/StatProject.js';
 import {defaultProjectConfig,validateProjectConfig,projectData,projectDataSource} from '../services/statProjectData.js';
 const config=defaultProjectConfig();config.video.stats=[57539,547,0,39,24];config.video.durationSeconds=75.5;config.watch.averageSeconds=20;
+assert.equal(projectData(config).viewsTimeUnit, 'hour');
+assert.throws(() => validateProjectConfig({ ...config, viewsTimeUnit: 'week' }), /часы или дни/);
+config.viewsTimeUnit = 'day';
+config.viewsByHour = [0, 120, 270];
 const data=projectData(config);
+const engineSource = readFileSync(new URL('../data/tt-stat/engine.js', import.meta.url), 'utf8');
+const graphCode = engineSource.slice(engineSource.indexOf('const viewsTimeSuffix'), engineSource.indexOf('$("ret-lead")'));
+const axisLabels = runInNewContext(projectDataSource(config) + graphCode, {
+  areaChart(id, values, options) { return options.xLabels.join(', '); },
+});
+assert.equal(axisLabels, '0 д., 2 д.');
 assert.equal(data.metrics.views.value,57539);assert.equal(data.video.duration,'75.5 с.');assert.equal(data.avgWatchedPercent,26.5);
 new Script(projectDataSource(config)+readFileSync(new URL('../data/tt-stat/engine.js',import.meta.url),'utf8'));
 assert.deepEqual(JSON.parse(runInNewContext(projectDataSource(config)+'JSON.stringify(DATA.video.stats)')),config.video.stats);
@@ -36,7 +46,7 @@ try{
  const other=await(await request('','POST',{videoId:second.id})).json();
  const saved=await request('/'+id,'PUT',{title:'Edited project',config,revision:1});assert.equal(saved.status,200);assert.equal((await saved.json()).revision,2);
  const script=await(await request('/'+id+'/script')).json();assert.ok(script.code.includes('const DATA = '));new Script(script.code);
- const loaded=await(await request('/'+id)).json();assert.deepEqual(loaded.config.video.stats,[57539,547,0,39,24]);
+ const loaded=await(await request('/'+id)).json();assert.deepEqual(loaded.config.video.stats,[57539,547,0,39,24]);assert.equal(loaded.config.viewsTimeUnit,'day');assert.deepEqual(loaded.config.viewsByHour,[0,120,270]);
  assert.equal((await request('/'+id,'PUT',{title:'stale',config,revision:1})).status,409);
  const concurrent=await Promise.all([request('/'+id,'PUT',{title:'A',config,revision:2}),request('/'+id,'PUT',{title:'B',config,revision:2})]);assert.deepEqual(concurrent.map(r=>r.status).sort(),[200,409]);
  assert.equal((await request('/'+id,'DELETE')).status,200);

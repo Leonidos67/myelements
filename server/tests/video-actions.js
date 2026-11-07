@@ -100,6 +100,14 @@ try{
  assert.equal((await review(root._id, 'confirm', false)).status, 401);
  assert.equal((await review(root._id, 'confirm')).status, 200);
  assert.equal((await review(root._id, 'rollback')).status, 409);
+ assert.equal((await review(root._id, 'reopen')).status, 200);
+ assert.equal((await review(root._id, 'reopen')).status, 409);
+ const reopened = (await (await commentRequest('?video=' + legacy.id)).json()).find(page => page._id === root._id);
+ assert.equal(reopened.confirmed, 0);
+ assert.equal(reopened.issued, 1);
+ assert.equal(reopened.reviews[0].confirmedAt, undefined);
+ assert.deepEqual(await (await claim(root._id, visitor)).json(), pair);
+ assert.equal((await review(root._id, 'confirm')).status, 200);
  const rollback = await Promise.all([review(branch.branchId, 'rollback'), review(branch.branchId, 'rollback')]);
  assert.deepEqual(rollback.map(response => response.status).sort(), [200, 409]);
  const branchPage = (await (await commentRequest('?video=' + copy._id)).json()).find(page => page._id === branch.branchId);
@@ -144,6 +152,12 @@ try{
  assert.deepEqual(deletedReview.pending, []);
  assert.deepEqual(deletedReview.reviews.map(entry => entry.index), [1]);
  assert.equal((await claim(manual._id, manualVisitor)).status, 410);
+ assert.equal((await commentRequest('/' + manual._id + '/reviews/1', 'POST', { action: 'requeue' })).status, 200);
+ const returned = (await (await commentRequest('?video=' + legacy.id)).json()).find(page => page._id === manual._id);
+ assert.equal(returned.total, 1);
+ assert.equal(returned.confirmed, 0);
+ assert.equal(returned.issued, 0);
+ assert.deepEqual(returned.pending, [{ text: 'Ещё текст', tags: [] }]);
  console.log('PASS: completed deletion adjusts totals once and does not requeue or replay the comment');
  assert.equal((await commentRequest('/' + root._id + '/reset-timer', 'POST')).status, 200);
  await commentRequest('/' + root._id + '/comments', 'POST', { text: 'После проверки', tags: [] });

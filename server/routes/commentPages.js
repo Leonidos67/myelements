@@ -184,16 +184,17 @@ router.post('/:id/reviews/:index', auth, wrap(async (req, res) => {
   const index = Number(req.params.index);
   const { action } = req.body || {};
   if (!/^\d+$/.test(req.params.index) || !Number.isSafeInteger(index) || index > 2147483647 ||
-      !['confirm', 'rollback', 'delete'].includes(action)) {
+      !['confirm', 'rollback', 'reopen', 'requeue', 'delete'].includes(action)) {
     return res.status(400).json({ error: 'Некорректное действие проверки' });
   }
   // Keep withdrawn claims in history to preserve indexes and prevent replay.
   const key = 'claims.' + index;
+  const fromCompleted = ['reopen', 'requeue', 'delete'].includes(action);
   const filter = { _id: req.params.id, $expr: { $let: {
     vars: { claim: { $arrayElemAt: ['$claims', index] } },
     in: { $and: [
       { $lt: [index, { $size: '$claims' }] },
-      { [action === 'delete' ? '$ne' : '$eq']: [{ $ifNull: ['$$claim.confirmedAt', null] }, null] },
+      { [fromCompleted ? '$ne' : '$eq']: [{ $ifNull: ['$$claim.confirmedAt', null] }, null] },
       { $eq: [{ $ifNull: ['$$claim.revertedAt', null] }, null] },
     ] },
   } } };
@@ -201,7 +202,9 @@ router.post('/:id/reviews/:index', auth, wrap(async (req, res) => {
   let update = { $set: { [key + '.confirmedAt']: now } };
   if (action === 'delete') {
     update = { $set: { [key + '.revertedAt']: now }, $inc: { total: -1 } };
-  } else if (action === 'rollback') {
+  } else if (action === 'reopen') {
+    update = { $unset: { [key + '.confirmedAt']: 1 } };
+  } else if (action === 'rollback' || action === 'requeue') {
     const page = await CommentPage.findOne(filter, { claims: { $slice: [index, 1] } }).lean();
     if (!page) return res.status(409).json({ error: 'Действие уже выполнено или комментарий недоступен' });
     update = { $set: { [key + '.revertedAt']: now }, $push: { remaining: page.claims[0].comment } };

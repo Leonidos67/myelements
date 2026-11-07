@@ -133,6 +133,7 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
     finally { setRemoving(''); }
   }
   async function review(index, decision) {
+    if (decision === 'requeue' && !window.confirm('Вернуть комментарий в очередь? Его сможет получить другой посетитель.')) return;
     if (decision === 'delete' && !window.confirm('Удалить комментарий из выполненных и из набора?')) return;
     setReviewing(true);
     setError('');
@@ -329,10 +330,18 @@ export default function CommentPageModal({ video, videos, onClose, onChange }) {
                 </div>
                 <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{claim.comment.text}</p>
                 {claim.comment.tags?.length > 0 && <p className="mt-2 break-words text-xs text-muted">{claim.comment.tags.join(' · ')}</p>}
-                <button type="button" disabled={reviewing || deleting} onClick={() => review(claim.index, 'delete')}
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-red-400/20 px-3 py-2 text-xs text-red-400 hover:bg-red-400/10 disabled:opacity-50">
-                  <Trash2 size={14} />Удалить
-                </button>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button type="button" disabled={reviewing || deleting} onClick={() => review(claim.index, 'reopen')} className={action}>
+                    <ClipboardCheck size={14} />На проверку
+                  </button>
+                  <button type="button" disabled={reviewing || deleting} onClick={() => review(claim.index, 'requeue')} className={action}>
+                    <RotateCcw size={14} />В очередь выдачи
+                  </button>
+                  <button type="button" disabled={reviewing || deleting} onClick={() => review(claim.index, 'delete')}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-red-400/20 px-3 py-2 text-xs text-red-400 hover:bg-red-400/10 disabled:opacity-50">
+                    <Trash2 size={14} />Удалить
+                  </button>
+                </div>
               </li>)}
             </ol>}
           </>}

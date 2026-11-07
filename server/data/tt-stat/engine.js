@@ -160,12 +160,13 @@ for (const k in DATA.metrics) {
   $("v-" + k).textContent = typeof v === "number" ? fmtKExact(v) : v;
 }
 
-// График просмотров по часам
+// Шаг между точками графика просмотров
+const viewsTimeSuffix = DATA.viewsTimeUnit === "day" ? " д." : "h";
 areaChart("views-chart", DATA.viewsByHour, { 
   H: 200, 
   max: Math.max(1, ...DATA.viewsByHour, ...DATA.viewsTicks),
   ticks: DATA.viewsTicks, 
-  xLabels: ["0h", String(Math.max(0, DATA.viewsByHour.length - 1)) + "h"], 
+  xLabels: ["0" + viewsTimeSuffix, String(DATA.viewsByHour.length - 1) + viewsTimeSuffix],
   x0: 15,  
   dot: false, // Без точек
   slider: false 

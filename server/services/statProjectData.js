@@ -14,10 +14,13 @@ export function validateProjectConfig(raw) {
   obj(raw,'Данные'); const v=obj(raw.video,'Видео'), w=obj(raw.watch,'Просмотр'), l=obj(raw.likes,'Лайки');
   const duration=number(v.durationSeconds,'Длительность',0.01,86400);
   const stats=list(v.stats,'Основные показатели',5,5).map(n=>number(n,'Основные показатели',0,1e12,true));
+  const viewsTimeUnit = raw.viewsTimeUnit === undefined ? 'hour' : raw.viewsTimeUnit;
+  if (viewsTimeUnit !== 'hour' && viewsTimeUnit !== 'day') fail('Выберите часы или дни для графика просмотров');
   const result={
     video:{durationSeconds:duration,cover:url(v.cover,'Обложка'),published:text(v.published,'Дата публикации'),stats},
     watch:{totalSeconds:number(w.totalSeconds,'Общее время',0,1e12,true),averageSeconds:number(w.averageSeconds,'Среднее время',0,duration),completionPercent:number(w.completionPercent,'Полные просмотры',0,100),subscribers:number(w.subscribers,'Подписчики',0,1e12,true)},
-    viewsByHour:series(raw.viewsByHour,'Просмотры по часам'),viewsTicks:series(raw.viewsTicks,'Метки просмотров',1e12,1),retention:series(raw.retention,'Удержание',100),
+    viewsTimeUnit,
+    viewsByHour:series(raw.viewsByHour,'Точки графика просмотров'),viewsTicks:series(raw.viewsTicks,'Метки просмотров',1e12,1),retention:series(raw.retention,'Удержание',100),
     sources:percentRows(raw.sources,'Источники'),totalViewers:number(raw.totalViewers,'Всего зрителей',0,1e12,true),
     viewerTypes:list(raw.viewerTypes,'Типы зрителей',1,8).map(t=>{obj(t,'Типы зрителей');const pair={left:rows([t.left],'Типы зрителей')[0],right:rows([t.right],'Типы зрителей')[0]};if(Math.round((pair.left[1]+pair.right[1])*100)!==10000)fail('Типы зрителей: сумма каждой пары должна быть 100%');return pair;}),
     gender:percentRows(raw.gender,'Пол'),ages:percentRows(raw.ages,'Возраст'),places:percentRows(raw.places,'Места'),

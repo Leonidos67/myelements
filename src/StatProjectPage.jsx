@@ -52,7 +52,15 @@ export default function StatProjectPage({id}){
 
       <div className="border-t border-line pt-6"><h2 className="text-sm font-medium mb-5">Показатели просмотра</h2><div className="grid gap-5 sm:grid-cols-2">{field('Общее время просмотра, секунды','watch.totalSeconds',{type:'number',min:0,step:'1',help:'Суммарное время всех просмотров. Это не длительность самого ролика.'})}{field('Среднее время просмотра, секунды','watch.averageSeconds',{type:'number',min:0,max:config.video.durationSeconds})}{field('Просмотрели полностью, %','watch.completionPercent',{type:'number',min:0,max:100})}{field('Новые подписчики','watch.subscribers',{type:'number',min:0,step:'1'})}</div><div className="rounded-xl border border-line bg-elevated p-4 text-xs leading-relaxed text-subtle">Общее время автоматически форматируется в часы, минуты и секунды. Средний просмотр: <span className="text-foreground">{Math.round(config.watch.averageSeconds/config.video.durationSeconds*1000)/10}%</span> длительности ролика — процент для подписи удержания вычисляется автоматически.</div></div>
       <div className="border-t border-line pt-6"><h2 className="text-sm font-medium mb-5">Графики просмотров и удержания</h2><div className="space-y-6">
-      {series('Просмотры по часам','viewsByHour',1e12,'От двух точек. Один элемент — один час; последняя отметка времени и масштаб графика определяются автоматически.')}
+      <label className="block text-xs text-muted">Шкала времени графика просмотров
+        <select className={input} value={config.viewsTimeUnit ?? 'hour'} onChange={event => change('viewsTimeUnit', event.target.value)}>
+          <option value="hour">По часам</option>
+          <option value="day">По дням</option>
+        </select>
+      </label>
+      {series('Точки графика просмотров','viewsByHour',1e12,config.viewsTimeUnit === 'day'
+        ? 'Введите от двух чисел через запятую. Первое — день 0, следующее — день 1 и так далее.'
+        : 'Введите от двух чисел через запятую. Первое — час 0, следующее — час 1 и так далее.')}
       {series('Метки оси Y просмотров','viewsTicks',1e12)}
       {series('Удержание, %','retention',100,'От двух точек от начала до конца ролика. Временная шкала использует длительность из раздела «Обзор».')}
 </div></div>
