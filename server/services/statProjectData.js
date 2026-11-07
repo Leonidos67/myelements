@@ -31,6 +31,11 @@ export function viewsDateLabels(config) {
   return [label(start), label(end)];
 }
 
+export function parseDurationInput(value) {
+  if (typeof value !== 'string' || value.length > 64 || !/^\d+(?:[.,]\d+)?$/.test(value)) return NaN;
+  return Number(value.replace(',', '.'));
+}
+
 export function validateProjectConfig(raw) {
   const fail = message => { throw Error(message); };
   const obj = (v,label) => v && typeof v === 'object' && !Array.isArray(v) ? v : fail('Проверьте раздел «'+label+'»');
@@ -43,6 +48,7 @@ export function validateProjectConfig(raw) {
   const percentRows=(v,label)=>{const result=rows(v,label);if(Math.round(percentageSum(result)*100)!==10000)fail(label+': сумма должна быть ровно 100%');return result;};
   obj(raw,'Данные'); const v=obj(raw.video,'Видео'), w=obj(raw.watch,'Просмотр'), l=obj(raw.likes,'Лайки');
   const duration=number(v.durationSeconds,'Длительность',0.01,86400);
+  const durationText = parseDurationInput(v.durationText) === duration ? v.durationText : undefined;
   const stats=list(v.stats,'Основные показатели',5,5).map(n=>number(n,'Основные показатели',0,1e12,true));
   const viewsTimeUnit = raw.viewsTimeUnit === undefined ? 'hour' : raw.viewsTimeUnit;
   if (viewsTimeUnit !== 'hour' && viewsTimeUnit !== 'day') fail('Выберите часы или дни для графика просмотров');
@@ -51,7 +57,7 @@ export function validateProjectConfig(raw) {
   const viewsShowDots = raw.viewsShowDots === undefined ? false : raw.viewsShowDots;
   if (typeof viewsShowDots !== 'boolean') fail('Проверьте настройку точек графика');
   const result={
-    video:{durationSeconds:duration,cover:url(v.cover,'Обложка'),published:text(v.published,'Дата публикации'),stats},
+    video:{durationSeconds:duration,...(durationText === undefined ? {} : {durationText}),cover:url(v.cover,'Обложка'),published:text(v.published,'Дата публикации'),stats},
     watch:{totalSeconds:number(w.totalSeconds,'Общее время',0,1e12,true),averageSeconds:number(w.averageSeconds,'Среднее время',0,duration),completionPercent:number(w.completionPercent,'Полные просмотры',0,100),subscribers:number(w.subscribers,'Подписчики',0,1e12,true)},
     viewsTimeUnit, viewsStartDate, viewsShowDots,
     viewsByHour:series(raw.viewsByHour,'Точки графика просмотров'),viewsTicks:series(raw.viewsTicks,'Метки просмотров',1e12,1),retention:series(raw.retention,'Удержание',100),
@@ -75,7 +81,7 @@ export function projectData(raw) {
   const c=validateProjectConfig(repairProjectPercentages(raw)), w=c.watch, duration=c.video.durationSeconds;
   const total=w.totalSeconds;
   return {
-    ...c,video:{...c.video,duration:duration+' с.'},
+    ...c,video:{...c.video,duration:(c.video.durationText ?? duration)+' с.'},
     metrics:{views:{label:'Просмотры видео',value:c.video.stats[0]},total:{label:'Общее время просмотра',value:Math.floor(total/3600)+' ч.:'+Math.floor(total%3600/60)+' мин.:'+total%60+' с.'},avg:{label:'Среднее время просмотра',value:w.averageSeconds+' с.'},full:{label:'Просмотрели видео полностью',value:w.completionPercent+'%'},subs:{label:'Новые подписчики',value:w.subscribers}},
     viewsDateLabels: c.viewsTimeUnit === 'day' ? viewsDateLabels(c) : null,
     avgWatchedPercent:Math.round(w.averageSeconds/duration*1000)/10,

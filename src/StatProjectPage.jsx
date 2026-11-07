@@ -6,7 +6,7 @@ import ProjectAssistant from './ProjectAssistant';
 import WorkspaceShell from './WorkspaceShell';
 import Rows,{ViewerTypeRanges} from './PercentRows';
 import {repairProjectPercentages} from '../server/services/statPercentages';
-import {validateProjectConfig,projectDataSource,publicationCalendarDate,viewsDateLabels} from '../server/services/statProjectData';
+import {validateProjectConfig,projectDataSource,publicationCalendarDate,viewsDateLabels,parseDurationInput} from '../server/services/statProjectData';
 import engine from '../server/data/tt-stat/engine.js?raw';
 const input='mt-2 w-full rounded-xl border border-line bg-inset px-3 py-2.5 text-sm text-foreground outline-none focus:border-foreground/40';
 const button='inline-flex items-center justify-center gap-2 rounded-lg border border-line px-3 py-2 text-xs text-foreground hover:bg-elevated disabled:opacity-40';
@@ -45,14 +45,25 @@ export default function StatProjectPage({id}){
    <nav aria-label="Параметры проекта" className="flex gap-1 overflow-x-auto border-b border-line p-3">{tabs.map(([key,label])=><button key={key} onClick={()=>setTab(key)} className={'whitespace-nowrap rounded-lg px-3 py-2 text-xs '+(tab===key?'bg-primary text-primary-foreground':'text-subtle hover:text-foreground hover:bg-elevated')}>{label}</button>)}</nav>
    <form key={formEpoch} onSubmit={save} className="ui-content space-y-6">
     {tab==='overview'&&<>
-      <div className="grid gap-5 sm:grid-cols-2"><Field label="Название проекта" value={title} onChange={v=>{setTitle(v);setDirty(true);}}/>{field('Длительность ролика, секунды','video.durationSeconds',{type:'number',min:0.01,max:86400,help:'Одно значение для подписи и временных шкал удержания и лайков.'})}</div>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field label="Название проекта" value={title} onChange={v=>{setTitle(v);setDirty(true);}} />
+        <label className="block text-xs text-muted">Длительность ролика, секунды
+          <input type="text" inputMode="decimal" required maxLength={64} className={input}
+            value={config.video.durationText ?? String(config.video.durationSeconds)}
+            onChange={event => {
+              const durationText = event.target.value;
+              change('video', { ...config.video, durationText, durationSeconds: parseDurationInput(durationText) });
+            }} />
+          <span className="mt-1.5 block text-[10px] leading-relaxed text-subtle">Например, 40,50. Точность ввода сохраняется в подписи.</span>
+        </label>
+      </div>
       <div><h2 className="text-sm font-medium mb-4">Пять основных показателей</h2><div className="grid grid-cols-2 sm:grid-cols-5 gap-3">{['Просмотры','Лайки','Комментарии','Репосты','Сохранения'].map((label,i)=><Field key={i} label={label} type="number" min={0} step="1" value={config.video.stats[i]} onChange={v=>change('video.stats',config.video.stats.map((n,j)=>j===i?v:n))}/>)}</div><p className="mt-2 text-[10px] text-subtle">Просмотры автоматически используются в верхних счётчиках и карточке метрик.</p></div>
       {field('Ссылка на обложку','video.cover',{type:'url'})}
       {config.video.cover&&/^https?:\/\//i.test(config.video.cover)&&<img src={config.video.cover} alt="Обложка проекта" referrerPolicy="no-referrer" className="h-36 w-24 rounded-xl object-cover border border-line"/>}
       {field('Подпись даты публикации','video.published',{help:'Например: Опубликовано 31 окт 2026, 04:10'})}
       <div><h3 className="text-sm mb-3">Обложки других публикаций</h3><div className="space-y-2">{config.otherCovers.map((url,i)=><div key={i} className="flex items-center gap-2"><input aria-label={'Обложка '+(i+1)} type="url" value={url} onChange={e=>change('otherCovers',config.otherCovers.map((v,j)=>j===i?e.target.value:v))} className={input+' !mt-0'}/><button type="button" onClick={()=>change('otherCovers',config.otherCovers.filter((_,j)=>j!==i))} className="p-2 text-subtle"><X size={14}/></button></div>)}</div><button type="button" onClick={()=>change('otherCovers',[...config.otherCovers,''])} disabled={config.otherCovers.length>=12} className={button+' mt-3'}><Plus size={12}/>Добавить обложку</button></div>
 
-      <div className="border-t border-line pt-6"><h2 className="text-sm font-medium mb-5">Показатели просмотра</h2><div className="grid gap-5 sm:grid-cols-2">{field('Общее время просмотра, секунды','watch.totalSeconds',{type:'number',min:0,step:'1',help:'Суммарное время всех просмотров. Это не длительность самого ролика.'})}{field('Среднее время просмотра, секунды','watch.averageSeconds',{type:'number',min:0,max:config.video.durationSeconds})}{field('Просмотрели полностью, %','watch.completionPercent',{type:'number',min:0,max:100})}{field('Новые подписчики','watch.subscribers',{type:'number',min:0,step:'1'})}</div><div className="rounded-xl border border-line bg-elevated p-4 text-xs leading-relaxed text-subtle">Общее время автоматически форматируется в часы, минуты и секунды. Средний просмотр: <span className="text-foreground">{Math.round(config.watch.averageSeconds/config.video.durationSeconds*1000)/10}%</span> длительности ролика — процент для подписи удержания вычисляется автоматически.</div></div>
+      <div className="border-t border-line pt-6"><h2 className="text-sm font-medium mb-5">Показатели просмотра</h2><div className="grid gap-5 sm:grid-cols-2">{field('Общее время просмотра, секунды','watch.totalSeconds',{type:'number',min:0,step:'1',help:'Суммарное время всех просмотров. Это не длительность самого ролика.'})}{field('Среднее время просмотра, секунды','watch.averageSeconds',{type:'number',min:0,max:Number.isFinite(config.video.durationSeconds) ? config.video.durationSeconds : undefined})}{field('Просмотрели полностью, %','watch.completionPercent',{type:'number',min:0,max:100})}{field('Новые подписчики','watch.subscribers',{type:'number',min:0,step:'1'})}</div><div className="rounded-xl border border-line bg-elevated p-4 text-xs leading-relaxed text-subtle">Общее время автоматически форматируется в часы, минуты и секунды. Средний просмотр: <span className="text-foreground">{config.video.durationSeconds > 0 ? Math.round(config.watch.averageSeconds/config.video.durationSeconds*1000)/10 + '%' : '—'}</span> длительности ролика — процент для подписи удержания вычисляется автоматически.</div></div>
       <div className="border-t border-line pt-6"><h2 className="text-sm font-medium mb-5">Графики просмотров и удержания</h2><div className="space-y-6">
       <label className="block text-xs text-muted">Шкала времени графика просмотров
         <select className={input} value={config.viewsTimeUnit ?? 'hour'} onChange={event => change('viewsTimeUnit', event.target.value)}>
