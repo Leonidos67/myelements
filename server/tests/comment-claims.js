@@ -70,14 +70,14 @@ try {
   assert.equal(race.remaining.length, 1);
   assert.equal(race.claims.length, 1);
   assert.ok(!race.discarded.some(c => c.text === race.claims[0].comment.text));
-  for (const [label, count, age, expectedSeconds] of [['first', 0, 0, 120], ['two', 1, 60000, 600], ['four', 3, 60000, 1200], ['idle', 1, 1260000, 10]]) {
+  for (const [label, count, age, expectedSeconds] of [['first', 0, 0, 30], ['two', 1, 60000, 60], ['four', 3, 60000, 1200], ['idle', 1, 1260000, 10]]) {
     const claims = Array.from({ length: count }, (_, i) => ({ visitor: randomUUID(), comment: {text: 'prior ' + i, tags: []}, issuedAt: new Date(Date.now() - age) }));
     await Model.create({ _id: 'tier-' + label, video: new mongoose.Types.ObjectId(), total: 26, remaining: comments, claims });
     assert.equal((await claimComment(Model, 'tier-' + label, randomUUID())).status, 200);
     const tier = await Model.findById('tier-' + label).lean();
     assert.equal((tier.nextAvailableAt - tier.claims.at(-1).issuedAt) / 1000, expectedSeconds);
   }
-  console.log('PASS: global cooldown, one concurrent winner, repeat bypass, 2/10/20 minute and idle 10 second tiers');
+  console.log('PASS: global cooldown, one concurrent winner, repeat bypass, 30 second, 1 minute, 20 minute and idle 10 second tiers');
   console.log('PASS: pending replacements, simultaneous replacements and claims, issued unchanged, unchanged quota, no repeats, exhausted reserve');
   console.log('PASS: concurrent unique claims, exhaustion, retry after exhaustion, simultaneous duplicate requests, tags, missing page');
 } finally {

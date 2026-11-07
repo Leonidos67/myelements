@@ -1,9 +1,11 @@
+import { commentCooldown } from './commentTiming.js';
+
 // Cooldown and assignment change together in one MongoDB document update.
 const recentCount = { $add: [1, { $size: { $filter: { input: '$claims', as: 'claim', cond: { $gt: ['$$claim.issuedAt', { $subtract: ['$$NOW', 600000] }] } } } }] };
 const cooldownSeconds = { $cond: [
   { $and: [{ $gt: [{ $size: '$claims' }, 0] }, { $lte: [{ $arrayElemAt: ['$claims.issuedAt', -1] }, { $subtract: ['$$NOW', 1200000] }] }] },
-  10,
-  { $switch: { branches: [{ case: { $gte: [recentCount, 4] }, then: 1200 }, { case: { $gte: [recentCount, 2] }, then: 600 }], default: 120 } },
+  commentCooldown.idle,
+  { $switch: { branches: [{ case: { $gte: [recentCount, 4] }, then: commentCooldown.peak }, { case: { $gte: [recentCount, 2] }, then: commentCooldown.busy }], default: commentCooldown.normal } },
 ] };
 export async function claimComment(Model, id, visitor, session = null) {
   const page = await Model.findOneAndUpdate(
