@@ -40,17 +40,29 @@ router.get('/summary', auth, wrap(async (req, res) => {
     { $group: { _id: '$video', total: { $sum: '$total' }, issued: { $sum: { $size: activeClaims } }, confirmed: { $sum: confirmedCount }, pages: { $sum: 1 } } },
   ]));
 }));
+const adminPageFields = {
+  video: 1, videoTitle: 1, theme: 1, themeLabel: 1, branchId: 1, parentId: 1,
+  total: 1, createdAt: 1, nextAvailableAt: 1, serverTime: '$$NOW',
+  pending: '$remaining', reviews: reviewEntries, issueHistory: '$claims.issuedAt',
+  issued: { $size: activeClaims }, confirmed: confirmedCount, remaining: { $size: '$remaining' },
+};
+
 router.get('/', auth, wrap(async (req, res) => {
   if (!mongoose.isValidObjectId(req.query.video)) return res.status(400).json({ error: 'Некорректное видео' });
-  res.json(await CommentPage.aggregate([
+  const pages = await CommentPage.aggregate([
     { $match: { video: new mongoose.Types.ObjectId(req.query.video) } },
     { $sort: { createdAt: -1 } },
-    { $project: {
-      theme: 1, themeLabel: 1, branchId: 1, parentId: 1, total: 1, createdAt: 1, nextAvailableAt: 1,
-      serverTime: '$$NOW', pending: '$remaining', reviews: reviewEntries, issueHistory: '$claims.issuedAt',
-      issued: { $size: activeClaims }, confirmed: confirmedCount, remaining: { $size: '$remaining' },
-    } },
-  ]));
+    { $project: adminPageFields },
+  ]);
+  if (req.query.includeLinked !== '1') return res.json(pages);
+
+  const ownIds = new Set(pages.map(page => page._id));
+  const linkedIds = [...new Set(pages.flatMap(page => [page.parentId, page.branchId]).filter(id => id && !ownIds.has(id)))];
+  const linked = linkedIds.length ? await CommentPage.aggregate([
+    { $match: { _id: { $in: linkedIds } } },
+    { $project: adminPageFields },
+  ]) : [];
+  res.json([...pages, ...linked]);
 }));
 router.delete('/', auth, wrap(async (req, res) => {
   if (!mongoose.isValidObjectId(req.query.video)) return res.status(400).json({ error: 'Некорректное видео' });

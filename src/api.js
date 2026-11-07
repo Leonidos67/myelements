@@ -32,7 +32,7 @@ export const api = {
   deleteCommentTask: (video) => req('/comment-pages?video=' + encodeURIComponent(video), { method: 'DELETE' }),
   commentSummary: () => req('/comment-pages/summary'),
   commentThemes: () => req('/comment-pages/themes'),
-  commentPages: (video) => req('/comment-pages?video=' + encodeURIComponent(video)),
+  commentPages: (video, includeLinked = false) => req('/comment-pages?video=' + encodeURIComponent(video) + (includeLinked ? '&includeLinked=1' : '')),
   createCommentBranch: (id, data) => req('/comment-pages/' + encodeURIComponent(id) + '/branch', { method: 'POST', body: JSON.stringify(data) }),
   createCommentPage: (data) => req('/comment-pages', { method: 'POST', body: JSON.stringify(data) }),
   commentPage: (id) => req('/comment-pages/' + encodeURIComponent(id)),

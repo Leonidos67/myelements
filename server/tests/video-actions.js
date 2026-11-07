@@ -162,6 +162,23 @@ try{
  assert.equal((await commentRequest('/' + root._id + '/reset-timer', 'POST')).status, 200);
  await commentRequest('/' + root._id + '/comments', 'POST', { text: 'После проверки', tags: [] });
  console.log('PASS: manual confirmation, atomic rollback, restored queue, and linked comment preserved');
+ for (const [id, text] of [[root._id, 'Для первого видео'], [branch.branchId, 'Для второго видео']]) {
+   assert.equal((await commentRequest('/' + id + '/comments', 'POST', { text, tags: [] })).status, 201);
+ }
+ const linkedList = videoId => commentRequest('?video=' + videoId + '&includeLinked=1').then(res => res.json());
+ for (const videoId of [legacy.id, copy._id]) {
+   const listed = await linkedList(videoId);
+   const linkedRoot = listed.find(page => page._id === root._id);
+   const linkedBranch = listed.find(page => page._id === branch.branchId);
+   assert.equal(linkedRoot.video, legacy.id);
+   assert.equal(linkedBranch.video, copy._id);
+   assert.ok(linkedRoot.pending.some(comment => comment.text === 'Для первого видео'));
+   assert.ok(linkedBranch.pending.some(comment => comment.text === 'Для второго видео'));
+   assert.ok(!linkedRoot.pending.some(comment => comment.text === 'Для второго видео'));
+   assert.ok(!linkedBranch.pending.some(comment => comment.text === 'Для первого видео'));
+   assert.ok(linkedRoot.reviews.length && linkedBranch.reviews.length);
+ }
+ console.log('PASS: linked sets load in both directions and custom comments stay with their video');
  assert.equal((await request('/' + copy._id, 'DELETE')).status, 200);
  assert.equal(await CommentPage.exists({ _id: branch.branchId }), null);
  assert.equal((await CommentPage.findById(root._id)).branchId, undefined);
