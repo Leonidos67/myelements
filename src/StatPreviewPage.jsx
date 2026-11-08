@@ -23,5 +23,5 @@ export default function StatPreviewPage({videoId,projectId}) {
   if(login)return <Login onLogin={load}/>;
   if(loading)return <main className="min-h-screen grid place-items-center bg-inset text-subtle">Загрузка макета…</main>;
   if(error)return <main className="min-h-screen grid place-items-center bg-inset text-foreground p-6"><div className="max-w-md"><h1 className="text-xl font-semibold">Предпросмотр недоступен</h1><p role="alert" className="mt-3 text-sm text-muted">{error}</p><div className="mt-5 flex flex-wrap gap-3"><button onClick={load} className="rounded-lg bg-primary px-4 py-2 text-xs text-primary-foreground">Повторить</button>{!projectId&&<button onClick={()=>{setCode(localScript);setError('');}} className="rounded-lg border border-line px-4 py-2 text-xs">Открыть локальный шаблон</button>}<a href="/" className="p-2 text-xs text-muted">В кабинет</a></div></div></main>;
-  return <iframe title="Макет аналитики видео" sandbox="allow-scripts" referrerPolicy="no-referrer" srcDoc={html} className="fixed inset-0 h-[100dvh] w-full border-0 bg-primary" />;
+  return <iframe title="Макет аналитики видео" sandbox="allow-scripts" referrerPolicy="no-referrer" srcDoc={html} className="stat-preview-frame fixed inset-0 h-[100dvh] w-full border-0" />;
 }

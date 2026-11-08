@@ -392,3 +392,16 @@ input[type='checkbox'], input[type='radio'] { accent-color:var(--ui-primary); }
   top: calc(50% - 1px);
   border-top: 2px solid var(--branch-color);
 }
+
+/* Match the outer scroll canvas to the document inside the preview frame. */
+html:has(.stat-preview-frame),
+body:has(.stat-preview-frame),
+#root:has(> .stat-preview-frame) {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  color-scheme: light;
+  background-color: #f4f4f5;
+}
+.stat-preview-frame { background-color: #f4f4f5; }
