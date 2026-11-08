@@ -18,7 +18,7 @@ router.post('/',wrap(async(req,res)=>{
   if(!video)return res.status(404).json({error:'Видео не найдено'});
   const existing=await StatProject.findOne({video:videoId}).lean();
   if(existing)return res.json(existing);
-  const config=defaultProjectConfig();config.video.stats[0]=video.views||0;config.video.stats[1]=video.likes||0;
+  const config=defaultProjectConfig();
   await StatProject.init();
   try{res.status(201).json(await StatProject.create({video:videoId,title:video.title||'Проект видео',config,createdBy:req.admin.id,updatedBy:req.admin.id}));}
   catch(e){if(e.code!==11000)throw e;res.json(await StatProject.findOne({video:videoId}).lean());}

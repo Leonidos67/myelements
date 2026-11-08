@@ -3,6 +3,9 @@ import {ArrowLeft,ArrowUpRight,Save,Trash2,Plus,X,Download,Check,RefreshCw} from
 import {api} from './api';
 import Login from './Login';
 import ProjectAssistant from './ProjectAssistant';
+import ProjectCoverField from './ProjectCoverField';
+import ProjectBlock, { ProjectGraph, ProjectGenderGraph } from './ProjectBlock';
+import { applyProjectBlock } from './projectBlockJs';
 import WorkspaceShell from './WorkspaceShell';
 import Rows,{ViewerTypeRanges} from './PercentRows';
 import {repairProjectPercentages} from '../server/services/statPercentages';
@@ -31,11 +34,32 @@ export default function StatProjectPage({id}){
  if(login)return <Login onLogin={load}/>;
  if(loading)return <main className="grid min-h-screen place-items-center bg-background text-subtle">Загрузка проекта…</main>;
  if(!project)return <main className="grid min-h-screen place-items-center bg-background p-6 text-foreground"><div><p role="alert">{error}</p><a href="/" className={button+' mt-4'}>В кабинет</a><button onClick={load} className={button+' ml-2'}>Повторить</button></div></main>;
+ const hasCover = /^(?:https?:\/\/|data:image\/jpeg;base64,)/i.test(config.video.cover);
  const inferredViewsDate = publicationCalendarDate(config.video.published);
  const dateLabels = config.viewsTimeUnit === 'day' ? viewsDateLabels(config) : null;
  const tabs=[['overview','Обзор'],['viewers','Зрители'],['engagement','Вовлеченность']];
  const field=(label,path,options={})=>{let value=config;for(const key of path.split('.'))value=value[key];return <Field label={label} value={value} onChange={v=>change(path,v)} {...options}/>;};
- const series=(label,path,max,help)=>{let values=config;for(const key of path.split('.'))values=values[key];return <Series key={path} label={label} values={values} onChange={v=>change(path,v)} max={max} help={help}/>;};
+ function importBlock(source, paths) {
+   const next = validateProjectConfig(applyProjectBlock(source, config, paths));
+   setConfig(next);
+   setDirty(true);
+   setNotice('');
+   setFormEpoch(value => value + 1);
+ }
+ const block = (title, paths, children) => <ProjectBlock key={title} title={title} paths={paths} config={config} onImport={importBlock}>{children}</ProjectBlock>;
+ const distribution = (label, key) => block(label, [key, 'bounds.' + key, 'calculation.' + key], <>
+   {key === "gender" && <ProjectGenderGraph rows={config.gender} />}
+   <div className="space-y-2">
+     {config[key].map(([name, value], index) => <div key={index}>
+       <div className="mb-1 flex justify-between gap-2 text-xs"><span>{name}</span><span>{value}%</span></div>
+       {key !== "gender" && <div className="project-editor-track"><i style={{ width: value + '%' }} /></div>}
+     </div>)}
+   </div>
+   <Rows label={label} rows={config[key]} bounds={config.bounds?.[key]} calculation={config.calculation?.[key]}
+     onCalculationChange={value => change('calculation.' + key, value)}
+     onBoundsChange={value => change('bounds.' + key, value)} onChange={value => change(key, value)} />
+ </>);
+ const series=(label,path,max,help)=>{let values=config;for(const key of path.split('.'))values=values[key];return <Series key={path + formEpoch} label={label} values={values} onChange={v=>change(path,v)} max={max} help={help}/>;};
  return <WorkspaceShell breadcrumb={title||'Проект макета'} onAgent={()=>document.querySelector('textarea[aria-label="Запрос к AI-ассистенту"]')?.focus()}><main className="project-page text-foreground"><div className="mx-auto max-w-[1440px]">
   <a href="/" className="inline-flex items-center gap-2 text-xs text-subtle hover:text-foreground"><ArrowLeft size={13}/>Ваши видео</a>
   <header className="mt-6 flex flex-wrap justify-between items-start gap-5"><div><p className="text-[10px] uppercase tracking-widest text-subtle">MyElement / Макеты</p><h1 className="mt-2 text-2xl font-semibold tracking-tight">Проект видео</h1><p className="mt-2 font-mono text-[10px] text-subtle">ID: {id} · v{project.revision}</p></div><div className="flex flex-wrap gap-2"><a href={'/projects/'+id+'/preview'} target="_blank" rel="noreferrer" className={button} title={dirty?'Откроется последняя сохранённая версия':'Открыть сохранённый макет'}>Перейти к макету<ArrowUpRight size={14}/></a><button onClick={download} className={button}><Download size={13}/>Скачать JS</button><button disabled={busy} onClick={save} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground disabled:opacity-40"><Save size={13}/>{busy?'Сохраняем…':'Сохранить'}</button></div></header>
@@ -43,8 +67,9 @@ export default function StatProjectPage({id}){
   {notice&&<p role="status" className="mt-5 flex items-center gap-2 text-xs text-green-400"><Check size={13}/>{notice}</p>}
   <div className="mt-6 grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]"><div className="ui-panel min-w-0 overflow-hidden">
    <nav aria-label="Параметры проекта" className="flex gap-1 overflow-x-auto border-b border-line p-3">{tabs.map(([key,label])=><button key={key} onClick={()=>setTab(key)} className={'whitespace-nowrap rounded-lg px-3 py-2 text-xs '+(tab===key?'bg-primary text-primary-foreground':'text-subtle hover:text-foreground hover:bg-elevated')}>{label}</button>)}</nav>
-   <form key={formEpoch} onSubmit={save} className="ui-content space-y-6">
+   <form onSubmit={save} className="project-editor-form space-y-3">
     {tab==='overview'&&<>
+      {block('Видео и счётчики', ['video'], <>
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Название проекта" value={title} onChange={v=>{setTitle(v);setDirty(true);}} />
         <label className="block text-xs text-muted">Длительность ролика, секунды
@@ -57,14 +82,16 @@ export default function StatProjectPage({id}){
           <span className="mt-1.5 block text-[10px] leading-relaxed text-subtle">Например, 40,50. Точность ввода сохраняется в подписи.</span>
         </label>
       </div>
-      <div><h2 className="text-sm font-medium mb-4">Пять основных показателей</h2><div className="grid grid-cols-2 sm:grid-cols-5 gap-3">{['Просмотры','Лайки','Комментарии','Репосты','Сохранения'].map((label,i)=><Field key={i} label={label} type="number" min={0} step="1" value={config.video.stats[i]} onChange={v=>change('video.stats',config.video.stats.map((n,j)=>j===i?v:n))}/>)}</div><p className="mt-2 text-[10px] text-subtle">Просмотры автоматически используются в верхних счётчиках и карточке метрик.</p></div>
-      {field('Ссылка на обложку','video.cover',{type:'url'})}
-      {config.video.cover&&/^https?:\/\//i.test(config.video.cover)&&<img src={config.video.cover} alt="Обложка проекта" referrerPolicy="no-referrer" className="h-36 w-24 rounded-xl object-cover border border-line"/>}
+      <div><h2 className="text-sm font-medium mb-4">Пять основных показателей</h2><div className="project-editor-metrics grid grid-cols-2 sm:grid-cols-5 gap-2">{['Просмотры','Лайки','Комментарии','Репосты','Сохранения'].map((label,i)=><Field key={i} label={label} type="number" min={0} step="1" value={config.video.stats[i]} onChange={v=>change('video.stats',config.video.stats.map((n,j)=>j===i?v:n))}/>)}</div><p className="mt-2 text-[10px] text-subtle">Просмотры автоматически используются в верхних счётчиках и карточке метрик.</p></div>
+      <ProjectCoverField value={config.video.cover || ''} onChange={value => change('video.cover', value)} disabled={busy} />
       {field('Подпись даты публикации','video.published',{help:'Например: Опубликовано 31 окт 2026, 04:10'})}
-      <div><h3 className="text-sm mb-3">Обложки других публикаций</h3><div className="space-y-2">{config.otherCovers.map((url,i)=><div key={i} className="flex items-center gap-2"><input aria-label={'Обложка '+(i+1)} type="url" value={url} onChange={e=>change('otherCovers',config.otherCovers.map((v,j)=>j===i?e.target.value:v))} className={input+' !mt-0'}/><button type="button" onClick={()=>change('otherCovers',config.otherCovers.filter((_,j)=>j!==i))} className="p-2 text-subtle"><X size={14}/></button></div>)}</div><button type="button" onClick={()=>change('otherCovers',[...config.otherCovers,''])} disabled={config.otherCovers.length>=12} className={button+' mt-3'}><Plus size={12}/>Добавить обложку</button></div>
+      </>)}
+      {block('Другие публикации', ['otherCovers'], <><div className="space-y-2">{config.otherCovers.map((url,i)=><div key={i} className="flex items-center gap-2"><input aria-label={'Обложка '+(i+1)} type="url" value={url} onChange={e=>change('otherCovers',config.otherCovers.map((v,j)=>j===i?e.target.value:v))} className={input+' !mt-0'}/><button type="button" onClick={()=>change('otherCovers',config.otherCovers.filter((_,j)=>j!==i))} className="p-2 text-subtle"><X size={14}/></button></div>)}</div><button type="button" onClick={()=>change('otherCovers',[...config.otherCovers,''])} disabled={config.otherCovers.length>=12} className={button+' mt-3'}><Plus size={12}/>Добавить обложку</button></>)}
 
-      <div className="border-t border-line pt-6"><h2 className="text-sm font-medium mb-5">Показатели просмотра</h2><div className="grid gap-5 sm:grid-cols-2">{field('Общее время просмотра, секунды','watch.totalSeconds',{type:'number',min:0,step:'1',help:'Суммарное время всех просмотров. Это не длительность самого ролика.'})}{field('Среднее время просмотра, секунды','watch.averageSeconds',{type:'number',min:0,max:Number.isFinite(config.video.durationSeconds) ? config.video.durationSeconds : undefined})}{field('Просмотрели полностью, %','watch.completionPercent',{type:'number',min:0,max:100})}{field('Новые подписчики','watch.subscribers',{type:'number',min:0,step:'1'})}</div><div className="rounded-xl border border-line bg-elevated p-4 text-xs leading-relaxed text-subtle">Общее время автоматически форматируется в часы, минуты и секунды. Средний просмотр: <span className="text-foreground">{config.video.durationSeconds > 0 ? Math.round(config.watch.averageSeconds/config.video.durationSeconds*1000)/10 + '%' : '—'}</span> длительности ролика — процент для подписи удержания вычисляется автоматически.</div></div>
-      <div className="border-t border-line pt-6"><h2 className="text-sm font-medium mb-5">Графики просмотров и удержания</h2><div className="space-y-6">
+      {block('Основные метрики', ['watch'], <><div className="project-editor-metrics grid gap-2 sm:grid-cols-2">{field('Общее время просмотра, секунды','watch.totalSeconds',{type:'number',min:0,step:'1',help:'Суммарное время всех просмотров. Это не длительность самого ролика.'})}{field('Среднее время просмотра, секунды','watch.averageSeconds',{type:'number',min:0,max:config.video.durationSeconds > 0 ? config.video.durationSeconds : undefined})}{field('Просмотрели полностью, %','watch.completionPercent',{type:'number',min:0,max:100})}{field('Новые подписчики','watch.subscribers',{type:'number',min:0,step:'1'})}</div><div className="rounded-xl border border-line bg-elevated p-4 text-xs leading-relaxed text-subtle">Общее время автоматически форматируется в часы, минуты и секунды. Средний просмотр: <span className="text-foreground">{config.video.durationSeconds > 0 ? Math.round(config.watch.averageSeconds/config.video.durationSeconds*1000)/10 + '%' : '—'}</span> длительности ролика — процент для подписи удержания вычисляется автоматически.</div></>)}
+      {block('График просмотров', ['viewsByHour', 'viewsTicks', 'viewsTimeUnit', 'viewsStartDate', 'viewsShowDots'], <>
+      <ProjectGraph values={config.viewsByHour} max={Math.max(0, ...config.viewsTicks)} dots={config.viewsShowDots}
+        labels={dateLabels || (config.viewsTimeUnit === 'day' ? ['0 д.', (config.viewsByHour.length - 1) + ' д.'] : ['0h', (config.viewsByHour.length - 1) + 'h'])} />
       <label className="block text-xs text-muted">Шкала времени графика просмотров
         <select className={input} value={config.viewsTimeUnit ?? 'hour'} onChange={event => change('viewsTimeUnit', event.target.value)}>
           <option value="hour">По часам</option>
@@ -92,20 +119,44 @@ export default function StatProjectPage({id}){
         </span>
       </button>
       {series('Метки оси Y просмотров','viewsTicks',1e12)}
-      {series('Удержание, %','retention',100,'От двух точек от начала до конца ролика. Временная шкала использует длительность из раздела «Обзор».')}
-</div></div>
-      <Rows label="Источники трафика" rows={config.sources} bounds={config.bounds?.sources} calculation={config.calculation?.sources} onCalculationChange={v=>change('calculation.sources',v)} onBoundsChange={v=>change('bounds.sources',v)} onChange={v=>change('sources',v)}/>
+      </>)}
+      {block('Коэффициент удержания', ['retention'], <>
+        {hasCover && <img src={config.video.cover} alt="Обложка видео" referrerPolicy="no-referrer" className="mx-auto h-40 w-26 rounded-lg object-cover" />}
+        <ProjectGraph values={config.retention} max={100} />
+        {series('Удержание, %','retention',100,'От двух точек от начала до конца ролика. Временная шкала использует длительность из раздела «Обзор».')}
+      </>)}
+      {distribution('Источники трафика', 'sources')}
+      {block('Поисковые запросы', ['searchQueriesText'], <label className="block text-xs text-muted">Текст блока
+        <textarea rows={3} maxLength={2000} className={input} value={config.searchQueriesText ?? ''}
+          onChange={event => change('searchQueriesText', event.target.value)} placeholder="Стандартная подсказка макета" />
+      </label>)}
     </>}
-    {tab==='viewers'&&<>
-      {field('Всего зрителей','totalViewers',{type:'number',min:0,step:'1'})}
-
-      <ViewerTypeRanges pairs={config.viewerTypes} bounds={config.bounds?.viewerTypes} onChange={v=>change('viewerTypes',v)} onBoundsChange={v=>change('bounds.viewerTypes',v)}/>
-      <Rows label="Пол" rows={config.gender} bounds={config.bounds?.gender} calculation={config.calculation?.gender} onCalculationChange={v=>change('calculation.gender',v)} onBoundsChange={v=>change('bounds.gender',v)} onChange={v=>change('gender',v)}/><Rows label="Возраст" rows={config.ages} bounds={config.bounds?.ages} calculation={config.calculation?.ages} onCalculationChange={v=>change('calculation.ages',v)} onBoundsChange={v=>change('bounds.ages',v)} onChange={v=>change('ages',v)}/><Rows label="Места" rows={config.places} bounds={config.bounds?.places} calculation={config.calculation?.places} onCalculationChange={v=>change('calculation.places',v)} onBoundsChange={v=>change('bounds.places',v)} onChange={v=>change('places',v)}/>
-        </>}
-    {tab==='engagement'&&<>      {series('Лайки по ходу видео, %','likes.values',100)}
+    {tab === 'viewers' && <>
+      {block('Всего зрителей', ['totalViewers'], <div className="project-editor-metrics">{field('Всего зрителей','totalViewers',{type:'number',min:0,step:'1'})}</div>)}
+      {block('Типы зрителей', ['viewerTypes', 'bounds.viewerTypes'], <>
+        {config.viewerTypes.map(({left, right}, index) => <div key={index} className="space-y-1">
+          <div className="flex justify-between gap-2 text-xs"><span>{left[0]} · {left[1]}%</span><span>{right[0]} · {right[1]}%</span></div>
+          <div className="project-editor-track"><i style={{ width: left[1] + '%' }} /><i style={{ width: right[1] + '%', background: '#7fb8ec' }} /></div>
+        </div>)}
+        <ViewerTypeRanges pairs={config.viewerTypes} bounds={config.bounds?.viewerTypes} onBoundsChange={v=>change('bounds.viewerTypes',v)} onChange={v=>change('viewerTypes',v)}/>
+      </>)}
+      {distribution('Пол', 'gender')}
+      {distribution('Возраст', 'ages')}
+      {distribution('Места', 'places')}
+    </>}
+    {tab === 'engagement' && <>
+      {block('Самые частые слова в комментариях', ['commentWordsText'], <label className="block text-xs text-muted">Текст блока
+        <textarea rows={3} maxLength={2000} className={input} value={config.commentWordsText ?? ''}
+          onChange={event => change('commentWordsText', event.target.value)} placeholder="Стандартная подсказка макета" />
+      </label>)}
+      {block('Лайки', ['likes'], <>
+      {hasCover && <img src={config.video.cover} alt="Обложка видео" referrerPolicy="no-referrer" className="mx-auto h-40 w-26 rounded-lg object-cover" />}
+      <ProjectGraph values={config.likes.values} max={Math.max(0, ...config.likes.ticks)} />
+      {series('Лайки по ходу видео, %','likes.values',100)}
       {series('Метки оси Y лайков, %','likes.ticks',100)}
       {field('Текст под графиком лайков','likes.text')}
-        </>}
+      </>)}
+    </>}
     <div className="flex items-center justify-between gap-3 border-t border-line pt-5"><span className="text-[10px] text-subtle">{dirty?'Есть несохранённые изменения':'Все изменения сохранены'}</span><button disabled={busy} className="rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground disabled:opacity-40">Сохранить значения</button></div>
    </form>
   </div>

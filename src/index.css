@@ -405,3 +405,39 @@ body:has(.stat-preview-frame),
   background-color: #f4f4f5;
 }
 .stat-preview-frame { background-color: #f4f4f5; }
+
+.project-editor-form {
+  background: var(--ui-elevated);
+  padding: clamp(8px, 2vw, 20px);
+}
+.project-editor-card {
+  min-width: 0;
+  padding: clamp(14px, 2.2vw, 22px);
+  border: 1px solid var(--ui-line);
+  border-radius: 16px;
+  background: var(--ui-surface);
+}
+.project-editor-metrics > label {
+  display: block;
+  padding: 10px 12px;
+  border: 1px solid var(--ui-line);
+  border-radius: 10px;
+  color: var(--ui-text);
+}
+.project-editor-metrics > label > input {
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.project-editor-chart { padding-block: 8px; }
+.project-editor-track {
+  display: flex;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--ui-line);
+}
+.project-editor-track i { display: block; background: #0a74da; }

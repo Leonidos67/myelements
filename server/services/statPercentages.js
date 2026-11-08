@@ -50,8 +50,8 @@ export function manualPercentage(rows,index,value,bounds=defaultBounds(rows),fro
 export function repairProjectPercentages(raw){
  const c=structuredClone(raw);c.calculation=c.calculation&&typeof c.calculation==='object'&&!Array.isArray(c.calculation)?c.calculation:{};c.bounds=c.bounds&&typeof c.bounds==='object'&&!Array.isArray(c.bounds)?c.bounds:{};
  for(const field of ['sources','gender','ages','places']){
-  if(Array.isArray(c[field])&&c[field].length){if(Math.round(percentageSum(c[field])*100)!==TOTAL)c[field]=normalizePercentages(c[field]);c.bounds[field]=c[field].map((_,i)=>c.bounds[field]?.[i]||[0,100]);c.calculation[field]={auto:c.calculation[field]?.auto!==false,frozen:c[field].map((_,i)=>!!c.calculation[field]?.frozen?.[i])};}
+  if(Array.isArray(c[field])&&c[field].length){if(!c[field].every(row=>row[1]===0)&&Math.round(percentageSum(c[field])*100)!==TOTAL)c[field]=normalizePercentages(c[field]);c.bounds[field]=c[field].map((_,i)=>c.bounds[field]?.[i]||[0,100]);c.calculation[field]={auto:c.calculation[field]?.auto!==false,frozen:c[field].map((_,i)=>!!c.calculation[field]?.frozen?.[i])};}
  }
- if(Array.isArray(c.viewerTypes)){c.viewerTypes=c.viewerTypes.map(pair=>{const [left,right]=normalizePercentages([pair.left,pair.right]);return{left,right};});c.bounds.viewerTypes=c.viewerTypes.map((_,i)=>c.bounds.viewerTypes?.[i]||[0,100]);}
+ if(Array.isArray(c.viewerTypes)){c.viewerTypes=c.viewerTypes.map(pair=>{if(pair.left[1]===0&&pair.right[1]===0)return pair;const [left,right]=normalizePercentages([pair.left,pair.right]);return{left,right};});c.bounds.viewerTypes=c.viewerTypes.map((_,i)=>c.bounds.viewerTypes?.[i]||[0,100]);}
  return c;
 }

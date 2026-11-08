@@ -5,7 +5,7 @@ export {ViewerTypeRanges} from './ViewerTypeRanges';
 const field='h-9 w-full min-w-0 rounded-lg border border-line bg-inset px-2 text-xs text-foreground outline-none focus:border-foreground/40';
 const action='inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-2 text-[10px] text-muted hover:bg-elevated hover:text-foreground disabled:opacity-30';
 export default function PercentRows({label,rows,bounds,calculation,onChange,onBoundsChange,onCalculationChange}){
- const [expanded,setExpanded]=useState(true),[error,setError]=useState('');
+ const [expanded,setExpanded]=useState(false),[error,setError]=useState('');
  const ranges=rows.map((_,i)=>bounds?.[i]||[0,100]);const frozen=rows.map((_,i)=>!!calculation?.frozen?.[i]);const auto=calculation?.auto!==false;
  const effective=effectivePercentageBounds(rows,ranges,frozen),total=percentageSum(rows);
  const grid=expanded?'grid-cols-[minmax(110px,1fr)_58px_58px_72px_28px_28px_24px]':'grid-cols-[minmax(110px,1fr)_72px_28px_28px_24px]';
@@ -32,6 +32,6 @@ export default function PercentRows({label,rows,bounds,calculation,onChange,onBo
   </div></div>
   {error&&<p role="alert" className="text-[11px] text-red-400">{error}</p>}
   <div className="flex flex-wrap items-center justify-between gap-2"><button type="button" onClick={add} disabled={rows.length>=60} className={action}><Plus size={12}/>Добавить строку</button><p className="max-w-xs text-[9px] leading-relaxed text-subtle">{auto?'При изменении доли пересчитываются только незамороженные строки.':'Ручной режим: остальные строки не меняются. Для сохранения доведите сумму до 100%.'}</p></div>
-  {!auto&&total!==100&&<p className="text-[10px] text-amber-400">Осталось распределить {Math.round((100-total)*100)/100}%. Можно заполнить вручную или включить автоподсчёт.</p>}
+  {!auto&&total!==0&&total!==100&&<p className="text-[10px] text-amber-400">Осталось распределить {Math.round((100-total)*100)/100}%. Можно заполнить вручную или включить автоподсчёт.</p>}
  </section>;
 }

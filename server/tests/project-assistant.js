@@ -10,7 +10,7 @@ assert.throws(()=>normalizePercentRows([['Россия',0]]));assert.throws(()=>
 assert.throws(()=>parseProjectAdvice('{"message":"x","changes":{"__proto__":{}}}',config));
 assert.throws(()=>parseProjectAdvice('{"message":"x","changes":{"video":{"unknown":1}}}',config));
 assert.throws(()=>parseProjectAdvice('not JSON',config));
-assert.throws(()=>parseProjectAdvice('{"message":"x","changes":{"watch":{"averageSeconds":9999}}}',config));
+assert.throws(()=>parseProjectAdvice('{"message":"x","changes":{"watch":{"averageSeconds":9999}}}',{...config,video:{...config.video,durationSeconds:12}}));
 const messages=[{role:'user',content:'Страны для темы занос, сумма 100%'}];let request;
 const mock=async(url,opts)=>{request=JSON.parse(opts.body);return{ok:true,json:async()=>({choices:[{message:{content:JSON.stringify({message:'Вариант для макета',changes:{places:[['Россия',60],['Казахстан',40]]}})}}]})};};
 await getProjectAdvice({config,title:'Тест',messages},{env:{ROUTERAI_API_KEY:'test'},fetchImpl:mock});

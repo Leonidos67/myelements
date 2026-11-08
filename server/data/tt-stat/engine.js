@@ -29,6 +29,8 @@ document.querySelector('[data-pane="engagement"] .big-vid').innerHTML =
    </div>`;
 
 $("pub").textContent = DATA.video.published;
+if (DATA.searchQueriesText && $("search-queries-text")) $("search-queries-text").textContent = DATA.searchQueriesText;
+if (DATA.commentWordsText && $("comment-words-text")) $("comment-words-text").textContent = DATA.commentWordsText;
 
 const ICONS = [
   `<path d="M7 4.5L19 12 7 19.5z"/>`,
