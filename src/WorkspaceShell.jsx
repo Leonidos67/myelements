@@ -1,13 +1,13 @@
 import {useEffect,useRef,useState} from 'react';
-import {Layers,LayoutDashboard,FolderOpen,Wallet,Calendar,Bookmark,Bot,Search,ChevronsUpDown,Plus,ChevronRight,Menu,X,LogOut,FileSliders} from 'lucide-react';
+import {Layers,LayoutDashboard,FolderOpen,Wallet,Calendar,Bookmark,Bot,Search,ChevronsUpDown,Plus,ChevronRight,Menu,X,LogOut,FileSliders,Wrench} from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import AccountSwitcher from './AccountSwitcher';
-const links=[{id:'dashboard',label:'Обзор',icon:LayoutDashboard},{id:'accounts',label:'Аккаунты UBT',icon:FolderOpen},{id:'finance',label:'Финансы и цели',icon:Wallet},{id:'calendar',label:'Календарь',icon:Calendar},{id:'savings',label:'Сохранёнки',icon:Bookmark},{id:'ai',label:'AI-ассистент',icon:Bot}];
+const links=[{id:'dashboard',label:'Обзор',icon:LayoutDashboard},{id:'accounts',label:'Аккаунты UBT',icon:FolderOpen},{id:'finance',label:'Финансы и цели',icon:Wallet},{id:'calendar',label:'Календарь',icon:Calendar},{id:'savings',label:'Сохранёнки',icon:Bookmark},{id:'tools',label:'Инструменты',icon:Wrench},{id:'ai',label:'AI-ассистент',icon:Bot}];
 export default function WorkspaceShell({children,view='project',onNavigate,username='Личный кабинет',breadcrumb='MyElement',onCreate,onAgent,onLogout,accounts,activeAccount,onAccountChange,onAddAccount}){
  const [query,setQuery]=useState(''),[mobile,setMobile]=useState(false);const search=useRef(null);
  useEffect(()=>{const key=e=>{if(e.key==='Escape')setMobile(false);if(e.key.toLowerCase()==='f'&&!e.ctrlKey&&!e.metaKey&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)){e.preventDefault();search.current?.focus();}};document.addEventListener('keydown',key);return()=>document.removeEventListener('keydown',key);},[]);
  const items=links.filter(l=>l.label.toLowerCase().includes(query.toLowerCase()));
- function navigate(e,id){setMobile(false);if(onNavigate){e.preventDefault();onNavigate(id);}}
+ function navigate(e,id){setMobile(false);if(onNavigate && id!=='tools'){e.preventDefault();onNavigate(id);}}
  return <div className="workspace-layout min-h-screen text-foreground">
   {mobile&&<button aria-label="Закрыть навигацию" onClick={()=>setMobile(false)} className="fixed inset-0 z-[69] bg-black/40 backdrop-blur-sm lg:hidden"/>}
   <aside aria-label="Рабочее пространство" className={'workspace-sidebar '+(mobile?'is-open':'')}>

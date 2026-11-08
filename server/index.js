@@ -13,6 +13,7 @@ import goalsRouter from './routes/goals.js';
 import aiRouter from './routes/ai.js';
 import ideasRouter from './routes/ideas.js';
 import savingsRouter from './routes/savings.js';
+import toolServicesRouter from './routes/toolServices.js';
 import adjustmentsRouter from './routes/adjustments.js';
 
 import commentPagesRouter from './routes/commentPages.js';
@@ -40,6 +41,7 @@ app.use('/api/goals', goalsRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api/ideas', ideasRouter);
 app.use('/api/savings', savingsRouter);
+app.use('/api/tools', toolServicesRouter);
 app.use('/api/adjustments', adjustmentsRouter);
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));

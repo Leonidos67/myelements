@@ -49,6 +49,15 @@ export const api = {
   addIdea: (d) => req('/ideas', { method: 'POST', body: JSON.stringify(d) }),
   deleteIdea: (id) => req(`/ideas/${id}`, { method: 'DELETE' }),
 
+  toolServices: () => req('/tools'),
+  toolService: id => req('/tools/' + encodeURIComponent(id)),
+  createToolService: data => req('/tools', { method: 'POST', body: JSON.stringify(data) }),
+  updateToolService: (id, data) => req('/tools/' + encodeURIComponent(id), { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteToolService: id => req('/tools/' + encodeURIComponent(id), { method: 'DELETE' }),
+  saveToolMaterial: (id, materialId, data) => req('/tools/' + encodeURIComponent(id) + '/materials' + (materialId ? '/' + encodeURIComponent(materialId) : ''),
+    { method: materialId ? 'PATCH' : 'POST', body: JSON.stringify(data) }),
+  deleteToolMaterial: (id, materialId) => req('/tools/' + encodeURIComponent(id) + '/materials/' + encodeURIComponent(materialId), { method: 'DELETE' }),
+
   savings: () => req('/savings'),
   addSaving: (d) => req('/savings', { method: 'POST', body: JSON.stringify(d) }),
   deleteSaving: (id) => req(`/savings/${id}`, { method: 'DELETE' }),

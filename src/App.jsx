@@ -12,6 +12,7 @@ import EditVideoModal from './EditVideoModal';
 import AIChat from './AIChat';
 import CalendarView from './CalendarView';
 import SavingsView from './SavingsView';
+import ToolsView from './ToolsView';
 import { getUsdRate } from './currency';
 import { 
   Copy, CopyPlus, ExternalLink, ArrowRightLeft, Filter, ArrowDownWideNarrow, Search, Plus, LogOut, User, Wallet, Eye, EyeOff,
@@ -74,7 +75,7 @@ export default function App() {
   }
   const [goal, setGoal] = useState(null);
 
-  const [currentView, setCurrentView] = useState(() => { const view=new URLSearchParams(window.location.search).get('view'); return ['dashboard','accounts','finance','calendar','savings','ai'].includes(view)?view:'dashboard'; });
+  const [currentView, setCurrentView] = useState(() => { const view=new URLSearchParams(window.location.search).get('view'); return ['dashboard','accounts','finance','calendar','savings','tools','ai'].includes(view)?view:'dashboard'; });
   const [isAddOpen, setIsAddOpen] = useState(() => new URLSearchParams(window.location.search).get('create')==='video');
   const [editVideo, setEditVideo] = useState(null);
   const [commentVideo, setCommentVideo] = useState(null);
@@ -224,6 +225,7 @@ export default function App() {
             {currentView === 'finance' && 'Финансы и цели'}
             {currentView === 'calendar' && 'Календарь'}
             {currentView === 'savings' && 'Сохраненки'}
+            {currentView === 'tools' && 'Инструменты'}
             {currentView === 'ai' && 'AI Ассистент'}
           </h1>
           <p className="text-xs text-subtle mt-2">
@@ -232,6 +234,7 @@ export default function App() {
             {currentView === 'finance' && 'Анализ выплат и планирование'}
             {currentView === 'calendar' && 'Идеи и график выплат'}
             {currentView === 'savings' && 'Референсы и вдохновение'}
+            {currentView === 'tools' && 'Сервисы, ссылки и заметки'}
             {currentView === 'ai' && 'Интеллектуальный помощник (RouterAI)'}
           </p>
         </div>
@@ -746,6 +749,8 @@ export default function App() {
       {currentView === 'savings' && (
         <SavingsView savings={savings} reload={reload} />
       )}
+
+      {currentView === 'tools' && <ToolsView />}
 
       {currentView === 'ai' && (
         <AIChat 
