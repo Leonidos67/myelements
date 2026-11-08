@@ -6,6 +6,7 @@ import Video from '../models/Video.js';
 import StatProject from '../models/StatProject.js';
 import {repairProjectPercentages} from '../services/statPercentages.js';
 import {getProjectAdvice} from '../services/projectAssistant.js';
+import {getOtherPublications} from '../services/otherPublications.js';
 import {defaultProjectConfig,validateProjectConfig,projectDataSource} from '../services/statProjectData.js';
 const engine=readFileSync(new URL('../data/tt-stat/engine.js',import.meta.url),'utf8');
 const router=express.Router(); router.use(auth);
@@ -30,12 +31,13 @@ router.get('/by-video/:videoId',wrap(async(req,res)=>{
 }));
 router.get('/:id',wrap(async(req,res)=>{
   res.set('Cache-Control','no-store');const project=await StatProject.findById(req.params.id).lean();
-  if(!project)return res.status(404).json({error:'Проект удалён или не найден'});const config=repairProjectPercentages(project.config);res.json({...project,config,percentagesAdjusted:JSON.stringify(config)!==JSON.stringify(project.config)});
+  if(!project)return res.status(404).json({error:'Проект удалён или не найден'});const config=repairProjectPercentages(project.config);const otherPublications = await getOtherPublications(project.video);
+  res.json({...project,config,otherPublications,percentagesAdjusted:JSON.stringify(config)!==JSON.stringify(project.config)});
 }));
 router.get('/:id/script',wrap(async(req,res)=>{
   res.set('Cache-Control','no-store');const project=await StatProject.findById(req.params.id).lean();
   if(!project)return res.status(404).json({error:'Проект удалён или не найден'});
-  res.json({code:projectDataSource(project.config)+engine,revision:project.revision,source:'project'});
+  res.json({code:projectDataSource(project.config, await getOtherPublications(project.video))+engine,revision:project.revision,source:'project'});
 }));
 router.post('/:id/assistant',wrap(async(req,res)=>{
  const project=await StatProject.findById(req.params.id).select('title').lean();

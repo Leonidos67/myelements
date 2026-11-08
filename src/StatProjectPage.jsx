@@ -1,5 +1,5 @@
 import {useEffect,useState} from 'react';
-import {ArrowLeft,ArrowUpRight,Save,Trash2,Plus,X,Download,Check,RefreshCw} from 'lucide-react';
+import {ArrowLeft,ArrowUpRight,Save,Trash2,Download,Check,RefreshCw} from 'lucide-react';
 import {api} from './api';
 import Login from './Login';
 import ProjectAssistant from './ProjectAssistant';
@@ -28,9 +28,9 @@ export default function StatProjectPage({id}){
  useEffect(()=>{load();},[id]);
  useEffect(()=>{if(!dirty)return;const warn=e=>{e.preventDefault();e.returnValue='';};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn);},[dirty]);
  function change(path,value){setConfig(c=>{const next=structuredClone(c);const parts=path.split('.');let obj=next;for(const part of parts.slice(0,-1))obj=obj[part];obj[parts.at(-1)]=value;return next;});setDirty(true);setNotice('');}
- async function save(e){e?.preventDefault();setBusy(true);setError('');try{const valid=validateProjectConfig(config);const p=await api.saveStatProject(id,{title,config:valid,revision:project.revision});setProject(p);setConfig(repairProjectPercentages(p.config));setDirty(false);setNotice('Все значения сохранены. Макет и JS обновлены.');}catch(e){setError(e.message);}finally{setBusy(false);}}
+ async function save(e){e?.preventDefault();setBusy(true);setError('');try{const valid=validateProjectConfig(config);const p=await api.saveStatProject(id,{title,config:valid,revision:project.revision});setProject(previous => ({ ...previous, ...p }));setConfig(repairProjectPercentages(p.config));setDirty(false);setNotice('Все значения сохранены. Макет и JS обновлены.');}catch(e){setError(e.message);}finally{setBusy(false);}}
  async function remove(){if(!window.confirm('Удалить проект '+id+' и все его параметры? Ссылка на макет перестанет работать. Само видео останется в кабинете.'))return;setBusy(true);try{await api.deleteStatProject(id);window.location.assign('/');}catch(e){setError(e.message);setBusy(false);}}
- function download(){try{const code=projectDataSource(config)+engine;const url=URL.createObjectURL(new Blob([code],{type:'text/javascript'}));const a=document.createElement('a');a.href=url;a.download='project-'+id+'.js';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){setError(e.message);}}
+ function download(){try{const code=projectDataSource(config, project.otherPublications)+engine;const url=URL.createObjectURL(new Blob([code],{type:'text/javascript'}));const a=document.createElement('a');a.href=url;a.download='project-'+id+'.js';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){setError(e.message);}}
  if(login)return <Login onLogin={load}/>;
  if(loading)return <main className="grid min-h-screen place-items-center bg-background text-subtle">Загрузка проекта…</main>;
  if(!project)return <main className="grid min-h-screen place-items-center bg-background p-6 text-foreground"><div><p role="alert">{error}</p><a href="/" className={button+' mt-4'}>В кабинет</a><button onClick={load} className={button+' ml-2'}>Повторить</button></div></main>;
@@ -86,7 +86,17 @@ export default function StatProjectPage({id}){
       <ProjectCoverField value={config.video.cover || ''} onChange={value => change('video.cover', value)} disabled={busy} />
       {field('Подпись даты публикации','video.published',{help:'Например: Опубликовано 31 окт 2026, 04:10'})}
       </>)}
-      {block('Другие публикации', ['otherCovers'], <><div className="space-y-2">{config.otherCovers.map((url,i)=><div key={i} className="flex items-center gap-2"><input aria-label={'Обложка '+(i+1)} type="url" value={url} onChange={e=>change('otherCovers',config.otherCovers.map((v,j)=>j===i?e.target.value:v))} className={input+' !mt-0'}/><button type="button" onClick={()=>change('otherCovers',config.otherCovers.filter((_,j)=>j!==i))} className="p-2 text-subtle"><X size={14}/></button></div>)}</div><button type="button" onClick={()=>change('otherCovers',[...config.otherCovers,''])} disabled={config.otherCovers.length>=12} className={button+' mt-3'}><Plus size={12}/>Добавить обложку</button></>)}
+      <section className="project-editor-card">
+        <h2 className="text-base font-semibold">Другие публикации</h2>
+        <p className="mt-2 text-sm text-muted">
+          {[project.otherPublications?.accountName, project.otherPublications?.handle].filter(Boolean).join(' · ') || 'Аккаунт не указан'}
+        </p>
+        <p className="mt-1 text-xs text-muted">Последние публикации этого аккаунта с обложками в MyElement</p>
+        {project.otherPublications?.items.length ? <div className="mt-3 flex flex-wrap gap-2">
+          {project.otherPublications.items.map(item => <img key={item.id} src={item.cover} alt={item.title} title={item.title}
+            referrerPolicy="no-referrer" className="h-20 w-14 rounded-md border border-line object-cover" />)}
+        </div> : <p className="mt-3 text-xs text-muted">У других публикаций пока нет сохранённых обложек.</p>}
+      </section>
 
       {block('Основные метрики', ['watch'], <><div className="project-editor-metrics grid gap-2 sm:grid-cols-2">{field('Общее время просмотра, секунды','watch.totalSeconds',{type:'number',min:0,step:'1',help:'Суммарное время всех просмотров. Это не длительность самого ролика.'})}{field('Среднее время просмотра, секунды','watch.averageSeconds',{type:'number',min:0,max:config.video.durationSeconds > 0 ? config.video.durationSeconds : undefined})}{field('Просмотрели полностью, %','watch.completionPercent',{type:'number',min:0,max:100})}{field('Новые подписчики','watch.subscribers',{type:'number',min:0,step:'1'})}</div><div className="rounded-xl border border-line bg-elevated p-4 text-xs leading-relaxed text-subtle">Общее время автоматически форматируется в часы, минуты и секунды. Средний просмотр: <span className="text-foreground">{config.video.durationSeconds > 0 ? Math.round(config.watch.averageSeconds/config.video.durationSeconds*1000)/10 + '%' : '—'}</span> длительности ролика — процент для подписи удержания вычисляется автоматически.</div></>)}
       {block('График просмотров', ['viewsByHour', 'viewsTicks', 'viewsTimeUnit', 'viewsStartDate', 'viewsShowDots'], <>

@@ -111,6 +111,11 @@ export function projectData(raw) {
     avgWatchedPercent:duration ? Math.round(w.averageSeconds/duration*1000)/10 : 0,
   };
 }
-export function projectDataSource(config) {
-  return 'const DATA = '+JSON.stringify(projectData(config)).replace(/</g,'\\u003c')+';\n';
+export function projectDataSource(config, otherPublications) {
+  const data = projectData(config);
+  if (otherPublications) {
+    data.otherCovers = otherPublications.items.map(item => item.cover);
+    data.otherPublicationsAccount = otherPublications.handle || otherPublications.accountName;
+  }
+  return 'const DATA = '+JSON.stringify(data).replace(/</g,'\\u003c')+';\n';
 }

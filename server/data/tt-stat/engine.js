@@ -266,5 +266,10 @@ window.addEventListener("resize", syncLogo);
 $("banner-close").addEventListener("click", () => $("banner").remove());
 
 showTab(location.hash.slice(1) || "overview", false);
+const publicationsAccount = $("other-publications-account");
+if (publicationsAccount && DATA.otherPublicationsAccount) {
+  publicationsAccount.textContent = DATA.otherPublicationsAccount;
+  publicationsAccount.hidden = false;
+}
 const thumbContainer = document.querySelector(".thumbs");
 if (thumbContainer && DATA.otherCovers) thumbContainer.innerHTML = DATA.otherCovers.map(url => `<img src="${escapeHtml(url)}" alt="" style="width:28px;height:28px;border-radius:4px;object-fit:cover;">`).join("");

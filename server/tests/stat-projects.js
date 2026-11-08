@@ -9,6 +9,7 @@ import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import router from '../routes/statProjects.js';
 import Video from '../models/Video.js';
+import Account from '../models/Account.js';
 import StatProject from '../models/StatProject.js';
 import {defaultProjectConfig,validateProjectConfig,projectData,projectDataSource} from '../services/statProjectData.js';
 const blank = validateProjectConfig(defaultProjectConfig());
@@ -56,7 +57,9 @@ const server=app.listen(0,'127.0.0.1');let connected=false;
 try{
  await mongoose.connect(process.env.MONGO_URI,{dbName,autoCreate:false,autoIndex:false,maxPoolSize:3,serverSelectionTimeoutMS:10000,connectTimeoutMS:10000,socketTimeoutMS:15000});connected=true;
  await StatProject.createCollection();await StatProject.createIndexes();
- const user=new mongoose.Types.ObjectId();const video=await Video.create({account:new mongoose.Types.ObjectId(),url:'https://example.com/a',views:123,likes:4,createdBy:user});
+ const user=new mongoose.Types.ObjectId();
+ const account = await Account.create({ name: 'Тестовый аккаунт', createdBy: user });
+ const video=await Video.create({account:account.id,url:'https://www.tiktok.com/@demo/video/1',views:123,likes:4,createdBy:user});
  const second=await Video.create({account:new mongoose.Types.ObjectId(),url:'https://example.com/b',createdBy:user});
  const base='http://127.0.0.1:'+server.address().port+'/api/stat-projects';const cookie='token='+jwt.sign({id:user.toString()},process.env.JWT_SECRET);
  const request=(path='',method='GET',body,auth=true)=>fetch(base+path,{method,headers:{'Content-Type':'application/json',...(auth?{Cookie:cookie}:{})},...(body?{body:JSON.stringify(body)}:{})});
@@ -66,7 +69,18 @@ try{
  const id=projects[0]._id;assert.deepEqual(projects[0].config.video.stats,[0,0,0,0,0]);assert.equal(await StatProject.countDocuments(),1);
  const other=await(await request('','POST',{videoId:second.id})).json();
  const saved=await request('/'+id,'PUT',{title:'Edited project',config,revision:1});assert.equal(saved.status,200);assert.equal((await saved.json()).revision,2);
- const script=await(await request('/'+id+'/script')).json();assert.ok(script.code.includes('const DATA = '));assert.ok(script.code.includes(embeddedCover));new Script(script.code);
+ for (const [index, date] of ['2026-10-01', '2026-11-04', '2026-11-02', '2026-11-08'].entries()) {
+   const sibling = await Video.create({ account: account.id, url: 'https://www.tiktok.com/@demo/video/' + (index + 2), title: date, createdBy: user });
+   const siblingConfig = defaultProjectConfig();
+   siblingConfig.video.published = date;
+   siblingConfig.video.cover = 'https://example.com/cover-' + index + '.jpg';
+   await StatProject.create({ video: sibling.id, title: date, config: siblingConfig, createdBy: user });
+ }
+ const related = (await (await request('/' + id)).json()).otherPublications;
+ assert.equal(related.accountName, account.name);
+ assert.equal(related.handle, '@demo');
+ assert.deepEqual(related.items.map(item => item.title), ['2026-11-08', '2026-11-04', '2026-11-02']);
+ const script=await(await request('/'+id+'/script')).json();assert.ok(script.code.includes('const DATA = '));assert.ok(script.code.includes(embeddedCover));new Script(script.code);assert.ok(script.code.includes('cover-3.jpg'));assert.ok(!script.code.includes('cover-0.jpg'));
  const loaded=await(await request('/'+id)).json();assert.deepEqual(loaded.config.video.stats,[57539,547,0,39,24]);assert.equal(loaded.config.video.durationText,'75,50');assert.equal(loaded.config.video.cover,embeddedCover);assert.equal(loaded.config.viewsTimeUnit,'day');assert.equal(loaded.config.viewsShowDots,true);assert.equal(loaded.config.viewsStartDate,'2026-11-07');assert.deepEqual(loaded.config.viewsByHour,[0,120,270]);
  assert.equal((await request('/'+id,'PUT',{title:'stale',config,revision:1})).status,409);
  const concurrent=await Promise.all([request('/'+id,'PUT',{title:'A',config,revision:2}),request('/'+id,'PUT',{title:'B',config,revision:2})]);assert.deepEqual(concurrent.map(r=>r.status).sort(),[200,409]);
@@ -76,5 +90,5 @@ try{
  const recreated=await(await request('','POST',{videoId:video.id})).json();assert.notEqual(recreated._id,id);
  console.log('PASS: auth, idempotent creation, input fields round-trip, script generation, concurrent saves, delete invalidates ID, video and other projects preserved');
 }finally{
- server.close();if(connected)await Promise.allSettled([StatProject.collection.drop(),Video.collection.drop()]);await mongoose.disconnect();
+ server.close();if(connected)await Promise.allSettled([StatProject.collection.drop(),Video.collection.drop(),Account.collection.drop()]);await mongoose.disconnect();
 }
