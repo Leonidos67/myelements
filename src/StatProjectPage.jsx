@@ -174,23 +174,28 @@ export default function StatProjectPage({id}){
         </label>
         {config.commentWordsMode === 'results'
           ? <div className="space-y-3">
-            {wordCounts.map(([word, count], index) => <div key={index} className="space-y-1">
+            {wordCounts.map(([word, count, arrow = true], index) => <div key={index} className="space-y-1">
               <div className="grid grid-cols-[minmax(0,1fr)_minmax(80px,120px)_auto] items-end gap-2">
                 <label className="text-xs text-muted">Слово
                   <input className={input} maxLength={200} value={word}
-                    onChange={event => change('commentWordCounts', wordCounts.map((row, i) => i === index ? [event.target.value, count] : row))} />
+                    onChange={event => change('commentWordCounts', wordCounts.map((row, i) => i === index ? [event.target.value, count, arrow] : row))} />
                 </label>
                 <label className="text-xs text-muted">Количество
                   <input className={input} type="number" min={0} max={1e12} step={1} value={count}
-                    onChange={event => change('commentWordCounts', wordCounts.map((row, i) => i === index ? [word, Number(event.target.value)] : row))} />
+                    onChange={event => change('commentWordCounts', wordCounts.map((row, i) => i === index ? [word, Number(event.target.value), arrow] : row))} />
                 </label>
                 <button type="button" className={button + ' mb-1'} aria-label={'Удалить слово ' + (index + 1)} disabled={wordCounts.length < 2}
                   onClick={() => change('commentWordCounts', wordCounts.filter((_, i) => i !== index))}><X size={14} /></button>
               </div>
+              <label className="inline-flex items-center gap-2 py-1 text-xs text-muted">
+                <input type="checkbox" checked={arrow} aria-label={'Показывать стрелку для слова ' + (index + 1)}
+                  onChange={event => change('commentWordCounts', wordCounts.map((row, i) => i === index ? [word, count, event.target.checked] : row))} />
+                Показывать стрелку
+              </label>
               <div className="project-editor-track"><i style={{ width: wordBars[index][1] + '%' }} /></div>
             </div>)}
             <button type="button" className={button} disabled={wordCounts.length >= 60}
-              onClick={() => change('commentWordCounts', [...wordCounts, ['Новое слово', 0]])}><Plus size={14} />Добавить слово</button>
+              onClick={() => change('commentWordCounts', [...wordCounts, ['Новое слово', 0, true]])}><Plus size={14} />Добавить слово</button>
           </div>
           : <p className="text-sm text-muted">Аналитические данные о самых часто используемых словах пока не готовы. Зайдите позже.</p>}
       </>)}

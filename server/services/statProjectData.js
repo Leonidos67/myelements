@@ -52,12 +52,12 @@ export function commentWordCounts(config) {
   if (config.commentWordCounts !== undefined) return config.commentWordCounts;
   if (!Array.isArray(config.commentWords) || !config.commentWords.length) return defaults.commentWordCounts;
   const scale = config.commentWords.some(row => !Number.isInteger(row[1])) ? 100 : 1;
-  return config.commentWords.map(([word, value]) => [word, Math.round(value * scale)]);
+  return config.commentWords.map(([word, value, arrow]) => [word, Math.round(value * scale), arrow ?? true]);
 }
 
 export function commentWordBars(counts) {
   const max = Math.max(1, ...counts.map(([, count]) => Number.isFinite(count) ? count : 0));
-  return counts.map(([word, count]) => [word, Number.isFinite(count) ? Math.max(0, count) / max * 100 : 0]);
+  return counts.map(([word, count, arrow]) => [word, Number.isFinite(count) ? Math.max(0, count) / max * 100 : 0, arrow ?? true]);
 }
 
 export function validateProjectConfig(raw) {
@@ -116,8 +116,10 @@ export function validateProjectConfig(raw) {
     searchQueriesText: text(raw.searchQueriesText ?? '', 'Поисковые запросы', 2000),
     commentWordsMode,
     commentWordCounts: list(commentWordCounts(raw), 'Частые слова', 1, 60).map(row => {
-      list(row, 'Частое слово', 2, 2);
-      return [text(row[0], 'Слово', 200), number(row[1], 'Количество упоминаний', 0, 1e12, true)];
+      list(row, 'Частое слово', 2, 3);
+      const arrow = row[2] ?? true;
+      if (typeof arrow !== 'boolean') fail('Частые слова: неверная отметка стрелки');
+      return [text(row[0], 'Слово', 200), number(row[1], 'Количество упоминаний', 0, 1e12, true), arrow];
     }),
     commentWordsText: text(raw.commentWordsText ?? '', 'Частые слова', 2000),
     otherCovers:list(raw.otherCovers,'Другие обложки',0,12).map(u=>url(u,'Другая обложка')),
