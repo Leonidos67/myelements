@@ -1,5 +1,5 @@
 import {useEffect,useRef,useState} from 'react';
-import {Layers,LayoutDashboard,FolderOpen,Wallet,Calendar,Bookmark,Bot,Search,ChevronsUpDown,Plus,ChevronRight,Menu,X,LogOut,FileSliders,Wrench} from 'lucide-react';
+import {Layers,LayoutDashboard,FolderOpen,Wallet,Calendar,Bookmark,Bot,ChevronsUpDown,Plus,ChevronRight,Menu,X,LogOut,FileSliders,Wrench} from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import AccountSwitcher from './AccountSwitcher';
 const links=[{id:'dashboard',label:'Обзор',icon:LayoutDashboard},{id:'accounts',label:'Аккаунты UBT',icon:FolderOpen},{id:'finance',label:'Финансы и цели',icon:Wallet},{id:'calendar',label:'Календарь',icon:Calendar},{id:'savings',label:'Сохранёнки',icon:Bookmark},{id:'tools',label:'Инструменты',icon:Wrench},{id:'ai',label:'AI-ассистент',icon:Bot}];
@@ -12,7 +12,6 @@ export default function WorkspaceShell({children,view='project',onNavigate,usern
   {mobile&&<button aria-label="Закрыть навигацию" onClick={()=>setMobile(false)} className="fixed inset-0 z-[69] bg-black/40 backdrop-blur-sm lg:hidden"/>}
   <aside aria-label="Рабочее пространство" className={'workspace-sidebar '+(mobile?'is-open':'')}>
    <div className="workspace-switcher"><AccountSwitcher accounts={accounts} activeAccount={activeAccount} onChange={onAccountChange} onAdd={onAddAccount}/><button onClick={()=>setMobile(false)} aria-label="Закрыть меню" className="p-1 text-subtle lg:hidden"><X size={15}/></button></div>
-   <label className="workspace-search"><Search size={15}/><input ref={search} aria-label="Найти раздел" placeholder="Найти раздел…" value={query} onChange={e=>setQuery(e.target.value)}/><kbd>F</kbd></label>
    <nav className="workspace-navigation" aria-label="Разделы кабинета">
     {view==='project'&&<><a className="workspace-nav-item active" href={window.location.pathname}><FileSliders size={16}/><span>Проект макета</span></a><div className="workspace-divider"/></>}
     {items.map(({id,label,icon:Icon},i)=><div key={id}>{id==='savings'&&!query&&<div className="workspace-divider"/>}<a href={'/?view='+id} onClick={e=>navigate(e,id)} aria-current={view===id?'page':undefined} className={'workspace-nav-item '+(view===id?'active':'')}><Icon size={16}/><span>{label}</span>{id==='ai'&&<span className="workspace-beta">AI</span>}{id==='accounts'&&<ChevronRight size={13} className="ml-auto text-subtle"/>}</a></div>)}
