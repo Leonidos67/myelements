@@ -9,7 +9,7 @@ import { applyProjectBlock } from './projectBlockJs';
 import WorkspaceShell from './WorkspaceShell';
 import Rows,{ViewerTypeRanges} from './PercentRows';
 import {repairProjectPercentages} from '../server/services/statPercentages';
-import {validateProjectConfig,projectDataSource,publicationCalendarDate,viewsDateLabels,parseDurationInput} from '../server/services/statProjectData';
+import {validateProjectConfig,projectDataSource,publicationCalendarDate,viewsDateLabels,parseDurationInput,defaultSearchQueries} from '../server/services/statProjectData';
 import engine from '../server/data/tt-stat/engine.js?raw';
 const input='mt-2 w-full rounded-xl border border-line bg-inset px-3 py-2.5 text-sm text-foreground outline-none focus:border-foreground/40';
 const button='inline-flex items-center justify-center gap-2 rounded-lg border border-line px-3 py-2 text-xs text-foreground hover:bg-elevated disabled:opacity-40';
@@ -47,18 +47,19 @@ export default function StatProjectPage({id}){
    setFormEpoch(value => value + 1);
  }
  const block = (title, paths, children) => <ProjectBlock key={title} title={title} paths={paths} config={config} onImport={importBlock}>{children}</ProjectBlock>;
- const distribution = (label, key) => block(label, [key, 'bounds.' + key, 'calculation.' + key], <>
+ const distributionFields = (label, key, rows = config[key]) => <>
    {key === "gender" && <ProjectGenderGraph rows={config.gender} />}
    <div className="space-y-2">
-     {config[key].map(([name, value], index) => <div key={index}>
+     {rows.map(([name, value], index) => <div key={index}>
        <div className="mb-1 flex justify-between gap-2 text-xs"><span>{name}</span><span>{value}%</span></div>
        {key !== "gender" && <div className="project-editor-track"><i style={{ width: value + '%' }} /></div>}
      </div>)}
    </div>
-   <Rows label={label} rows={config[key]} bounds={config.bounds?.[key]} calculation={config.calculation?.[key]}
+   <Rows label={label} rows={rows} bounds={config.bounds?.[key]} calculation={config.calculation?.[key]}
      onCalculationChange={value => change('calculation.' + key, value)}
      onBoundsChange={value => change('bounds.' + key, value)} onChange={value => change(key, value)} />
- </>);
+ </>;
+ const distribution = (label, key) => block(label, [key, 'bounds.' + key, 'calculation.' + key], distributionFields(label, key));
  const series=(label,path,max,help)=>{let values=config;for(const key of path.split('.'))values=values[key];return <Series key={path + formEpoch} label={label} values={values} onChange={v=>change(path,v)} max={max} help={help}/>;};
  return <WorkspaceShell breadcrumb={title||'Проект макета'} onAgent={()=>document.querySelector('textarea[aria-label="Запрос к AI-ассистенту"]')?.focus()}><main className="project-page text-foreground"><div className="mx-auto max-w-[1440px]">
   <a href="/" className="inline-flex items-center gap-2 text-xs text-subtle hover:text-foreground"><ArrowLeft size={13}/>Ваши видео</a>
@@ -136,10 +137,17 @@ export default function StatProjectPage({id}){
         {series('Удержание, %','retention',100,'От двух точек от начала до конца ролика. Временная шкала использует длительность из раздела «Обзор».')}
       </>)}
       {distribution('Источники трафика', 'sources')}
-      {block('Поисковые запросы', ['searchQueriesText'], <label className="block text-xs text-muted">Текст блока
-        <textarea rows={3} maxLength={2000} className={input} value={config.searchQueriesText ?? ''}
-          onChange={event => change('searchQueriesText', event.target.value)} placeholder="Стандартная подсказка макета" />
-      </label>)}
+      {block('Поисковые запросы', ['searchQueriesMode', 'searchQueries', 'bounds.searchQueries', 'calculation.searchQueries'], <>
+        <label className="block text-xs text-muted">Режим блока
+          <select className={input} value={config.searchQueriesMode ?? 'empty'} onChange={event => change('searchQueriesMode', event.target.value)}>
+            <option value="empty">Без запросов</option>
+            <option value="results">С запросами</option>
+          </select>
+        </label>
+        {config.searchQueriesMode === 'results'
+          ? distributionFields('Поисковые запросы', 'searchQueries', config.searchQueries ?? defaultSearchQueries)
+          : <p className="text-sm text-muted">Сейчас у всех поисковых запросов низкий трафик. Данные появятся, когда хотя бы у 1 запроса будет достаточно трафика.</p>}
+      </>)}
     </>}
     {tab === 'viewers' && <>
       {block('Всего зрителей', ['totalViewers'], <div className="project-editor-metrics">{field('Всего зрителей','totalViewers',{type:'number',min:0,step:'1'})}</div>)}

@@ -29,7 +29,6 @@ document.querySelector('[data-pane="engagement"] .big-vid').innerHTML =
    </div>`;
 
 $("pub").textContent = DATA.video.published;
-if (DATA.searchQueriesText && $("search-queries-text")) $("search-queries-text").textContent = DATA.searchQueriesText;
 if (DATA.commentWordsText && $("comment-words-text")) $("comment-words-text").textContent = DATA.commentWordsText;
 
 const ICONS = [
@@ -207,6 +206,12 @@ function bars(id, rows, dec) {
     </div>`).join("");
 }
 bars("sources", DATA.sources, 1);
+const searchQueriesResults = $("search-queries-results");
+if (searchQueriesResults && DATA.searchQueriesMode === "results" && DATA.searchQueries?.length) {
+  $("search-queries-text").hidden = true;
+  searchQueriesResults.hidden = false;
+  bars("search-queries-results", DATA.searchQueries, 1);
+}
 
 /* ---------- Зрители ---------- */
 $("v-total-viewers").textContent = fmtKExact(DATA.totalViewers);
@@ -266,10 +271,5 @@ window.addEventListener("resize", syncLogo);
 $("banner-close").addEventListener("click", () => $("banner").remove());
 
 showTab(location.hash.slice(1) || "overview", false);
-const publicationsAccount = $("other-publications-account");
-if (publicationsAccount && DATA.otherPublicationsAccount) {
-  publicationsAccount.textContent = DATA.otherPublicationsAccount;
-  publicationsAccount.hidden = false;
-}
 const thumbContainer = document.querySelector(".thumbs");
 if (thumbContainer && DATA.otherCovers) thumbContainer.innerHTML = DATA.otherCovers.map(url => `<img src="${escapeHtml(url)}" alt="" style="width:28px;height:28px;border-radius:4px;object-fit:cover;">`).join("");

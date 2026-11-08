@@ -142,7 +142,7 @@ input[type=range]:focus-visible{outline:2px solid var(--blue); outline-offset:10
 
 /* ---------- полоски ---------- */
 .src{margin-top:12px}
-#sources .src:first-child,#ages .src:first-child,#places .src:first-child{margin-top:18px}
+#sources .src:first-child,#search-queries-results .src:first-child,#ages .src:first-child,#places .src:first-child{margin-top:18px}
 .src-h{display:flex; justify-content:space-between; align-items:center; font-size:13px}
 .src-h b{display:flex; align-items:center; gap:4px; font-weight:500} /* Уменьшили жирность с 600 */
 .bar{height:9px; margin-top:8px; border-radius:3px; background:var(--track); overflow:hidden}
