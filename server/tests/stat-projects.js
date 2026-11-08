@@ -70,7 +70,7 @@ try{
  const other=await(await request('','POST',{videoId:second.id})).json();
  const saved=await request('/'+id,'PUT',{title:'Edited project',config,revision:1});assert.equal(saved.status,200);assert.equal((await saved.json()).revision,2);
  for (const [index, date] of ['2026-10-01', '2026-11-04', '2026-11-02', '2026-11-08'].entries()) {
-   const sibling = await Video.create({ account: account.id, url: 'https://www.tiktok.com/@demo/video/' + (index + 2), title: date, createdBy: user });
+   const sibling = await Video.create({ account: account.id, url: 'https://www.tiktok.com/@demo/video/' + (index + 2), title: date, status: index === 3 ? 'moderation' : 'published', createdBy: user });
    const siblingConfig = defaultProjectConfig();
    siblingConfig.video.published = date;
    siblingConfig.video.cover = 'https://example.com/cover-' + index + '.jpg';

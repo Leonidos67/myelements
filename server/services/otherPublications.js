@@ -34,7 +34,7 @@ export async function getOtherPublications(videoId) {
   const [account, candidates] = await Promise.all([
     Account.findById(video.account).select('name').lean(),
     Video.aggregate([
-      { $match: { account: video.account, _id: { $ne: video._id }, status: { $in: ['published', 'paid'] } } },
+      { $match: { account: video.account, _id: { $ne: video._id } } },
       { $lookup: {
         from: StatProject.collection.name, localField: '_id', foreignField: 'video', as: 'project',
         pipeline: [

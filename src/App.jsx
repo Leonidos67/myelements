@@ -314,7 +314,13 @@ export default function App() {
               <button aria-pressed={onlyFavorites} onClick={()=>setOnlyFavorites(v=>!v)} className={'workspace-filter-chip '+(onlyFavorites?'selected':'')}><Star size={13} fill={onlyFavorites?'currentColor':'none'}/>Избранные</button>
               <label className={'workspace-filter-chip workspace-filter-select '+(videoCategory?'selected':'')}><Filter size={13}/><select aria-label="Тематика видео" value={videoCategory} onChange={e=>setVideoCategory(e.target.value)}><option value="">Тематика: все</option>{Object.entries(stats?.categories||{}).map(([key,cat])=><option key={key} value={key}>{cat.label}</option>)}</select></label>
               <label className={'workspace-filter-chip workspace-filter-select '+(videoStatus?'selected':'')}><select aria-label="Статус видео" value={videoStatus} onChange={e=>setVideoStatus(e.target.value)}><option value="">Статус: все</option><option value="moderation">На модерации</option><option value="published">Опубликовано</option><option value="rejected">Отказано</option><option value="paid">Выплатили</option></select></label>
-              {activeAccount&&<button onClick={()=>setActiveAccount('')} className="workspace-filter-chip dashed"><span className="text-subtle">Аккаунт</span>{accounts.find(a=>a._id===activeAccount)?.name}<X size={12}/></button>}
+              <label className={'workspace-filter-chip workspace-filter-select ' + (activeAccount ? 'selected' : '')}>
+                <User size={13} aria-hidden="true" />
+                <select aria-label="Аккаунт видео" value={activeAccount} onChange={event => setActiveAccount(event.target.value)}>
+                  <option value="">Все аккаунты</option>
+                  {accounts.map(account => <option key={account._id} value={account._id}>{account.name}</option>)}
+                </select>
+              </label>
               {(hasVideoFilters||videoSort!=='newest')&&<button onClick={resetVideoFilters} className="workspace-filter-reset"><X size={12}/>Сбросить</button>}
               <label className="workspace-filter-chip workspace-filter-select workspace-sort" title="Закреплённые видео всегда сверху"><ArrowDownWideNarrow size={13}/><select aria-label="Сортировка видео" value={videoSort} onChange={e=>setVideoSort(e.target.value)}><option value="newest">Новые сначала</option><option value="oldest">Старые сначала</option><option value="views">Больше просмотров</option><option value="likes">Больше лайков</option><option value="revenue">Больше дохода</option></select></label>
             </div>
