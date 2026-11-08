@@ -48,7 +48,17 @@ function isEmbeddedJpeg(value) {
 }
 
 export const defaultSearchQueries = defaults.searchQueries;
-export const defaultCommentWords = defaults.commentWords;
+export function commentWordCounts(config) {
+  if (config.commentWordCounts !== undefined) return config.commentWordCounts;
+  if (!Array.isArray(config.commentWords) || !config.commentWords.length) return defaults.commentWordCounts;
+  const scale = config.commentWords.some(row => !Number.isInteger(row[1])) ? 100 : 1;
+  return config.commentWords.map(([word, value]) => [word, Math.round(value * scale)]);
+}
+
+export function commentWordBars(counts) {
+  const max = Math.max(1, ...counts.map(([, count]) => Number.isFinite(count) ? count : 0));
+  return counts.map(([word, count]) => [word, Number.isFinite(count) ? Math.max(0, count) / max * 100 : 0]);
+}
 
 export function validateProjectConfig(raw) {
   const fail = message => { throw Error(message); };
@@ -75,7 +85,6 @@ export function validateProjectConfig(raw) {
   raw = {
     ...raw,
     searchQueries: raw.searchQueries ?? defaultSearchQueries,
-    commentWords: raw.commentWords ?? defaultCommentWords,
   };
   const searchQueriesMode = raw.searchQueriesMode ?? 'empty';
   if (!['empty', 'results'].includes(searchQueriesMode)) fail('Выберите режим поисковых запросов');
@@ -106,7 +115,10 @@ export function validateProjectConfig(raw) {
     searchQueries: percentRows(raw.searchQueries, 'Поисковые запросы'),
     searchQueriesText: text(raw.searchQueriesText ?? '', 'Поисковые запросы', 2000),
     commentWordsMode,
-    commentWords: percentRows(raw.commentWords, 'Частые слова'),
+    commentWordCounts: list(commentWordCounts(raw), 'Частые слова', 1, 60).map(row => {
+      list(row, 'Частое слово', 2, 2);
+      return [text(row[0], 'Слово', 200), number(row[1], 'Количество упоминаний', 0, 1e12, true)];
+    }),
     commentWordsText: text(raw.commentWordsText ?? '', 'Частые слова', 2000),
     otherCovers:list(raw.otherCovers,'Другие обложки',0,12).map(u=>url(u,'Другая обложка')),
   };
@@ -124,6 +136,7 @@ export function projectData(raw) {
   return {
     ...c,video:{...c.video,duration:(c.video.durationText ?? duration)+' с.'},
     metrics:{views:{label:'Просмотры видео',value:c.video.stats[0]},total:{label:'Общее время просмотра',value:Math.floor(total/3600)+' ч.:'+Math.floor(total%3600/60)+' мин.:'+total%60+' с.'},avg:{label:'Среднее время просмотра',value:w.averageSeconds+' с.'},full:{label:'Просмотрели видео полностью',value:w.completionPercent+'%'},subs:{label:'Новые подписчики',value:w.subscribers}},
+    commentWordBars: commentWordBars(c.commentWordCounts),
     viewsDateLabels: c.viewsTimeUnit === 'day' ? viewsDateLabels(c) : null,
     avgWatchedPercent:duration ? Math.round(w.averageSeconds/duration*1000)/10 : 0,
   };

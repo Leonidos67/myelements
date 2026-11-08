@@ -173,7 +173,7 @@ export default {
   "searchQueries": [["Новый запрос", 0]],
   "searchQueriesText": "",
   "commentWordsMode": "empty",
-  "commentWords": [["Новое слово", 0]],
+  "commentWordCounts": [["Новое слово", 0]],
   "commentWordsText": "",
   "otherCovers": []
 };

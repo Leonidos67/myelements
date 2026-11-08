@@ -197,23 +197,24 @@ document.querySelectorAll(".m").forEach(m => m.addEventListener("click", () => {
 }));
 
 /* ---------- общий рендер полосок ---------- */
-function bars(id, rows, dec) {
-  $(id).innerHTML = rows.map(([name, v, chev]) => `
+function bars(id, rows, dec, format = value => value.toFixed(dec) + "%") {
+  $(id).innerHTML = rows.map(([name, v, chev], index) => `
     <div class="src">
-      <div class="src-h"><span>${escapeHtml(name)}</span><b>${v.toFixed(dec)}%${chev ? CHEV : ""}</b></div>
+      <div class="src-h"><span>${escapeHtml(name)}</span><b>${format(v, index)}${chev ? CHEV : ""}</b></div>
       <div class="bar ${v === 0 ? "zero" : ""}"><i style="width:${v}%"></i></div>
     </div>`).join("");
 }
 bars("sources", DATA.sources, 1);
-function optionalBars(id, mode, rows) {
+function optionalBars(id, mode, rows, format) {
   const results = $(id + "-results");
   if (!results || mode !== "results" || !rows?.length) return;
   $(id + "-text").hidden = true;
   results.hidden = false;
-  bars(results.id, rows, 1);
+  bars(results.id, rows, 1, format);
 }
 optionalBars("search-queries", DATA.searchQueriesMode, DATA.searchQueries);
-optionalBars("comment-words", DATA.commentWordsMode, DATA.commentWords);
+optionalBars("comment-words", DATA.commentWordsMode, DATA.commentWordBars,
+  (_, index) => DATA.commentWordCounts[index][1].toLocaleString("ru-RU"));
 
 /* ---------- Зрители ---------- */
 $("v-total-viewers").textContent = fmtKExact(DATA.totalViewers);

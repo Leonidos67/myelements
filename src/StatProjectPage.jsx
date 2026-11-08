@@ -1,5 +1,5 @@
 import {useEffect,useState} from 'react';
-import {ArrowLeft,ArrowUpRight,Save,Trash2,Download,Check,RefreshCw} from 'lucide-react';
+import {ArrowLeft,ArrowUpRight,Save,Trash2,Plus,X,Download,Check,RefreshCw} from 'lucide-react';
 import {api} from './api';
 import Login from './Login';
 import ProjectAssistant from './ProjectAssistant';
@@ -9,7 +9,7 @@ import { applyProjectBlock } from './projectBlockJs';
 import WorkspaceShell from './WorkspaceShell';
 import Rows,{ViewerTypeRanges} from './PercentRows';
 import {repairProjectPercentages} from '../server/services/statPercentages';
-import {validateProjectConfig,projectDataSource,publicationCalendarDate,viewsDateLabels,parseDurationInput,defaultSearchQueries,defaultCommentWords} from '../server/services/statProjectData';
+import {validateProjectConfig,projectDataSource,publicationCalendarDate,viewsDateLabels,parseDurationInput,defaultSearchQueries,commentWordCounts,commentWordBars} from '../server/services/statProjectData';
 import engine from '../server/data/tt-stat/engine.js?raw';
 const input='mt-2 w-full rounded-xl border border-line bg-inset px-3 py-2.5 text-sm text-foreground outline-none focus:border-foreground/40';
 const button='inline-flex items-center justify-center gap-2 rounded-lg border border-line px-3 py-2 text-xs text-foreground hover:bg-elevated disabled:opacity-40';
@@ -35,6 +35,8 @@ export default function StatProjectPage({id}){
  if(loading)return <main className="grid min-h-screen place-items-center bg-background text-subtle">Загрузка проекта…</main>;
  if(!project)return <main className="grid min-h-screen place-items-center bg-background p-6 text-foreground"><div><p role="alert">{error}</p><a href="/" className={button+' mt-4'}>В кабинет</a><button onClick={load} className={button+' ml-2'}>Повторить</button></div></main>;
  const hasCover = /^(?:https?:\/\/|data:image\/jpeg;base64,)/i.test(config.video.cover);
+ const wordCounts = commentWordCounts(config);
+ const wordBars = commentWordBars(wordCounts);
  const inferredViewsDate = publicationCalendarDate(config.video.published);
  const dateLabels = config.viewsTimeUnit === 'day' ? viewsDateLabels(config) : null;
  const tabs=[['overview','Обзор'],['viewers','Зрители'],['engagement','Вовлеченность']];
@@ -46,7 +48,7 @@ export default function StatProjectPage({id}){
    setNotice('');
    setFormEpoch(value => value + 1);
  }
- const block = (title, paths, children) => <ProjectBlock key={title} title={title} paths={paths} config={config} onImport={importBlock}>{children}</ProjectBlock>;
+ const block = (title, paths, children) => <ProjectBlock key={title} title={title} paths={paths} config={paths.includes('commentWordCounts') ? { ...config, commentWordCounts: wordCounts } : config} onImport={importBlock}>{children}</ProjectBlock>;
  const distributionFields = (label, key, rows = config[key]) => <>
    {key === "gender" && <ProjectGenderGraph rows={config.gender} />}
    <div className="space-y-2">
@@ -163,7 +165,7 @@ export default function StatProjectPage({id}){
       {distribution('Места', 'places')}
     </>}
     {tab === 'engagement' && <>
-      {block('Самые частые слова в комментариях', ['commentWordsMode', 'commentWords', 'bounds.commentWords', 'calculation.commentWords'], <>
+      {block('Самые частые слова в комментариях', ['commentWordsMode', 'commentWordCounts'], <>
         <label className="block text-xs text-muted">Режим блока
           <select className={input} value={config.commentWordsMode ?? 'empty'} onChange={event => change('commentWordsMode', event.target.value)}>
             <option value="empty">Без данных</option>
@@ -171,7 +173,25 @@ export default function StatProjectPage({id}){
           </select>
         </label>
         {config.commentWordsMode === 'results'
-          ? distributionFields('Частые слова', 'commentWords', config.commentWords ?? defaultCommentWords)
+          ? <div className="space-y-3">
+            {wordCounts.map(([word, count], index) => <div key={index} className="space-y-1">
+              <div className="grid grid-cols-[minmax(0,1fr)_minmax(80px,120px)_auto] items-end gap-2">
+                <label className="text-xs text-muted">Слово
+                  <input className={input} maxLength={200} value={word}
+                    onChange={event => change('commentWordCounts', wordCounts.map((row, i) => i === index ? [event.target.value, count] : row))} />
+                </label>
+                <label className="text-xs text-muted">Количество
+                  <input className={input} type="number" min={0} max={1e12} step={1} value={count}
+                    onChange={event => change('commentWordCounts', wordCounts.map((row, i) => i === index ? [word, Number(event.target.value)] : row))} />
+                </label>
+                <button type="button" className={button + ' mb-1'} aria-label={'Удалить слово ' + (index + 1)} disabled={wordCounts.length < 2}
+                  onClick={() => change('commentWordCounts', wordCounts.filter((_, i) => i !== index))}><X size={14} /></button>
+              </div>
+              <div className="project-editor-track"><i style={{ width: wordBars[index][1] + '%' }} /></div>
+            </div>)}
+            <button type="button" className={button} disabled={wordCounts.length >= 60}
+              onClick={() => change('commentWordCounts', [...wordCounts, ['Новое слово', 0]])}><Plus size={14} />Добавить слово</button>
+          </div>
           : <p className="text-sm text-muted">Аналитические данные о самых часто используемых словах пока не готовы. Зайдите позже.</p>}
       </>)}
       {block('Лайки', ['likes'], <>
