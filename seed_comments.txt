@@ -564,3 +564,21 @@ const cs2HighlightsComments = [
   { text: "Шанс маленький?", tags: ["+ стикеры upgrader"] },
   { text: "Сколько процентов?", tags: ["+ стикеры rubup"] }
 ];
+
+
+
+
+прочие комментарии
+
+const = [
+  where it is?
+  где это?
+  Where's the link?
+  Where can I find it?
+  дай ссылку
+  дайте ссылку🥺
+  Я хочу это. Дай мне ссылку или адрес, если сможешь
+  Где я могу найти эту ссылку? Она полезная.
+  wats a link
+  Where can I find it?
+]
