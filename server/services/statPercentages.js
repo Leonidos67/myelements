@@ -1,5 +1,5 @@
 const TOTAL=10000;
-export const percentageFields = ['sources', 'gender', 'ages', 'places', 'searchQueries'];
+export const percentageFields = ['sources', 'gender', 'ages', 'places', 'searchQueries', 'commentWords'];
 const units=n=>Math.round(Number(n)*100);
 export function percentageSum(rows){return rows.reduce((sum,row)=>sum+units(row[1]),0)/100;}
 export function defaultBounds(rows){return rows.map(()=>[0,100]);}

@@ -48,6 +48,7 @@ function isEmbeddedJpeg(value) {
 }
 
 export const defaultSearchQueries = defaults.searchQueries;
+export const defaultCommentWords = defaults.commentWords;
 
 export function validateProjectConfig(raw) {
   const fail = message => { throw Error(message); };
@@ -71,9 +72,15 @@ export function validateProjectConfig(raw) {
     return result;
   };
   obj(raw,'Данные');
-  raw = { ...raw, searchQueries: raw.searchQueries ?? defaultSearchQueries };
+  raw = {
+    ...raw,
+    searchQueries: raw.searchQueries ?? defaultSearchQueries,
+    commentWords: raw.commentWords ?? defaultCommentWords,
+  };
   const searchQueriesMode = raw.searchQueriesMode ?? 'empty';
   if (!['empty', 'results'].includes(searchQueriesMode)) fail('Выберите режим поисковых запросов');
+  const commentWordsMode = raw.commentWordsMode ?? 'empty';
+  if (!['empty', 'results'].includes(commentWordsMode)) fail('Выберите режим частых слов');
   const v=obj(raw.video,'Видео'), w=obj(raw.watch,'Просмотр'), l=obj(raw.likes,'Лайки');
   const duration=number(v.durationSeconds,'Длительность',0,86400);
   const durationText = parseDurationInput(v.durationText) === duration ? v.durationText : undefined;
@@ -98,6 +105,8 @@ export function validateProjectConfig(raw) {
     searchQueriesMode,
     searchQueries: percentRows(raw.searchQueries, 'Поисковые запросы'),
     searchQueriesText: text(raw.searchQueriesText ?? '', 'Поисковые запросы', 2000),
+    commentWordsMode,
+    commentWords: percentRows(raw.commentWords, 'Частые слова'),
     commentWordsText: text(raw.commentWordsText ?? '', 'Частые слова', 2000),
     otherCovers:list(raw.otherCovers,'Другие обложки',0,12).map(u=>url(u,'Другая обложка')),
   };

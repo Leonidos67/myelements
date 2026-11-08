@@ -172,6 +172,8 @@ export default {
   "searchQueriesMode": "empty",
   "searchQueries": [["Новый запрос", 0]],
   "searchQueriesText": "",
+  "commentWordsMode": "empty",
+  "commentWords": [["Новое слово", 0]],
   "commentWordsText": "",
   "otherCovers": []
 };

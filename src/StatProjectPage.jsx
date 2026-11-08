@@ -9,7 +9,7 @@ import { applyProjectBlock } from './projectBlockJs';
 import WorkspaceShell from './WorkspaceShell';
 import Rows,{ViewerTypeRanges} from './PercentRows';
 import {repairProjectPercentages} from '../server/services/statPercentages';
-import {validateProjectConfig,projectDataSource,publicationCalendarDate,viewsDateLabels,parseDurationInput,defaultSearchQueries} from '../server/services/statProjectData';
+import {validateProjectConfig,projectDataSource,publicationCalendarDate,viewsDateLabels,parseDurationInput,defaultSearchQueries,defaultCommentWords} from '../server/services/statProjectData';
 import engine from '../server/data/tt-stat/engine.js?raw';
 const input='mt-2 w-full rounded-xl border border-line bg-inset px-3 py-2.5 text-sm text-foreground outline-none focus:border-foreground/40';
 const button='inline-flex items-center justify-center gap-2 rounded-lg border border-line px-3 py-2 text-xs text-foreground hover:bg-elevated disabled:opacity-40';
@@ -163,10 +163,17 @@ export default function StatProjectPage({id}){
       {distribution('Места', 'places')}
     </>}
     {tab === 'engagement' && <>
-      {block('Самые частые слова в комментариях', ['commentWordsText'], <label className="block text-xs text-muted">Текст блока
-        <textarea rows={3} maxLength={2000} className={input} value={config.commentWordsText ?? ''}
-          onChange={event => change('commentWordsText', event.target.value)} placeholder="Стандартная подсказка макета" />
-      </label>)}
+      {block('Самые частые слова в комментариях', ['commentWordsMode', 'commentWords', 'bounds.commentWords', 'calculation.commentWords'], <>
+        <label className="block text-xs text-muted">Режим блока
+          <select className={input} value={config.commentWordsMode ?? 'empty'} onChange={event => change('commentWordsMode', event.target.value)}>
+            <option value="empty">Без данных</option>
+            <option value="results">Со словами</option>
+          </select>
+        </label>
+        {config.commentWordsMode === 'results'
+          ? distributionFields('Частые слова', 'commentWords', config.commentWords ?? defaultCommentWords)
+          : <p className="text-sm text-muted">Аналитические данные о самых часто используемых словах пока не готовы. Зайдите позже.</p>}
+      </>)}
       {block('Лайки', ['likes'], <>
       {hasCover && <img src={config.video.cover} alt="Обложка видео" referrerPolicy="no-referrer" className="mx-auto h-40 w-26 rounded-lg object-cover" />}
       <ProjectGraph values={config.likes.values} max={Math.max(0, ...config.likes.ticks)} />

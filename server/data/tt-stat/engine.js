@@ -29,7 +29,6 @@ document.querySelector('[data-pane="engagement"] .big-vid').innerHTML =
    </div>`;
 
 $("pub").textContent = DATA.video.published;
-if (DATA.commentWordsText && $("comment-words-text")) $("comment-words-text").textContent = DATA.commentWordsText;
 
 const ICONS = [
   `<path d="M7 4.5L19 12 7 19.5z"/>`,
@@ -206,12 +205,15 @@ function bars(id, rows, dec) {
     </div>`).join("");
 }
 bars("sources", DATA.sources, 1);
-const searchQueriesResults = $("search-queries-results");
-if (searchQueriesResults && DATA.searchQueriesMode === "results" && DATA.searchQueries?.length) {
-  $("search-queries-text").hidden = true;
-  searchQueriesResults.hidden = false;
-  bars("search-queries-results", DATA.searchQueries, 1);
+function optionalBars(id, mode, rows) {
+  const results = $(id + "-results");
+  if (!results || mode !== "results" || !rows?.length) return;
+  $(id + "-text").hidden = true;
+  results.hidden = false;
+  bars(results.id, rows, 1);
 }
+optionalBars("search-queries", DATA.searchQueriesMode, DATA.searchQueries);
+optionalBars("comment-words", DATA.commentWordsMode, DATA.commentWords);
 
 /* ---------- Зрители ---------- */
 $("v-total-viewers").textContent = fmtKExact(DATA.totalViewers);
